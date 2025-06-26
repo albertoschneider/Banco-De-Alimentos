@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#004E7C"
+    android:backgroundTintMode="add">
+
+    <!-- Header Branco -->
+    <LinearLayout
+        android:id="@+id/header"
+        android:layout_width="429dp"
+        android:layout_height="104dp"
+        android:background="#FFFFFF"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <!-- Ícone Pessoa -->
+
+        <TextView
+            android:id="@+id/userName"
+            android:layout_width="257dp"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="14dp"
+            android:layout_weight="1"
+            android:text="Nome Usuário"
+            android:textColor="#000000"
+            android:textSize="22sp" />
+
+        <ImageView
+            android:id="@+id/iconProfile"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/iconprofile"
+            android:padding="8dp" />
+
+        <!-- Ícone Carrinho -->
+        <ImageView
+            android:id="@+id/iconCart"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/groceriescar"
+            android:padding="8dp" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="409dp"
+        android:layout_height="625dp"
+        android:layout_marginEnd="8dp"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/header"
+        app:layout_constraintVertical_bias="0.0">
+
+        <ImageButton
+            android:id="@+id/btnPontosColeta"
+            android:layout_width="368dp"
+            android:layout_height="170dp"
+            android:layout_marginLeft="16dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginRight="16dp"
+            android:layout_marginBottom="12dp"
+            app:srcCompat="@drawable/pontos_de_coleta" />
+
+        <ImageButton
+            android:id="@+id/imageButton9"
+            android:layout_width="367dp"
+            android:layout_height="181dp"
+            android:layout_marginLeft="12dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginRight="12dp"
+            android:layout_marginBottom="12dp"
+            android:textAlignment="center"
+            app:srcCompat="@drawable/doe_alimentos_online" />
+
+        <ImageButton
+            android:id="@+id/imageButton10"
+            android:layout_width="366dp"
+            android:layout_height="182dp"
+            android:layout_marginLeft="12dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginRight="12dp"
+            android:layout_marginBottom="12dp"
+            app:srcCompat="@drawable/se_torne_um_volunt_rio" />
+
+    </LinearLayout>
+
+    <!-- Card 1 - Pontos de Coleta -->
+
+    <!-- Card 2 - Doação Online -->
+
+    <!-- Card 3 - Voluntário -->
+
+</androidx.constraintlayout.widget.ConstraintLayout>
