@@ -13,6 +13,9 @@
         android:theme="@style/Theme.BancoDeAlimentos"
         tools:targetApi="31">
         <activity
+            android:name=".telaregistro"
+            android:exported="false" />
+        <activity
             android:name=".telalogin"
             android:exported="false" />
         <activity
