@@ -12,7 +12,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-public class telalogin extends AppCompatActivity {
+public class registrarse extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,23 +25,13 @@ public class telalogin extends AppCompatActivity {
             return insets;
         });
 
-        ImageButton imgBtnLogin = findViewById(R.id.btn_back);
         Button btnLogin = findViewById(R.id.btn_login);
 
         btnLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 // Aqui vai a ação desejada
-                Intent intent = new Intent(telalogin.this, menu.class);
-                startActivity(intent);
-            }
-        });
-
-        imgBtnLogin.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Aqui vai a ação desejada
-                Intent intent = new Intent(telalogin.this, MainActivity.class);
+                Intent intent = new Intent(registrarse.this, menu.class);
                 startActivity(intent);
             }
         });
