@@ -28,7 +28,7 @@ public class MainActivity extends AppCompatActivity {
         btnRegistrarse.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(MainActivity.this, registrarse.class);
+                Intent intent = new Intent(MainActivity.this, telaregistro.class);
                 startActivity(intent);
             }
         });
