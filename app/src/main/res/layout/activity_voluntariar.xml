@@ -12,31 +12,31 @@
         android:id="@+id/header"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="16dp"
+        android:background="#FFF1B100"
         android:gravity="center_vertical"
-        android:background="#FFD73A"
-        app:layout_constraintTop_toTopOf="parent"
+        android:orientation="horizontal"
+        android:padding="20dp"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintTop_toTopOf="parent">
 
         <!-- Ícone de voltar -->
         <ImageButton
             android:id="@+id/btn_voltar"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
             android:background="@android:color/transparent"
-            android:src="@drawable/back_button"
-            android:contentDescription="Voltar" />
+            android:contentDescription="Voltar"
+            android:src="@drawable/back_button" />
 
         <!-- Imagem de voluntariar-se -->
         <ImageView
             android:id="@+id/img_voluntariar"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
             android:layout_marginStart="16dp"
-            android:src="@drawable/ic_voluntarios"
-            android:contentDescription="Ícone Voluntariar" />
+            android:contentDescription="Ícone Voluntariar"
+            android:src="@drawable/ic_voluntarios" />
 
         <!-- Textos -->
         <LinearLayout
@@ -49,20 +49,25 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:singleLine="true"
                 android:text="Se torne um Voluntário"
                 android:textColor="#000000"
-                android:textStyle="bold"
-                android:textSize="18sp" />
+                android:textSize="20sp"
+                android:textStyle="bold" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:singleLine="true"
                 android:text="Seja um voluntário e ajude o BARC!"
                 android:textColor="#000000"
-                android:textSize="14sp" />
+                android:textSize="16sp" />
         </LinearLayout>
 
     </LinearLayout>
+
 
     <!-- Carrossel -->
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -92,10 +97,10 @@
             android:backgroundTint="#FFFFFF"
             android:foregroundTint="#FFFFFF"
             android:src="@drawable/left_arrow"
-            android:tint="#FFFFFF"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="#FFFFFF" />
 
         <!-- Botão próximo -->
         <ImageButton
@@ -104,10 +109,10 @@
             android:layout_height="40dp"
             android:background="@android:color/transparent"
             android:src="@drawable/right_arrow"
-            android:tint="#FFFFFF"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="#FFFFFF" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <!-- Texto explicativo -->
