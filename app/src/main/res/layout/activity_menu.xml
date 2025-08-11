@@ -60,15 +60,19 @@
 
         <!-- Card 1 -->
         <LinearLayout
+            android:id="@+id/card1"
             android:layout_width="match_parent"
             android:layout_height="172dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground"
             android:orientation="horizontal"
             android:background="@drawable/retangulo_arredondado_amarelo"
             android:padding="10dp">
 
             <ImageView
                 android:layout_width="100dp"
-                android:layout_height="wrap_content"
+                android:layout_height="153dp"
                 android:src="@drawable/se_torne_um_volutario_real" />
 
             <LinearLayout
@@ -99,8 +103,12 @@
 
         <!-- Card 2 -->
         <LinearLayout
+            android:id="@+id/card2"
             android:layout_width="match_parent"
             android:layout_height="172dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground"
             android:layout_marginTop="16dp"
             android:orientation="horizontal"
             android:background="@drawable/retangulo_arredondado_amarelo"
@@ -108,7 +116,7 @@
 
             <ImageView
                 android:layout_width="100dp"
-                android:layout_height="wrap_content"
+                android:layout_height="153dp"
                 android:src="@drawable/doe_alimentos_online" />
 
             <LinearLayout
@@ -139,8 +147,12 @@
 
         <!-- Card 3 -->
         <LinearLayout
+            android:id="@+id/card3"
             android:layout_width="match_parent"
             android:layout_height="172dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground"
             android:layout_marginTop="16dp"
             android:orientation="horizontal"
             android:background="@drawable/retangulo_arredondado_amarelo"
@@ -148,7 +160,7 @@
 
             <ImageView
                 android:layout_width="100dp"
-                android:layout_height="wrap_content"
+                android:layout_height="153dp"
                 android:src="@drawable/img_voluntario" />
 
             <LinearLayout
