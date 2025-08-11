@@ -1,5 +1,6 @@
 package com.instituto.bancodealimentos;
 
+import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
@@ -10,6 +11,8 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.viewpager2.widget.ViewPager2;
 import android.view.View;
 import android.widget.ImageButton;
+import android.net.Uri;
+import android.widget.LinearLayout;
 
 import java.util.Arrays;
 import java.util.List;
@@ -30,8 +33,27 @@ public class voluntariar extends AppCompatActivity {
         ImageButton btnPrev = findViewById(R.id.btn_prev);
 
         imageList = Arrays.asList(
-                R.drawable.imagem1
+                R.drawable.imagem1,
+                R.drawable.imagem2,
+                R.drawable.imagem3
         );
+
+        LinearLayout btnWhatsapp = findViewById(R.id.btn_whatsapp);
+
+        btnWhatsapp.setOnClickListener(v -> {
+            // COLOQUE O SEU LINK COMPLETO AQUI
+            String url = "https://wa.me/555192481830?text=Ol%C3%A1%21%20Tenho%20interesse%20em%20me%20tornar%20volunt%C3%A1rio%20no%20Banco%20de%20Alimentos%20e%20gostaria%20de%20saber%20como%20posso%20ajudar.\n";
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+            startActivity(intent);
+        });
+
+
+        ImageButton imgBtnBack = findViewById(R.id.btn_voltar);
+
+        imgBtnBack.setOnClickListener(v -> {
+            Intent intent = new Intent(voluntariar.this, menu.class);
+            startActivity(intent);
+        });
 
         adapter = new ImageAdapter(this, imageList);
         viewPager.setAdapter(adapter);
@@ -45,6 +67,7 @@ public class voluntariar extends AppCompatActivity {
                 }
             }
         });
+
 
         btnPrev.setOnClickListener(new View.OnClickListener() {
             @Override
