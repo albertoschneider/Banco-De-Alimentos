@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
@@ -30,6 +31,7 @@ public class telaregistro extends AppCompatActivity {
         });
 
         // Botões e textos
+        ImageButton imgBtnBack = findViewById(R.id.btn_back);
         TextView btnLogin = findViewById(R.id.tv_login_here);
         Button btnRegistro = findViewById(R.id.btn_login);
 
@@ -41,6 +43,11 @@ public class telaregistro extends AppCompatActivity {
 
         // Clique para voltar para a tela de login
         btnLogin.setOnClickListener(v -> {
+            Intent intent = new Intent(telaregistro.this, telalogin.class);
+            startActivity(intent);
+        });
+
+        imgBtnBack.setOnClickListener(v -> {
             Intent intent = new Intent(telaregistro.this, MainActivity.class);
             startActivity(intent);
         });
