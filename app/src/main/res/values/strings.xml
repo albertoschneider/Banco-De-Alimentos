@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Banco De Alimentos</string>
+    <string name="back">Voltar</string>
 </resources>

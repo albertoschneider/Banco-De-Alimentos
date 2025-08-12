@@ -13,6 +13,7 @@ import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import android.util.Log;
 
 public class doealimentos extends AppCompatActivity {
 
@@ -54,6 +55,16 @@ public class doealimentos extends AppCompatActivity {
             Intent intent = new Intent(doealimentos.this, menu.class);
             startActivity(intent);
         });
+
+        findViewById(R.id.btnContinuar).setOnClickListener(v -> {
+            ArrayList<Produto> selecionados = new ArrayList<>();
+            for (Produto p : listaProdutos) if (p.getQuantidade() > 0) selecionados.add(p);
+
+            Intent it = new Intent(this, carrinho.class);
+            it.putParcelableArrayListExtra("itens", selecionados);
+            startActivity(it);
+        });
+
     }
 
     private void atualizarTotal() {
