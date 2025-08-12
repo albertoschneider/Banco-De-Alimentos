@@ -2,6 +2,7 @@ package com.instituto.bancodealimentos;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 
 import androidx.activity.EdgeToEdge;
@@ -28,6 +29,7 @@ public class menu extends AppCompatActivity {
         LinearLayout card1 = findViewById(R.id.card1);
         LinearLayout card2 = findViewById(R.id.card2);
         LinearLayout card3 = findViewById(R.id.card3);
+        ImageView imgCart = findViewById(R.id.iconCart);
 
         card1.setOnClickListener(v -> {
             Intent intent = new Intent(menu.this, pontosdecoleta.class);
@@ -43,5 +45,11 @@ public class menu extends AppCompatActivity {
             Intent intent = new Intent(menu.this, voluntariar.class);
             startActivity(intent);
         });
+
+        imgCart.setOnClickListener(v -> {
+            Intent intent = new Intent(menu.this, carrinho.class);
+            startActivity(intent);
+        });
+
     }
 }

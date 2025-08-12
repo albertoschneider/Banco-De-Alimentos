@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.Locale;
 import android.util.Log;
 
+import com.google.gson.Gson;
+
 public class doealimentos extends AppCompatActivity {
 
     RecyclerView recyclerView;
@@ -58,12 +60,23 @@ public class doealimentos extends AppCompatActivity {
 
         findViewById(R.id.btnContinuar).setOnClickListener(v -> {
             ArrayList<Produto> selecionados = new ArrayList<>();
-            for (Produto p : listaProdutos) if (p.getQuantidade() > 0) selecionados.add(p);
+            for (Produto p : listaProdutos) {
+                if (p.getQuantidade() > 0) selecionados.add(p);
+            }
 
+            // Salva no SharedPreferences
+            Gson gson = new Gson();
+            String json = gson.toJson(selecionados);
+            getSharedPreferences("MeuApp", MODE_PRIVATE)
+                    .edit()
+                    .putString("carrinho", json)
+                    .apply();
+
+            // Abre a tela do carrinho
             Intent it = new Intent(this, carrinho.class);
-            it.putParcelableArrayListExtra("itens", selecionados);
             startActivity(it);
         });
+
 
     }
 

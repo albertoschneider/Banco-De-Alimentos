@@ -35,6 +35,7 @@ android {
 dependencies {
     implementation(platform("com.google.firebase:firebase-bom:34.0.0"))
     implementation(libs.appcompat)
+    implementation("com.google.code.gson:gson:2.10.1")
     implementation(libs.material)
     implementation(libs.activity)
     implementation(libs.constraintlayout)
