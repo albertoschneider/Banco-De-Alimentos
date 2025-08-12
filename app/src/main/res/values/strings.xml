@@ -1,4 +1,8 @@
 <resources>
     <string name="app_name">Banco De Alimentos</string>
     <string name="back">Voltar</string>
+    <string name="pix_key">+5551991591769</string>
+    <string name="pix_nome">ALBERTO PEREIRA SCHNEIDER</string>   <!-- máx. 25 caracteres -->
+    <string name="pix_cidade">ESTANCIA VELHA</string>         <!-- máx. 15 caracteres (sem acentos idealmente) -->
+
 </resources>

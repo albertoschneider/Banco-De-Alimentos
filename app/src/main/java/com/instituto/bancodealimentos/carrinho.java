@@ -60,27 +60,33 @@ public class carrinho extends AppCompatActivity {
         rv.setLayoutManager(new LinearLayoutManager(this));
         adapter = new CarrinhoAdapter(itens, () -> {
             atualizarTotal();
-            saveCart(itens); // persiste a cada mudança de quantidade
+            saveCart(itens);
         });
         rv.setAdapter(adapter);
 
         atualizarTotal();
 
         findViewById(R.id.btnVoltar).setOnClickListener(v -> {
-            Intent i = new Intent(carrinho.this, menu.class); // confira o nome da classe!
+            Intent i = new Intent(carrinho.this, menu.class);
             i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             startActivity(i);
         });
 
         findViewById(R.id.btn_voltar).setOnClickListener(v -> {
-            Intent i = new Intent(carrinho.this, doealimentos.class); // confira o nome da classe!
+            Intent i = new Intent(carrinho.this, doealimentos.class);
             i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             startActivity(i);
         });
 
         findViewById(R.id.btnContinuar).setOnClickListener(v -> {
-            // próximo passo (pagamento/confirmacao)
-            // Ex.: startActivity(new Intent(this, Pagamento.class));
+            double total = 0;
+            for (Produto p : itens) {
+                total += p.getPreco() * p.getQuantidade();
+            }
+
+            Intent intent = new Intent(carrinho.this, pagamento.class);
+            intent.putExtra("total", total); // <<--- envia o valor
+            startActivity(intent);
         });
     }
 
