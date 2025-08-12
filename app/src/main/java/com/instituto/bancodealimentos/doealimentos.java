@@ -36,6 +36,7 @@ public class doealimentos extends AppCompatActivity {
         listaProdutos = new ArrayList<>();
         listaProdutos.add(new Produto("Arroz Branco", 5.00, R.drawable.arroz_branco));
         listaProdutos.add(new Produto("Feijão Preto", 7.00, R.drawable.feijao_preto));
+        listaProdutos.add(new Produto("Farinha de Trigo", 8.00, R.drawable.farinha_de_trigo));
 
 
         adapter = new ProdutoAdapter(
