@@ -2,6 +2,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Permissões necessárias para mapa e localização -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
+    <uses-feature android:name="android.hardware.location.network" android:required="false" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -12,6 +20,27 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.BancoDeAlimentos"
         tools:targetApi="31">
+
+        <!-- SUA CHAVE DE API DO GOOGLE MAPS -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="@string/google_maps_key" />
+
+        <activity
+            android:name=".pagamento"
+            android:exported="false" />
+        <activity
+            android:name=".carrinho"
+            android:exported="false" />
+        <activity
+            android:name=".doealimentos"
+            android:exported="false" />
+        <activity
+            android:name=".pontosdecoleta"
+            android:exported="false" />
+        <activity
+            android:name=".voluntariar"
+            android:exported="false" />
         <activity
             android:name=".telaregistro"
             android:exported="false" />
@@ -23,10 +52,12 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".menu"
+            android:exported="false" />
 
         <meta-data
             android:name="preloaded_fonts"

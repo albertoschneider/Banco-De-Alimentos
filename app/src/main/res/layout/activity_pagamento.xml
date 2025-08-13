@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#004E7C"
+    tools:context=".pagamento">
+
+    <LinearLayout
+        android:id="@+id/header"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="#FFF1B100"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="20dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <!-- Ícone de voltar -->
+        <ImageButton
+            android:id="@+id/btn_voltar"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="@android:color/transparent"
+            android:contentDescription="Voltar"
+            android:src="@drawable/back_button" />
+
+        <!-- Imagem de voluntariar-se -->
+        <ImageView
+            android:id="@+id/img_voluntariar"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_marginStart="16dp"
+            android:contentDescription="Ícone Pagamento"
+            android:src="@drawable/ic_payment" />
+
+        <!-- Textos -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:singleLine="true"
+                android:text="Pagamento"
+                android:textColor="#000000"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:singleLine="true"
+                android:text="Conclua sua doação para o BARC!"
+                android:textColor="#000000"
+                android:textSize="16sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- CONTEÚDO SCROLLÁVEL -->
+    <ScrollView
+        android:id="@+id/scroll"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        app:layout_constraintTop_toBottomOf="@id/header"
+        app:layout_constraintBottom_toTopOf="@id/btnVoltarMenu"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- CARD BRANCO -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:cardBackgroundColor="@android:color/white"
+                app:cardCornerRadius="14dp"
+                app:cardUseCompatPadding="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:id="@+id/tvValorTotalLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Valor Total:"
+                        android:textColor="#6B778C"
+                        android:textSize="14sp"
+                        android:layout_gravity="center"/>
+
+                    <TextView
+                        android:id="@+id/tvTotalValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="R$20,00"
+                        android:textStyle="bold"
+                        android:textSize="26sp"
+                        android:textColor="#1B1F3B"
+                        android:layout_marginTop="2dp"
+                        android:layout_gravity="center"/>
+
+                    <TextView
+                        android:id="@+id/tvPixTitulo"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Pagamento via chave PIX:"
+                        android:textColor="#202020"
+                        android:textSize="14sp"
+                        android:layout_marginTop="10dp"
+                        android:layout_gravity="center"/>
+
+                    <!-- ÁREA DO QR CODE -->
+                    <FrameLayout
+                        android:id="@+id/qrContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="210dp"
+                        android:layout_marginTop="12dp"
+                        android:background="#FFFFFF"
+                        android:padding="18dp">
+
+                        <!-- Sombra do “quadro” (opcional simples) -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            app:cardCornerRadius="8dp"
+                            app:cardUseCompatPadding="true"
+                            app:cardElevation="2dp">
+
+                            <ImageView
+                                android:id="@+id/ivQrCode"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:contentDescription="QRCode do PIX"
+                                android:scaleType="fitCenter"
+                                android:padding="24dp"
+                                android:src="@android:drawable/ic_dialog_dialer"/>
+                        </com.google.android.material.card.MaterialCardView>
+                    </FrameLayout>
+
+                    <!-- CHAVE PIX + BOTÃO COPIAR -->
+                    <androidx.constraintlayout.widget.ConstraintLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp">
+
+                        <EditText
+                            android:id="@+id/etPixKey"
+                            android:layout_width="0dp"
+                            android:layout_height="48dp"
+                            android:background="@drawable/bg_edit_rounded"
+                            android:hint="Chave1234567890"
+                            android:paddingStart="14dp"
+                            android:paddingEnd="48dp"
+                            android:textColor="#1B1F3B"
+                            android:textColorHint="#9AA4B2"
+                            android:singleLine="true"
+                            android:focusable="false"
+                            android:clickable="false"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintEnd_toStartOf="@id/btnCopyPix"
+                            app:layout_constraintTop_toTopOf="parent"
+                            app:layout_constraintBottom_toBottomOf="parent"/>
+
+                        <ImageButton
+                            android:id="@+id/btnCopyPix"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:layout_marginStart="8dp"
+                            android:background="@android:color/transparent"
+                            android:contentDescription="Copiar chave PIX"
+                            android:src="@drawable/ic_content_copy"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintTop_toTopOf="@+id/etPixKey"
+                            app:layout_constraintBottom_toBottomOf="@+id/etPixKey"/>
+
+                    </androidx.constraintlayout.widget.ConstraintLayout>
+
+                    <TextView
+                        android:id="@+id/tvPixObs"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Pagamento seguro via PIX direto para o Banco de Alimentos"
+                        android:textColor="#9AA4B2"
+                        android:textSize="11sp"
+                        android:layout_marginTop="6dp"/>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- BOTÃO VOLTAR AO MENU -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnVoltarMenu"
+        android:layout_width="0dp"
+        android:layout_height="46dp"
+        android:layout_margin="16dp"
+        android:text="Voltar ao Menu"
+        android:textAllCaps="false"
+        android:textColor="#000000"
+        android:textStyle="bold"
+        app:backgroundTint="#FFFFFF"
+        app:cornerRadius="24dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
