@@ -3,6 +3,7 @@ package com.instituto.bancodealimentos;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.os.Bundle;
@@ -96,7 +97,10 @@ public class pagamento extends AppCompatActivity {
             findViewById(R.id.btn_voltar).setOnClickListener(v -> finish());
         }
         if (findViewById(R.id.btnVoltarMenu) != null) {
-            findViewById(R.id.btnVoltarMenu).setOnClickListener(v -> finish());
+            findViewById(R.id.btnVoltarMenu).setOnClickListener(v ->{
+                Intent intent = new Intent(pagamento.this, menu.class);
+                startActivity(intent);
+            });
         }
     }
 
