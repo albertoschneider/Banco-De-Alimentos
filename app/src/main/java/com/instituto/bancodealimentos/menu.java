@@ -29,6 +29,7 @@ public class menu extends AppCompatActivity {
         LinearLayout card1 = findViewById(R.id.card1);
         LinearLayout card2 = findViewById(R.id.card2);
         LinearLayout card3 = findViewById(R.id.card3);
+        LinearLayout card4 = findViewById(R.id.card4);
         ImageView imgCart = findViewById(R.id.iconCart);
 
         card1.setOnClickListener(v -> {
@@ -43,6 +44,11 @@ public class menu extends AppCompatActivity {
 
         card3.setOnClickListener(v -> {
             Intent intent = new Intent(menu.this, voluntariar.class);
+            startActivity(intent);
+        });
+
+        card4.setOnClickListener(v -> {
+            Intent intent = new Intent(menu.this, pedidos.class);
             startActivity(intent);
         });
 
