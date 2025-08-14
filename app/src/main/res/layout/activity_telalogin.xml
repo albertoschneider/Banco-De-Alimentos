@@ -111,10 +111,10 @@
             android:layout_marginTop="14dp"
             android:text="Entrar"
             android:textAllCaps="false"
+            android:textColor="#004E7C"
             android:textStyle="bold"
-            android:textColor="#FFFFFF"
-            app:cornerRadius="26dp"
-            app:backgroundTint="#FFF1B100"/>
+            app:backgroundTint="#FFF1B100"
+            app:cornerRadius="26dp" />
 
         <!-- Entrar com Google (branco, pill) -->
         <com.google.android.material.button.MaterialButton
