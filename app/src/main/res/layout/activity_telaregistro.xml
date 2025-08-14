@@ -6,185 +6,247 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#004E7C"
     tools:context=".telaregistro">
 
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="#CCE4F2"
-        android:fillViewport="true">
+    <!-- Scroll para telas pequenas -->
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scroll"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="24dp"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            android:paddingTop="16dp"
+            android:paddingBottom="24dp"
             android:gravity="center_horizontal">
 
-            <!-- Botão Voltar -->
+            <!-- Botão Voltar (usa seu PNG) -->
             <ImageButton
                 android:id="@+id/btn_back"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
                 android:layout_gravity="start"
-                android:background="@android:color/transparent"
-                android:src="@drawable/seta_voltar"
-                android:contentDescription="Voltar" />
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Voltar"
+                android:padding="6dp"
+                android:scaleType="centerInside"
+                app:srcCompat="@drawable/arrow_back_png"
+                app:tint="#FFFFFF" />
 
-            <!-- Logotipo -->
+            <!-- Logo (sua imagem branca) -->
             <ImageView
                 android:id="@+id/logo_image"
-                android:layout_width="wrap_content"
+                android:layout_width="180dp"
+                android:layout_height="180dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="16dp"
+                android:adjustViewBounds="true"
+                android:contentDescription="Logo"
+                android:scaleType="fitCenter"
+                android:src="@drawable/logoinicio"
+                app:tint="#FFFFFF" />
+
+            <!-- Nome completo -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/til_username"
+                style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox.Dense"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:boxBackgroundColor="#FFFFFF"
+                app:boxCornerRadiusTopStart="12dp"
+                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusBottomStart="12dp"
+                app:boxCornerRadiusBottomEnd="12dp"
+                app:boxStrokeWidth="0dp">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/et_username"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:hint="Nome completo"
+                    android:inputType="textPersonName"
+                    android:textColor="#000000"
+                    android:textColorHint="#9EB9D4"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="14dp"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Email -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/til_email"
+                style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox.Dense"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:layout_marginBottom="32dp"
-                android:src="@drawable/logo_barc"
-                android:adjustViewBounds="true"
-                android:contentDescription="Logo Banco de Alimentos" />
+                app:boxBackgroundColor="#FFFFFF"
+                app:boxCornerRadiusTopStart="12dp"
+                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusBottomStart="12dp"
+                app:boxCornerRadiusBottomEnd="12dp"
+                app:boxStrokeWidth="0dp">
 
-            <!-- Campo Usuário -->
-            <EditText
-                android:id="@+id/et_username"
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:hint="Nome de Usuário"
-                android:background="@drawable/bg_input_field_blue"
-                android:paddingHorizontal="12dp"
-                android:textColor="#FFFFFF"
-                android:textColorHint="#FFFFFF" />
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/et_email"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:hint="Email"
+                    android:inputType="textEmailAddress"
+                    android:textColor="#000000"
+                    android:textColorHint="#9EB9D4"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="14dp"/>
+            </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Campo Email -->
-            <EditText
-                android:id="@+id/et_email"
+            <!-- Senha -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/til_password"
+                style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox.Dense"
                 android:layout_width="match_parent"
-                android:layout_height="50dp"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:hint="Email"
-                android:background="@drawable/bg_input_field_blue"
-                android:paddingHorizontal="12dp"
-                android:textColor="#FFFFFF"
-                android:textColorHint="#FFFFFF" />
+                app:boxBackgroundColor="#FFFFFF"
+                app:boxCornerRadiusTopStart="12dp"
+                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusBottomStart="12dp"
+                app:boxCornerRadiusBottomEnd="12dp"
+                app:boxStrokeWidth="0dp"
+                app:endIconMode="password_toggle">
 
-            <!-- Campo Senha -->
-            <EditText
-                android:id="@+id/et_password"
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/et_password"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:hint="Senha"
+                    android:inputType="textPassword"
+                    android:textColor="#000000"
+                    android:textColorHint="#9EB9D4"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="14dp"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Confirmar Senha (novo id) -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/til_confirm_password"
+                style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox.Dense"
                 android:layout_width="match_parent"
-                android:layout_height="50dp"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:hint="Senha"
-                android:inputType="textPassword"
-                android:background="@drawable/bg_input_field_blue"
-                android:paddingHorizontal="12dp"
-                android:textColor="#FFFFFF"
-                android:textColorHint="#FFFFFF" />
+                app:boxBackgroundColor="#FFFFFF"
+                app:boxCornerRadiusTopStart="12dp"
+                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusBottomStart="12dp"
+                app:boxCornerRadiusBottomEnd="12dp"
+                app:boxStrokeWidth="0dp"
+                app:endIconMode="password_toggle">
 
-            <!-- Botão Registrar -->
-            <Button
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/et_confirm_password"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:hint="Confirmar senha"
+                    android:inputType="textPassword"
+                    android:textColor="#000000"
+                    android:textColorHint="#9EB9D4"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="14dp"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Registrar-se (amarelo, pill) -->
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_login"
                 android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:layout_marginTop="20dp"
-                android:backgroundTint="#FFFFFF"
+                android:layout_height="52dp"
+                android:layout_marginTop="16dp"
                 android:text="Registrar-se"
                 android:textAllCaps="false"
-                android:textColor="#000000"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:textColor="#004E7C"
+                app:cornerRadius="26dp"
+                app:backgroundTint="#FFD73A"/>
 
-            <!-- Esqueceu sua senha -->
-            <LinearLayout
+            <!-- "Esqueceu sua senha?" (mantém id, mas escondido) -->
+            <TextView
+                android:id="@+id/tv_forgot_password"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="12dp">
+                android:layout_marginTop="8dp"
+                android:text="Esqueceu sua senha?"
+                android:textColor="#CFE3F6"
+                android:textSize="12sp"
+                android:visibility="gone"/>
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Esqueceu sua senha?"
-                    android:textColor="#000000"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:id="@+id/tv_forgot_password"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text=" Clique aqui"
-                    android:textColor="#0000EE"
-                    android:textSize="14sp"
-                    android:textStyle="bold"
-                    android:clickable="true"
-                    android:focusable="true" />
-            </LinearLayout>
-
-            <!-- Divisor -->
+            <!-- Divisor "ou" -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center"
-                android:layout_marginVertical="12dp">
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="8dp">
 
                 <View
                     android:layout_width="0dp"
                     android:layout_height="1dp"
                     android:layout_weight="1"
-                    android:background="#000" />
+                    android:background="#CFE3F6" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="  ou  "
-                    android:textColor="#000000"
+                    android:textColor="#FFFFFF"
                     android:textSize="14sp" />
 
                 <View
                     android:layout_width="0dp"
                     android:layout_height="1dp"
                     android:layout_weight="1"
-                    android:background="#000" />
+                    android:background="#CFE3F6" />
             </LinearLayout>
 
-            <!-- Botão Google -->
-            <LinearLayout
+            <!-- Registrar com Google (mantendo seus IDs) -->
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_google"
                 android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:layout_marginTop="12dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:background="@drawable/bg_button_white"
-                android:clickable="true"
-                android:focusable="true"
-                android:padding="8dp">
+                android:layout_height="52dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp"
+                android:text="Registrar com Google"
+                android:textAllCaps="false"
+                android:textStyle="bold"
+                android:textColor="#1F2937"
+                app:cornerRadius="26dp"
+                app:icon="@drawable/google_g_png"
+                app:iconTint="@null"
+                app:iconSize="24dp"
+                app:iconPadding="10dp"
+                app:iconGravity="textStart"
+                android:backgroundTint="#FFFFFF"
+                android:foreground="?attr/selectableItemBackground" />
 
-                <ImageView
-                    android:id="@+id/img_google"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/google_g_png"
-                    android:contentDescription="Google" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="  Continuar com Google"
-                    android:textColor="#000000"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
-            <!-- Criar conta -->
+            <!-- Rodapé: já possui conta? Entre -->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginTop="24dp">
+                android:layout_marginTop="14dp">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Já possui uma conta?"
-                    android:textColor="#000000"
+                    android:textColor="#CFE3F6"
                     android:textSize="14sp" />
 
                 <TextView
@@ -192,7 +254,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text=" Entre aqui"
-                    android:textColor="#0000EE"
+                    android:textColor="#FFFFFF"
                     android:textStyle="bold"
                     android:textSize="14sp"
                     android:clickable="true"
@@ -200,5 +262,5 @@
             </LinearLayout>
 
         </LinearLayout>
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>
