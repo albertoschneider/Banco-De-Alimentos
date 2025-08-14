@@ -2,8 +2,7 @@ package com.instituto.bancodealimentos;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
+import android.widget.ImageButton;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -11,13 +10,15 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.google.android.material.card.MaterialCardView;
+
 public class menu extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_menu); // Corrigido para o layout correto
+        setContentView(R.layout.activity_menu);
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -25,31 +26,35 @@ public class menu extends AppCompatActivity {
             return insets;
         });
 
-        // Agora sim, já que o layout foi carregado
-        LinearLayout card1 = findViewById(R.id.card1);
-        LinearLayout card2 = findViewById(R.id.card2);
-        LinearLayout card3 = findViewById(R.id.card3);
-        ImageView imgCart = findViewById(R.id.iconCart);
+        MaterialCardView cardPontos = findViewById(R.id.cardPontos);
+        MaterialCardView cardDoe = findViewById(R.id.cardDoe);
+        MaterialCardView cardVoluntario = findViewById(R.id.cardVoluntario);
+        MaterialCardView cardHistorico = findViewById(R.id.cardHistorico);
+        ImageButton btnCart = findViewById(R.id.btnCart);
 
-        card1.setOnClickListener(v -> {
-            Intent intent = new Intent(menu.this, pontosdecoleta.class);
-            startActivity(intent);
+        cardPontos.setOnClickListener(v -> {
+            Intent i = new Intent(menu.this, pontosdecoleta.class);
+            startActivity(i);
         });
 
-        card2.setOnClickListener(v -> {
-            Intent intent = new Intent(menu.this, doealimentos.class);
-            startActivity(intent);
+        cardDoe.setOnClickListener(v -> {
+            Intent i = new Intent(menu.this, doealimentos.class);
+            startActivity(i);
         });
 
-        card3.setOnClickListener(v -> {
-            Intent intent = new Intent(menu.this, voluntariar.class);
-            startActivity(intent);
+        cardVoluntario.setOnClickListener(v -> {
+            Intent i = new Intent(menu.this, voluntariar.class);
+            startActivity(i);
         });
 
-        imgCart.setOnClickListener(v -> {
-            Intent intent = new Intent(menu.this, carrinho.class);
-            startActivity(intent);
+        cardHistorico.setOnClickListener(v -> {
+            Intent i = new Intent(menu.this, pedidos.class);
+            startActivity(i);
         });
 
+        btnCart.setOnClickListener(v -> {
+            Intent i = new Intent(menu.this, carrinho.class);
+            startActivity(i);
+        });
     }
 }

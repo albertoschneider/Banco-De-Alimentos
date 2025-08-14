@@ -63,7 +63,7 @@
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Conteúdo (Mapa + Lista) -->
+    <!-- Conteúdo: MAPA (OSM) + LISTA -->
     <LinearLayout
         android:id="@+id/content"
         android:layout_width="0dp"
@@ -74,6 +74,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent">
 
+        <!-- Mapa OSM -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/map_card"
             android:layout_width="match_parent"
@@ -84,12 +85,13 @@
             app:strokeColor="#E6E6E6"
             app:strokeWidth="1dp">
 
-            <FrameLayout
-                android:id="@+id/map_container"
+            <org.osmdroid.views.MapView
+                android:id="@+id/map_osm"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- Lista -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvPontos"
             android:layout_width="match_parent"

@@ -5,4 +5,16 @@
     <string name="pix_nome">ALBERTO PEREIRA SCHNEIDER</string>   <!-- máx. 25 caracteres -->
     <string name="pix_cidade">ESTANCIA VELHA</string>         <!-- máx. 15 caracteres (sem acentos idealmente) -->
     <string name="google_maps_key">SUA_CHAVE_AQUI</string>
+    <string name="sem_descricao">Sem descrição</string>
+    <string name="bem_vindo">Bem-vindo,</string>
+    <string name="nome_usuario">Ademir Rodrigues</string>
+    <string name="pontos_coleta_titulo">Pontos de Coleta</string>
+    <string name="pontos_coleta_subtitulo">Encontre locais próximos</string>
+    <string name="doe_alimentos_titulo">Doe Alimentos</string>
+    <string name="doe_alimentos_subtitulo">Faça sua doação online</string>
+    <string name="seja_voluntario_titulo">Seja Voluntário</string>
+    <string name="seja_voluntario_subtitulo">Ajude o BARC</string>
+    <string name="historico_titulo">Histórico</string>
+    <string name="historico_subtitulo">Veja suas doações</string>
+    <string name="voltar">Voltar</string>
 </resources>
