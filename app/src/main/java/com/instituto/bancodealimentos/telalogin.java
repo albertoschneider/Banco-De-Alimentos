@@ -26,30 +26,26 @@ public class telalogin extends AppCompatActivity {
             return insets;
         });
 
-        ImageButton imgBtnBack = findViewById(R.id.btn_back);
-        Button btnLogin = findViewById(R.id.btn_login);
-        TextView tvForgotPassword = findViewById(R.id.tv_forgot_password);
-        TextView tvCreateAccount = findViewById(R.id.tv_create_account);
+        ImageButton imgBtnBack = findViewById(R.id.btnBack);
+        Button btnLogin = findViewById(R.id.btnEntrar);
+        TextView tvForgotPassword = findViewById(R.id.txtForgot);
+        TextView tvCreateAccount = findViewById(R.id.txtRegister);
 
-        // Botão login
         btnLogin.setOnClickListener(v -> {
             Intent intent = new Intent(telalogin.this, menu.class);
             startActivity(intent);
         });
 
-        // Voltar para MainActivity
         imgBtnBack.setOnClickListener(v -> {
             Intent intent = new Intent(telalogin.this, MainActivity.class);
             startActivity(intent);
         });
 
-        // Clique no "Esqueceu sua senha?"
         tvForgotPassword.setOnClickListener(v -> {
             Intent intent = new Intent(telalogin.this, MainActivity.class);
             startActivity(intent);
         });
 
-        // Clique no "Crie uma aqui"
         tvCreateAccount.setOnClickListener(v -> {
             Intent intent = new Intent(telalogin.this, telaregistro.class);
             startActivity(intent);
