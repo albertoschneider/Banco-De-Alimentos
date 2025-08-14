@@ -22,8 +22,8 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
-        Button btnRegistrarse = findViewById(R.id.btnRegistrarse);
-        TextView textViewClick = findViewById(R.id.textView11);
+        Button btnRegistrarse = findViewById(R.id.btnRegister);
+        TextView textViewClick = findViewById(R.id.txtLogin);
 
         btnRegistrarse.setOnClickListener(new View.OnClickListener() {
             @Override

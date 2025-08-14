@@ -6,189 +6,177 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#004E7C"
     tools:context=".telalogin">
 
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="#CCE4F2"
-        android:fillViewport="true">
+    <ImageButton
+        android:id="@+id/btnBack"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginTop="20dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/voltar"
+        android:padding="6dp"
+        android:scaleType="centerInside"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/arrow_back_png"
+        app:tint="#FFFFFF" />
 
-        <LinearLayout
+
+
+    <!-- Bloco central -->
+    <LinearLayout
+        android:id="@+id/centerBlock"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        app:layout_constraintTop_toBottomOf="@id/btnBack"
+        app:layout_constraintBottom_toTopOf="@id/footerBlock"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp">
+
+        <!-- LOGO quadrada, sem contorno -->
+        <ImageView
+            android:id="@+id/imgLogo"
+            android:layout_width="180dp"
+            android:layout_height="180dp"
+            android:adjustViewBounds="true"
+            android:contentDescription="Logo"
+            android:scaleType="fitCenter"
+            android:src="@drawable/logoinicio"
+            app:tint="#FFFFFF" />
+
+        <!-- E-mail -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilEmail"
+            style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox.Dense"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="24dp"
-            android:gravity="center_horizontal">
+            android:layout_marginTop="18dp"
+            app:boxBackgroundColor="#FFFFFF"
+            app:boxCornerRadiusTopStart="12dp"
+            app:boxCornerRadiusTopEnd="12dp"
+            app:boxCornerRadiusBottomStart="12dp"
+            app:boxCornerRadiusBottomEnd="12dp"
+            app:boxStrokeWidth="0dp">
 
-            <!-- Botão Voltar -->
-            <ImageButton
-                android:id="@+id/btn_back"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:layout_gravity="start"
-                android:background="@android:color/transparent"
-                android:src="@drawable/seta_voltar"
-                android:contentDescription="Voltar" />
-
-            <!-- Logotipo -->
-            <ImageView
-                android:id="@+id/logo_image"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:layout_marginBottom="32dp"
-                android:src="@drawable/logo_barc"
-                android:adjustViewBounds="true"
-                android:contentDescription="Logo Banco de Alimentos" />
-
-            <!-- Campo Email -->
-            <EditText
-                android:id="@+id/et_email"
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/edtEmail"
                 android:layout_width="match_parent"
-                android:layout_height="50dp"
+                android:layout_height="48dp"
                 android:hint="Email"
-                android:background="@drawable/bg_input_field_blue"
-                android:paddingHorizontal="12dp"
-                android:textColor="#FFFFFF"
-                android:textColorHint="#FFFFFF" />
+                android:inputType="textEmailAddress"
+                android:textColor="#000000"
+                android:textColorHint="#9EB9D4"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"/>
+        </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Campo Senha -->
-            <EditText
-                android:id="@+id/et_password"
+        <!-- Senha -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilSenha"
+            style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox.Dense"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            app:boxBackgroundColor="#FFFFFF"
+            app:boxCornerRadiusTopStart="12dp"
+            app:boxCornerRadiusTopEnd="12dp"
+            app:boxCornerRadiusBottomStart="12dp"
+            app:boxCornerRadiusBottomEnd="12dp"
+            app:boxStrokeWidth="0dp">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/edtSenha"
                 android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:layout_marginTop="12dp"
+                android:layout_height="48dp"
                 android:hint="Senha"
                 android:inputType="textPassword"
-                android:background="@drawable/bg_input_field_blue"
-                android:paddingHorizontal="12dp"
-                android:textColor="#FFFFFF"
-                android:textColorHint="#FFFFFF" />
-
-            <!-- Botão Entrar -->
-            <Button
-                android:id="@+id/btn_login"
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:layout_marginTop="20dp"
-                android:backgroundTint="#FFFFFF"
-                android:text="Entrar"
-                android:textAllCaps="false"
                 android:textColor="#000000"
-                android:textStyle="bold" />
+                android:textColorHint="#9EB9D4"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"/>
+        </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Esqueceu sua senha -->
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="12dp">
+        <!-- Entrar (amarelo, pill) -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnEntrar"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="14dp"
+            android:text="Entrar"
+            android:textAllCaps="false"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            app:cornerRadius="26dp"
+            app:backgroundTint="#FFF1B100"/>
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Esqueceu sua senha?"
-                    android:textColor="#000000"
-                    android:textSize="14sp" />
+        <!-- Entrar com Google (branco, pill) -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnGoogle"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="10dp"
+            android:text="Entrar com Google"
+            android:textAllCaps="false"
+            android:textStyle="bold"
+            android:textColor="#1F2937"
+            app:cornerRadius="26dp"
+            app:icon="@drawable/google_g_png"
+            app:iconTint="@null"
+            app:iconSize="24dp"
+            app:iconPadding="10dp"
+            app:iconGravity="textStart"
+            android:backgroundTint="#FFFFFF"/>
 
-                <TextView
-                    android:id="@+id/tv_forgot_password"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text=" Clique aqui"
-                    android:textColor="#0000EE"
-                    android:textSize="14sp"
-                    android:textStyle="bold"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:padding="8dp" />
-            </LinearLayout>
+        <!-- Esqueci minha senha -->
+        <TextView
+            android:id="@+id/txtForgot"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Esqueci minha senha"
+            android:textSize="12sp"
+            android:textColor="#CFE3F6"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="6dp"/>
+    </LinearLayout>
 
-            <!-- Divisor OU -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center"
-                android:layout_marginVertical="12dp">
+    <!-- Rodapé -->
+    <LinearLayout
+        android:id="@+id/footerBlock"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="14dp">
 
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="1dp"
-                    android:layout_weight="1"
-                    android:background="#000" />
+        <TextView
+            android:id="@+id/txtNoAccount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Não tem uma conta? "
+            android:textSize="12sp"
+            android:textColor="#CFE3F6"/>
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="  ou  "
-                    android:textColor="#000000"
-                    android:textSize="14sp" />
-
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="1dp"
-                    android:layout_weight="1"
-                    android:background="#000" />
-            </LinearLayout>
-
-            <!-- Botão Google -->
-            <LinearLayout
-                android:id="@+id/btn_google"
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:layout_marginTop="12dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:background="@drawable/bg_button_white"
-                android:clickable="true"
-                android:focusable="true"
-                android:padding="8dp">
-
-                <ImageView
-                    android:id="@+id/img_google"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_google"
-                    android:contentDescription="Google" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="  Continuar com Google"
-                    android:textColor="#000000"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
-            <!-- Criar conta -->
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="24dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Não possui conta?"
-                    android:textColor="#000000"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:id="@+id/tv_create_account"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text=" Crie uma aqui"
-                    android:textColor="#0000EE"
-                    android:textStyle="bold"
-                    android:textSize="14sp"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:padding="8dp" />
-            </LinearLayout>
-
-        </LinearLayout>
-    </ScrollView>
+        <TextView
+            android:id="@+id/txtRegister"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Registre-se"
+            android:textStyle="bold"
+            android:textSize="12sp"
+            android:textColor="#FFFFFF"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="2dp"/>
+    </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

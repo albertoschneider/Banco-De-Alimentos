@@ -6,85 +6,101 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#CDE5F1"
-    android:backgroundTint="#CDE5F1"
+    android:backgroundTint="#004E7C"
     tools:context=".MainActivity">
 
     <LinearLayout
-        android:id="@+id/linearLayout"
-        android:layout_width="416dp"
-        android:layout_height="220dp"
-        android:orientation="horizontal"
+        android:id="@+id/centerBlock"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toTopOf="@+id/btnRegister"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.5">
 
         <ImageView
-            android:id="@+id/imageView3"
-            android:layout_width="370dp"
-            android:layout_height="147dp"
-            android:layout_marginTop="42dp"
-            android:layout_weight="1"
-            app:srcCompat="@drawable/logoinicio" />
-    </LinearLayout>
+            android:id="@+id/imgLogo"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:adjustViewBounds="true"
+            android:contentDescription="Logo"
+            android:scaleType="fitCenter"
+            android:src="@drawable/passarinho_barc"
+            app:tint="#FFFFFF" />
 
-    <LinearLayout
-        android:id="@+id/linearLayout2"
-        android:layout_width="320dp"
-        android:layout_height="146dp"
-        android:layout_marginTop="58dp"
-        android:orientation="horizontal"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/linearLayout">
-
-        <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/btnRegistrarse"
-            android:layout_width="376dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="60dp"
-            android:layout_weight="1"
-            android:background="@drawable/corbotaoregistrar"
-            android:backgroundTint="#005487"
-            android:text="Registrar-se"
-            android:textAllCaps="false"
-            android:textColor="#FFFFFF"
-            android:textStyle="bold" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="328dp"
-        android:layout_height="157dp"
-        android:layout_marginTop="64dp"
-        android:orientation="vertical"
-        app:layout_constraintEnd_toEndOf="@+id/linearLayout2"
-        app:layout_constraintStart_toStartOf="@+id/linearLayout2"
-        app:layout_constraintTop_toBottomOf="@+id/linearLayout2">
-
+        <!-- TÍTULO -->
         <TextView
-            android:id="@+id/textView9"
-            android:layout_width="214dp"
+            android:id="@+id/txtTitle"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginTop="32dp"
-            android:text="Já possui uma conta?"
-            android:textAlignment="center"
-            android:textColor="#000000"
-            android:textSize="16sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/textView11"
-            android:layout_width="match_parent"
-            android:layout_height="60dp"
             android:layout_marginTop="16dp"
+            android:text="BARC"
+            android:textAllCaps="true"
+            android:textColor="#FFC107"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/txtSubtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:lineSpacingExtra="2dp"
+            android:text="Banco de Alimentos\nRegião do Calçado"
+            android:textAlignment="center"
+            android:textColor="#E6F0FA"
+            android:textSize="13sp" />
+    </LinearLayout>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnRegister"
+        android:layout_width="0dp"
+        android:layout_height="52dp"
+        android:text="Registrar-se"
+        android:textAllCaps="false"
+        android:textStyle="bold"
+        android:textColor="#FFFFFF"
+        app:cornerRadius="26dp"
+        app:backgroundTint="#FFF1B100"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/llLogin"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="18dp"/>
+
+    <LinearLayout
+        android:id="@+id/llLogin"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginBottom="14dp">
+
+        <TextView
+            android:id="@+id/txtHaveAcc"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Já tem uma conta? "
+            android:textSize="12sp"
+            android:textColor="#CFE3F6"/>
+
+        <TextView
+            android:id="@+id/txtLogin"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Faça login"
+            android:textStyle="bold"
+            android:textSize="12sp"
+            android:textColor="#FFFFFF"
             android:clickable="true"
             android:focusable="true"
-            android:text="Fazer Login"
-            android:textAlignment="center"
-            android:textColor="#000000"
-            android:textSize="16sp"
-            android:textStyle="bold" />
-
+            android:foreground="?attr/selectableItemBackgroundBorderless"
+            android:padding="2dp" />
     </LinearLayout>
-
 </androidx.constraintlayout.widget.ConstraintLayout>
