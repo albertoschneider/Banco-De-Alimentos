@@ -1,76 +1,101 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginVertical="6dp"
-    app:cardCornerRadius="14dp"
+    android:layout_marginBottom="12dp"
+    app:cardCornerRadius="16dp"
     app:cardUseCompatPadding="true"
+    app:cardElevation="2dp"
     app:strokeColor="#E6E6E6"
-    app:strokeWidth="1dp">
+    app:strokeWidth="1dp"
+    android:foreground="?attr/selectableItemBackground">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="14dp">
+        android:padding="16dp">
 
         <!-- Linha título + distância -->
-        <LinearLayout
+        <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:layout_height="wrap_content">
 
             <TextView
                 android:id="@+id/tvNome"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Mercado Central"
-                android:textColor="#1B1B1B"
-                android:textStyle="bold"
-                android:textSize="16sp" />
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chipDistancia"
-                style="@style/Widget.Material3.Chip.Assist.Elevated"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="—"
-                app:chipCornerRadius="12dp"
-                app:chipMinHeight="32dp"
-                app:chipIconVisible="false" />
-        </LinearLayout>
+                android:text="Mercado Central"
+                android:textColor="#0F172A"
+                android:textStyle="bold"
+                android:textSize="18sp"/>
+
+            <TextView
+                android:id="@+id/tvDistancia"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:text="10.4km"
+                android:textColor="#1E3A8A"
+                android:textStyle="bold"
+                android:textSize="16sp"/>
+        </RelativeLayout>
 
         <!-- Endereço -->
         <TextView
             android:id="@+id/tvEndereco"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:text="IV - Av. Presidente Lucena, 230"
-            android:textColor="#5F6B74"
-            android:textSize="13sp" />
+            android:layout_marginTop="4dp"
+            android:text="Av. Pres. Lucena, 2733 - Ivoti - RS"
+            android:textColor="#475569"
+            android:textSize="14sp"/>
 
-        <!-- Disponibilidade (opcional) -->
-        <TextView
-            android:id="@+id/tvDisponibilidade"
-            android:layout_width="wrap_content"
+        <!-- Linha status + botão -->
+        <RelativeLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:text="Disponível Terça"
-            android:textStyle="bold"
-            android:textSize="12sp"
-            android:textColor="#1B8A4B"
-            android:visibility="gone" />
+            android:layout_marginTop="12dp">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnVerRota"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:text="Ver rota" />
+            <!-- Status (ícone + texto) -->
+            <LinearLayout
+                android:id="@+id/llStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:id="@+id/imgStatus"
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@drawable/ic_status_ok"
+                    android:contentDescription="@string/sem_descricao"/>
+
+                <TextView
+                    android:id="@+id/tvStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="Disponível"
+                    android:textColor="#1E293B"
+                    android:textSize="14sp"/>
+            </LinearLayout>
+
+            <!-- Botão Ver Rota -->
+            <TextView
+                android:id="@+id/btnRota"
+                android:layout_width="96dp"
+                android:layout_height="36dp"
+                android:layout_alignParentEnd="true"
+                android:gravity="center"
+                android:text="Ver Rota"
+                android:textStyle="bold"
+                android:textSize="14sp"
+                android:textColor="#FFFFFF"
+                android:background="@drawable/bg_btn_rota_primary"/>
+        </RelativeLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>
