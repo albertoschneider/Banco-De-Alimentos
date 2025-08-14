@@ -5,7 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F2F5F9">
+    android:background="#0A4E7C">
 
     <androidx.core.widget.NestedScrollView
         android:id="@+id/scroll"
@@ -26,7 +26,7 @@
             android:paddingTop="12dp"
             android:paddingBottom="12dp">
 
-            <!-- HEADER (mesma cor do fundo, sem borda/sombra e com tint nos ícones) -->
+            <!-- Header -->
             <LinearLayout
                 android:id="@+id/header"
                 android:layout_width="match_parent"
@@ -35,13 +35,13 @@
                 android:gravity="center_vertical"
                 android:paddingStart="16dp"
                 android:paddingEnd="6dp"
-                android:background="#F2F5F9">
+                android:background="@android:color/transparent">
 
                 <ImageView
                     android:id="@+id/avatar"
                     android:layout_width="40dp"
                     android:layout_height="40dp"
-                    android:background="@drawable/bg_circle_grey_200"
+                    android:background="@drawable/bg_circle_white"
                     android:src="@drawable/ic_user_light"
                     android:padding="8dp"
                     android:contentDescription="@string/sem_descricao"/>
@@ -58,7 +58,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/bem_vindo"
-                        android:textColor="#9AA4AE"
+                        android:textColor="#FFFFFF"
                         android:textSize="14sp"/>
 
                     <TextView
@@ -66,22 +66,12 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/nome_usuario"
-                        android:textColor="#111827"
+                        android:textColor="#FFFFFF"
                         android:textStyle="bold"
                         android:textSize="20sp"/>
                 </LinearLayout>
 
-                <!-- Ícones do topo com tint para aparecerem -->
-                <ImageButton
-                    android:id="@+id/btnCart"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:background="@android:color/transparent"
-                    android:padding="8dp"
-                    android:src="@drawable/ic_cart_24"
-                    android:contentDescription="@string/sem_descricao"
-                    app:tint="#4B5563" />
-
+                <!-- Somente configurações no topo -->
                 <ImageButton
                     android:id="@+id/btnSettings"
                     android:layout_width="40dp"
@@ -90,15 +80,55 @@
                     android:padding="8dp"
                     android:src="@drawable/ic_settings_24"
                     android:contentDescription="@string/sem_descricao"
-                    app:tint="#4B5563" />
+                    app:tint="#FFFFFF" />
             </LinearLayout>
 
-            <!-- GRID 2x2: TODOS OS CARDS MESMA ALTURA (220dp) -->
+            <!-- Mini banner do Carrinho (sem bolinhas) -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardCarrinho"
+                android:layout_width="match_parent"
+                android:layout_height="72dp"
+                android:layout_marginTop="8dp"
+                app:cardCornerRadius="16dp"
+                app:cardUseCompatPadding="true"
+                app:cardElevation="0dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                android:backgroundTint="#12618F">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp">
+
+                    <ImageView
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:src="@drawable/ic_cart_24"
+                        android:contentDescription="@string/sem_descricao"
+                        app:tint="#FFFFFF"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:text="Carrinho"
+                        android:textColor="#FFFFFF"
+                        android:textStyle="bold"
+                        android:textSize="18sp"/>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- GRID 2x2 -->
             <LinearLayout
                 android:id="@+id/grid"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="14dp"
                 android:orientation="vertical">
 
                 <!-- Linha 1 -->
@@ -124,46 +154,51 @@
                         android:foreground="?attr/selectableItemBackground"
                         android:backgroundTint="#FFFFFF">
 
+                        <!-- CENTRALIZADO -->
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:orientation="vertical"
-                            android:gravity="top"
+                            android:gravity="center"
                             android:padding="22dp">
 
                             <FrameLayout
                                 android:layout_width="40dp"
                                 android:layout_height="40dp"
-                                android:background="@drawable/bg_circle_orange_100">
+                                android:background="@drawable/bg_circle_blue_100">
 
                                 <ImageView
                                     android:layout_width="24dp"
                                     android:layout_height="24dp"
                                     android:layout_gravity="center"
                                     android:src="@drawable/ic_pin_24"
-                                    app:tint="#F59E0B" />
+                                    app:tint="#3B82F6" />
                             </FrameLayout>
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:layout_gravity="center"
                                 android:layout_marginTop="14dp"
                                 android:text="@string/pontos_coleta_titulo"
+                                android:textAlignment="center"
                                 android:textColor="#111827"
-                                android:textStyle="bold"
-                                android:textSize="18sp"/>
+                                android:textSize="18sp"
+                                android:textStyle="bold" />
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:layout_gravity="center"
                                 android:layout_marginTop="2dp"
                                 android:text="@string/pontos_coleta_subtitulo"
+                                android:textAlignment="center"
                                 android:textColor="#6B7280"
-                                android:textSize="15sp"/>
+                                android:textSize="15sp" />
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
 
-                    <!-- Doe Alimentos -->
+                    <!-- Doar Alimentos -->
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/cardDoe"
                         android:layout_width="0dp"
@@ -180,42 +215,47 @@
                         android:foreground="?attr/selectableItemBackground"
                         android:backgroundTint="#FFFFFF">
 
+                        <!-- CENTRALIZADO -->
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:orientation="vertical"
-                            android:gravity="top"
+                            android:gravity="center"
                             android:padding="22dp">
 
                             <FrameLayout
                                 android:layout_width="40dp"
                                 android:layout_height="40dp"
-                                android:background="@drawable/bg_circle_green_100">
+                                android:background="@drawable/bg_circle_orange_100">
 
                                 <ImageView
                                     android:layout_width="24dp"
                                     android:layout_height="24dp"
                                     android:layout_gravity="center"
                                     android:src="@drawable/ic_bag_24"
-                                    app:tint="#10B981" />
+                                    app:tint="#F59E0B" />
                             </FrameLayout>
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:layout_gravity="center"
                                 android:layout_marginTop="14dp"
                                 android:text="@string/doe_alimentos_titulo"
+                                android:textAlignment="center"
                                 android:textColor="#111827"
-                                android:textStyle="bold"
-                                android:textSize="18sp"/>
+                                android:textSize="18sp"
+                                android:textStyle="bold" />
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:layout_gravity="center"
                                 android:layout_marginTop="2dp"
                                 android:text="@string/doe_alimentos_subtitulo"
+                                android:textAlignment="center"
                                 android:textColor="#6B7280"
-                                android:textSize="15sp"/>
+                                android:textSize="15sp" />
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
                 </LinearLayout>
@@ -248,46 +288,51 @@
                         android:foreground="?attr/selectableItemBackground"
                         android:backgroundTint="#FFFFFF">
 
+                        <!-- CENTRALIZADO -->
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:orientation="vertical"
-                            android:gravity="top"
+                            android:gravity="center"
                             android:padding="22dp">
 
                             <FrameLayout
                                 android:layout_width="40dp"
                                 android:layout_height="40dp"
-                                android:background="@drawable/bg_circle_blue_100">
+                                android:background="@drawable/bg_circle_green_100">
 
                                 <ImageView
                                     android:layout_width="24dp"
                                     android:layout_height="24dp"
                                     android:layout_gravity="center"
                                     android:src="@drawable/ic_hands_24"
-                                    app:tint="#60A5FA"/>
+                                    app:tint="#10B981"/>
                             </FrameLayout>
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:layout_gravity="center"
                                 android:layout_marginTop="14dp"
                                 android:text="@string/seja_voluntario_titulo"
+                                android:textAlignment="center"
                                 android:textColor="#111827"
-                                android:textStyle="bold"
-                                android:textSize="18sp"/>
+                                android:textSize="18sp"
+                                android:textStyle="bold" />
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:layout_gravity="center"
                                 android:layout_marginTop="2dp"
                                 android:text="@string/seja_voluntario_subtitulo"
+                                android:textAlignment="center"
                                 android:textColor="#6B7280"
-                                android:textSize="15sp"/>
+                                android:textSize="15sp" />
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
 
-                    <!-- Histórico -->
+                    <!-- Meu Histórico -->
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/cardHistorico"
                         android:layout_width="0dp"
@@ -304,11 +349,12 @@
                         android:foreground="?attr/selectableItemBackground"
                         android:backgroundTint="#FFFFFF">
 
+                        <!-- CENTRALIZADO -->
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:orientation="vertical"
-                            android:gravity="top"
+                            android:gravity="center"
                             android:padding="22dp">
 
                             <FrameLayout
@@ -327,23 +373,56 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:layout_gravity="center"
                                 android:layout_marginTop="14dp"
                                 android:text="@string/historico_titulo"
+                                android:textAlignment="center"
                                 android:textColor="#111827"
-                                android:textStyle="bold"
-                                android:textSize="18sp"/>
+                                android:textSize="18sp"
+                                android:textStyle="bold" />
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:layout_gravity="center"
                                 android:layout_marginTop="2dp"
                                 android:text="@string/historico_subtitulo"
+                                android:textAlignment="center"
                                 android:textColor="#6B7280"
-                                android:textSize="15sp"/>
+                                android:textSize="15sp" />
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
                 </LinearLayout>
             </LinearLayout>
+
+            <!-- Rodapé centralizado -->
+            <LinearLayout
+                android:id="@+id/footerBrand"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginTop="28dp"
+                android:paddingBottom="8dp">
+
+                <ImageView
+                    android:id="@+id/imgBrand"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:contentDescription="@string/sem_descricao"
+                    android:src="@drawable/passarinho_barc"
+                    app:tint="#FFFFFF" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:text="Banco de Alimentos Regional"
+                    android:textColor="#FFFFFF"
+                    android:textSize="18sp"
+                    android:textStyle="bold"/>
+            </LinearLayout>
+
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>

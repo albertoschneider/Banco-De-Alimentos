@@ -2,7 +2,6 @@ package com.instituto.bancodealimentos;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.widget.ImageButton;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -30,31 +29,26 @@ public class menu extends AppCompatActivity {
         MaterialCardView cardDoe = findViewById(R.id.cardDoe);
         MaterialCardView cardVoluntario = findViewById(R.id.cardVoluntario);
         MaterialCardView cardHistorico = findViewById(R.id.cardHistorico);
-        ImageButton btnCart = findViewById(R.id.btnCart);
+        MaterialCardView cardCarrinho = findViewById(R.id.cardCarrinho);
 
         cardPontos.setOnClickListener(v -> {
-            Intent i = new Intent(menu.this, pontosdecoleta.class);
-            startActivity(i);
+            startActivity(new Intent(menu.this, pontosdecoleta.class));
         });
 
         cardDoe.setOnClickListener(v -> {
-            Intent i = new Intent(menu.this, doealimentos.class);
-            startActivity(i);
+            startActivity(new Intent(menu.this, doealimentos.class));
         });
 
         cardVoluntario.setOnClickListener(v -> {
-            Intent i = new Intent(menu.this, voluntariar.class);
-            startActivity(i);
+            startActivity(new Intent(menu.this, voluntariar.class));
         });
 
         cardHistorico.setOnClickListener(v -> {
-            Intent i = new Intent(menu.this, pedidos.class);
-            startActivity(i);
+            startActivity(new Intent(menu.this, pedidos.class));
         });
 
-        btnCart.setOnClickListener(v -> {
-            Intent i = new Intent(menu.this, carrinho.class);
-            startActivity(i);
+        cardCarrinho.setOnClickListener(v -> {
+            startActivity(new Intent(menu.this, carrinho.class));
         });
     }
 }
