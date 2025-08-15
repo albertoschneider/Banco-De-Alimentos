@@ -11,84 +11,83 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+
 import java.text.NumberFormat;
 import java.util.List;
 import java.util.Locale;
 
-public class ProdutoAdapter extends RecyclerView.Adapter<ProdutoAdapter.ProdutoViewHolder> {
+public class ProdutoAdapter extends RecyclerView.Adapter<ProdutoAdapter.VH> {
 
-    // Callback para avisar a Activity quando a quantidade mudar
-    public interface OnQuantidadeChangeListener {
-        void onQuantidadeChanged();
+    public interface OnQuantityChange {
+        void onChanged();
     }
 
-    private final Context context;
-    private final List<Produto> listaProdutos;
-    private final NumberFormat currencyBr = NumberFormat.getCurrencyInstance(new Locale("pt", "BR"));
-    private final OnQuantidadeChangeListener quantidadeChangeListener;
+    private final Context ctx;
+    private final List<Produto> data;
+    private final OnQuantityChange onQuantityChange;
+    private final NumberFormat currencyBr =
+            NumberFormat.getCurrencyInstance(new Locale("pt", "BR"));
 
-    public ProdutoAdapter(Context context, List<Produto> listaProdutos,
-                          OnQuantidadeChangeListener listener) {
-        this.context = context;
-        this.listaProdutos = listaProdutos;
-        this.quantidadeChangeListener = listener;
+    public ProdutoAdapter(Context ctx, List<Produto> data, OnQuantityChange cb) {
+        this.ctx = ctx;
+        this.data = data;
+        this.onQuantityChange = cb;
     }
 
-    @NonNull
-    @Override
-    public ProdutoViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(context).inflate(R.layout.item_produto, parent, false);
-        return new ProdutoViewHolder(view);
+    @NonNull @Override
+    public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View v = LayoutInflater.from(ctx).inflate(R.layout.item_produto_card, parent, false);
+        return new VH(v);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ProdutoViewHolder holder, int position) {
-        Produto produto = listaProdutos.get(position);
+    public void onBindViewHolder(@NonNull VH h, int position) {
+        Produto p = data.get(position);
 
-        holder.tvNomeProduto.setText(produto.getNome());
-        holder.tvPrecoProduto.setText("Valor: " + currencyBr.format(produto.getPreco()));
-        holder.imgProduto.setImageResource(produto.getImagemResId());
-        holder.tvQuantidade.setText(String.valueOf(produto.getQuantidade()));
+        h.tvNome.setText(p.getNome());
+        h.tvPreco.setText(currencyBr.format(p.getPreco()));
+        h.tvQtd.setText(String.valueOf(p.getQuantidade()));
 
-        holder.btnMais.setOnClickListener(v -> {
-            int pos = holder.getAdapterPosition();
-            if (pos != RecyclerView.NO_POSITION) {
-                Produto p = listaProdutos.get(pos);
-                p.setQuantidade(p.getQuantidade() + 1);
-                notifyItemChanged(pos);
-                if (quantidadeChangeListener != null) quantidadeChangeListener.onQuantidadeChanged();
-            }
+        // Imagem (Glide com placeholder)
+        if (p.getImagemUrl() != null && !p.getImagemUrl().isEmpty()) {
+            Glide.with(ctx)
+                    .load(p.getImagemUrl())
+                    .centerCrop()
+                    .placeholder(R.drawable.bg_image_placeholder)
+                    .into(h.ivFoto);
+        } else {
+            h.ivFoto.setImageResource(R.drawable.bg_image_placeholder);
+        }
+
+        h.btnMais.setOnClickListener(v -> {
+            p.setQuantidade(p.getQuantidade() + 1);
+            h.tvQtd.setText(String.valueOf(p.getQuantidade()));
+            if (onQuantityChange != null) onQuantityChange.onChanged();
         });
 
-        holder.btnMenos.setOnClickListener(v -> {
-            int pos = holder.getAdapterPosition();
-            if (pos != RecyclerView.NO_POSITION) {
-                Produto p = listaProdutos.get(pos);
-                if (p.getQuantidade() > 0) {
-                    p.setQuantidade(p.getQuantidade() - 1);
-                    notifyItemChanged(pos);
-                    if (quantidadeChangeListener != null) quantidadeChangeListener.onQuantidadeChanged();
-                }
+        h.btnMenos.setOnClickListener(v -> {
+            if (p.getQuantidade() > 0) {
+                p.setQuantidade(p.getQuantidade() - 1);
+                h.tvQtd.setText(String.valueOf(p.getQuantidade()));
+                if (onQuantityChange != null) onQuantityChange.onChanged();
             }
         });
     }
 
-    @Override
-    public int getItemCount() {
-        return (listaProdutos != null) ? listaProdutos.size() : 0;
-    }
+    @Override public int getItemCount() { return data.size(); }
 
-    public static class ProdutoViewHolder extends RecyclerView.ViewHolder {
-        ImageView imgProduto;
-        TextView tvNomeProduto, tvPrecoProduto, tvQuantidade;
+    static class VH extends RecyclerView.ViewHolder {
+        ImageView ivFoto;
+        TextView tvNome, tvQtd, tvPreco;
         ImageButton btnMais, btnMenos;
 
-        public ProdutoViewHolder(@NonNull View itemView) {
+        VH(@NonNull View itemView) {
             super(itemView);
-            imgProduto = itemView.findViewById(R.id.imgProduto);
-            tvNomeProduto = itemView.findViewById(R.id.tvNomeProduto);
-            tvPrecoProduto = itemView.findViewById(R.id.tvPrecoProduto);
-            tvQuantidade = itemView.findViewById(R.id.tvQuantidade);
+            ivFoto = itemView.findViewById(R.id.ivFoto);
+            tvNome = itemView.findViewById(R.id.tvNome);
+            tvQtd  = itemView.findViewById(R.id.tvQtd);
+            tvPreco = itemView.findViewById(R.id.tvPreco);
             btnMais = itemView.findViewById(R.id.btnMais);
             btnMenos = itemView.findViewById(R.id.btnMenos);
         }

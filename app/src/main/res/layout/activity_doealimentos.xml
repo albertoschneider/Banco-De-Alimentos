@@ -1,76 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".doealimentos">
+    android:background="#EAF0F6">
 
-    <!-- Cabeçalho -->
-    <LinearLayout
+    <!-- HEADER amarelo: voltar (esq), título centralizado, carrinho (dir) -->
+    <RelativeLayout
         android:id="@+id/header"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:background="#FFF1B100"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:padding="20dp"
+        android:layout_height="56dp"
+        android:background="#F4B400"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- Ícone de voltar -->
         <ImageButton
             android:id="@+id/btn_voltar"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_centerVertical="true"
+            android:adjustViewBounds="true"
             android:background="@android:color/transparent"
-            android:contentDescription="Voltar"
-            android:src="@drawable/back_button" />
+            android:contentDescription="@string/sem_descricao"
+            android:scaleType="fitCenter"
+            android:src="@drawable/arrow_back_png" />
 
-        <!-- Imagem -->
-        <ImageView
-            android:id="@+id/img_doar"
-            android:layout_width="56dp"
-            android:layout_height="56dp"
-            android:layout_marginStart="16dp"
-            android:contentDescription="Ícone Voluntariar"
-            android:src="@drawable/doe_alimentos_online" />
-
-        <!-- Textos -->
-        <LinearLayout
-            android:layout_width="0dp"
+        <TextView
+            android:id="@+id/tvTitulo"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_weight="1"
-            android:orientation="vertical">
+            android:layout_centerInParent="true"
+            android:text="Doar Alimentos Online"
+            android:textColor="#153E75"
+            android:textStyle="bold"
+            android:textSize="18sp"/>
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Doe Alimentos Online"
-                android:textColor="#000000"
-                android:textSize="20sp"
-                android:textStyle="bold" />
+        <ImageButton
+            android:id="@+id/btn_cart"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_centerVertical="true"
+            android:layout_alignParentEnd="true"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_cart_24"
+            android:contentDescription="@string/sem_descricao"/>
+    </RelativeLayout>
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Monte seu carrinho de alimentos e faça sua doação!"
-                android:textColor="#000000"
-                android:textSize="16sp" />
-        </LinearLayout>
-    </LinearLayout>
-
-    <!-- Grid de produtos -->
+    <!-- GRID de produtos (2 colunas) -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:clipToPadding="false"
-        android:background="#004E7C"
         android:padding="8dp"
         app:layout_constraintTop_toBottomOf="@id/header"
         app:layout_constraintBottom_toTopOf="@id/footer"
@@ -78,20 +64,24 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
         app:spanCount="2"
-        tools:listitem="@layout/item_produto" />
+        tools:listitem="@layout/item_produto_card"/>
 
-    <!-- Rodapé -->
+    <!-- RODAPÉ: Total + botão amarelo -->
     <LinearLayout
         android:id="@+id/footer"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:background="#FFF1B100"
         android:orientation="vertical"
-        android:padding="8dp"
+        android:background="#FFFFFF"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="12dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
+        <!-- linha do total -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -102,29 +92,32 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Valor Total:"
-                android:textColor="@android:color/black"
-                android:textSize="16sp"
-                android:textStyle="bold" />
+                android:text="Total:"
+                android:textColor="#4B5563"
+                android:textStyle="bold"
+                android:textSize="14sp"/>
 
             <TextView
                 android:id="@+id/tvValorTotal"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="R$0,00"
-                android:textColor="@android:color/black"
-                android:textSize="16sp"
-                android:textStyle="bold" />
+                android:text="R$ 0,00"
+                android:textColor="#1E3A8A"
+                android:textStyle="bold"
+                android:textSize="16sp"/>
         </LinearLayout>
 
-        <Button
+        <!-- botão finalizar -->
+        <TextView
             android:id="@+id/btnContinuar"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Continuar →"
-            android:textColor="@android:color/white"
-            android:backgroundTint="#008917" />
+            android:layout_height="48dp"
+            android:layout_marginTop="10dp"
+            android:gravity="center"
+            android:text="Finalizar Doação"
+            android:textStyle="bold"
+            android:textColor="#153E75"
+            android:background="@drawable/bg_button_yellow"/>
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
