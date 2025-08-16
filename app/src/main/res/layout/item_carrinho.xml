@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="84dp"
+    android:layout_marginBottom="10dp"
+    app:cardCornerRadius="12dp"
+    app:cardUseCompatPadding="true"
+    app:cardElevation="2dp"
+    app:strokeWidth="1dp"
+    app:strokeColor="#E5E7EB">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="10dp">
+
+        <!-- Thumb do produto -->
+        <ImageView
+            android:id="@+id/ivFoto"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_centerVertical="true"
+            android:scaleType="centerCrop"
+            android:background="@drawable/bg_thumb_round"/>
+
+        <!-- Nome e preço (coluna) -->
+        <LinearLayout
+            android:id="@+id/colInfo"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_toEndOf="@id/ivFoto"
+            android:layout_marginStart="10dp"
+            android:orientation="vertical"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/tvNome"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Arroz (1kg)"
+                android:textColor="#0F172A"
+                android:textStyle="bold"
+                android:textSize="14sp"/>
+
+            <TextView
+                android:id="@+id/tvPreco"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="R$ 5,00"
+                android:textColor="#1E3A8A"
+                android:textStyle="bold"
+                android:textSize="12sp"/>
+        </LinearLayout>
+
+        <!-- Pílula de quantidade -->
+        <LinearLayout
+            android:id="@+id/qtyPill"
+            android:layout_width="96dp"
+            android:layout_height="32dp"
+            android:layout_centerVertical="true"
+            android:layout_toStartOf="@+id/btnRemover"
+            android:layout_marginEnd="12dp"
+            android:background="@drawable/bg_qty_pill"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingStart="6dp"
+            android:paddingEnd="6dp">
+
+            <ImageButton
+                android:id="@+id/btnMenos"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:background="@drawable/bg_qty_circle"
+                android:src="@drawable/ic_remove"
+                android:contentDescription="@string/sem_descricao"/>
+
+            <TextView
+                android:id="@+id/tvQtd"
+                android:layout_width="36dp"
+                android:layout_height="24dp"
+                android:gravity="center"
+                android:text="1"
+                android:textStyle="bold"
+                android:textColor="#111827"
+                android:textSize="14sp"/>
+
+            <ImageButton
+                android:id="@+id/btnMais"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:background="@drawable/bg_qty_circle"
+                android:src="@drawable/ic_add"
+                android:contentDescription="@string/sem_descricao"/>
+        </LinearLayout>
+
+        <!-- Lixeira -->
+        <ImageButton
+            android:id="@+id/btnRemover"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_trash"
+            android:contentDescription="@string/sem_descricao"
+            app:tint="#EF4444" />
+    </RelativeLayout>
+</com.google.android.material.card.MaterialCardView>
