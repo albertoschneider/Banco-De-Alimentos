@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Parcelable; // <-- (1) import adicionado
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -44,7 +45,16 @@ public class carrinho extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             fromIntent = getIntent().getParcelableArrayListExtra("itens", Produto.class);
         } else {
-            fromIntent = getIntent().getParcelableArrayListExtra("itens");
+            // <-- (2) conversão segura para versões anteriores ao Android 13
+            ArrayList<? extends Parcelable> tmp = getIntent().getParcelableArrayListExtra("itens");
+            if (tmp != null) {
+                fromIntent = new ArrayList<>(tmp.size());
+                for (Parcelable p : tmp) {
+                    fromIntent.add((Produto) p); // itens foram enviados como Produto
+                }
+            } else {
+                fromIntent = null;
+            }
         }
 
         if (fromIntent != null && !fromIntent.isEmpty()) {
