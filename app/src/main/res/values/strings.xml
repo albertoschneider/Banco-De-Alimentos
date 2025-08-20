@@ -10,12 +10,15 @@
     <string name="nome_usuario">Ademir Rodrigues</string>
     <string name="pontos_coleta_titulo">Pontos de Coleta</string>
     <string name="pontos_coleta_subtitulo">Encontre locais próximos</string>
+    <string name="pontos_coleta_subtitulo_admin">Edite Pontos de Coleta</string>
     <string name="doe_alimentos_titulo">Doe Alimentos</string>
     <string name="doe_alimentos_subtitulo">Faça sua doação online</string>
+    <string name="doe_alimentos_subtitulo_admin">Gerencie os Produtos para Doação</string>
     <string name="seja_voluntario_titulo">Seja Voluntário</string>
     <string name="seja_voluntario_subtitulo">Ajude o BARC</string>
     <string name="historico_titulo">Histórico</string>
     <string name="historico_subtitulo">Veja suas doações</string>
+    <string name="historico_subtitulo_admin">Veja todas as doações realizadas pelos usuários do Aplicativo</string>
     <string name="voltar">Voltar</string>
     <string name="default_web_client_id">603787073561-2taj3fargl9c4l7g902l29255d5vvpa3.apps.googleusercontent.com</string>
 </resources>

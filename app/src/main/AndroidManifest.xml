@@ -25,6 +25,9 @@
         android:theme="@style/Theme.BancoDeAlimentos"
         tools:targetApi="31">
         <activity
+            android:name=".gerenciar_admins"
+            android:exported="false" />
+        <activity
             android:name=".settings"
             android:exported="false" />
         <activity
@@ -65,7 +68,7 @@
             android:exported="false" />
         <activity
             android:name=".MainActivity"
-            android:exported="true"></activity>
+            android:exported="true" />
         <activity
             android:name=".SplashActivity"
             android:exported="true">
