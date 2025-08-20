@@ -5,12 +5,11 @@ import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.google.android.material.button.MaterialButton;
-import com.google.android.material.chip.Chip;
-
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
@@ -20,9 +19,7 @@ public class PontoColetaAdapter extends RecyclerView.Adapter<PontoColetaAdapter.
 
     private final List<PontoColeta> data;
 
-    public PontoColetaAdapter(List<PontoColeta> data) {
-        this.data = data;
-    }
+    public PontoColetaAdapter(List<PontoColeta> data) { this.data = data; }
 
     @NonNull
     @Override
@@ -35,27 +32,41 @@ public class PontoColetaAdapter extends RecyclerView.Adapter<PontoColetaAdapter.
     @Override
     public void onBindViewHolder(@NonNull VH h, int position) {
         PontoColeta p = data.get(position);
+
         h.tvNome.setText(p.getNome());
         h.tvEndereco.setText(p.getEndereco());
 
-        if (p.getDisponibilidade() != null && !p.getDisponibilidade().isEmpty()) {
-            h.tvDisponibilidade.setText(p.getDisponibilidade());
-            h.tvDisponibilidade.setVisibility(View.VISIBLE);
-        } else {
-            h.tvDisponibilidade.setVisibility(View.GONE);
-        }
-
+        // Distância (canto superior direito)
         if (p.getDistanciaKm() > 0) {
-            h.chipDistancia.setText(String.format(Locale.getDefault(), "%.1f km", p.getDistanciaKm()));
+            h.tvDistancia.setText(String.format(Locale.getDefault(), "%.1fkm", p.getDistanciaKm()));
         } else {
-            h.chipDistancia.setText("—");
+            h.tvDistancia.setText("—");
         }
 
-        h.btnVerRota.setOnClickListener(v -> {
+        // Disponibilidade (ícone + texto) + cor do botão
+        final String disp = p.getDisponibilidade() != null ? p.getDisponibilidade() : "";
+        boolean disponivel = disp.equalsIgnoreCase("Disponível");
+
+        if (disponivel) {
+            h.imgStatus.setImageResource(R.drawable.ic_status_ok);
+            h.tvStatus.setText("Disponível");
+            h.btnRota.setEnabled(true);
+            h.btnRota.setBackground(ContextCompat.getDrawable(h.itemView.getContext(), R.drawable.bg_btn_rota_primary));
+            h.btnRota.setTextColor(0xFFFFFFFF);
+        } else {
+            h.imgStatus.setImageResource(R.drawable.ic_status_off);
+            h.tvStatus.setText("Indisponível");
+            h.btnRota.setEnabled(false);
+            h.btnRota.setBackground(ContextCompat.getDrawable(h.itemView.getContext(), R.drawable.bg_btn_rota_disabled));
+            h.btnRota.setTextColor(0xFFFFFFFF);
+        }
+
+        // Abrir rota no Maps
+        h.btnRota.setOnClickListener(v -> {
+            if (!disponivel) return;
             if (p.getLat() != null && p.getLng() != null) {
-                Uri gmmIntentUri = Uri.parse("google.navigation:q=" + p.getLat() + "," + p.getLng() + "&mode=d");
-                Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
-                mapIntent.setPackage("com.google.android.apps.maps");
+                Uri gmm = Uri.parse("google.navigation:q=" + p.getLat() + "," + p.getLng() + "&mode=d");
+                Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmm).setPackage("com.google.android.apps.maps");
                 v.getContext().startActivity(mapIntent);
             }
         });
@@ -65,17 +76,17 @@ public class PontoColetaAdapter extends RecyclerView.Adapter<PontoColetaAdapter.
     public int getItemCount() { return data.size(); }
 
     static class VH extends RecyclerView.ViewHolder {
-        TextView tvNome, tvEndereco, tvDisponibilidade;
-        Chip chipDistancia;
-        MaterialButton btnVerRota;
+        TextView tvNome, tvEndereco, tvDistancia, tvStatus, btnRota;
+        ImageView imgStatus;
 
         VH(@NonNull View itemView) {
             super(itemView);
-            tvNome = itemView.findViewById(R.id.tvNome);
-            tvEndereco = itemView.findViewById(R.id.tvEndereco);
-            tvDisponibilidade = itemView.findViewById(R.id.tvDisponibilidade);
-            chipDistancia = itemView.findViewById(R.id.chipDistancia);
-            btnVerRota = itemView.findViewById(R.id.btnVerRota);
+            tvNome      = itemView.findViewById(R.id.tvNome);
+            tvEndereco  = itemView.findViewById(R.id.tvEndereco);
+            tvDistancia = itemView.findViewById(R.id.tvDistancia);
+            tvStatus    = itemView.findViewById(R.id.tvStatus);
+            imgStatus   = itemView.findViewById(R.id.imgStatus);
+            btnRota     = itemView.findViewById(R.id.btnRota); // é um TextView com fundo arredondado
         }
     }
 }

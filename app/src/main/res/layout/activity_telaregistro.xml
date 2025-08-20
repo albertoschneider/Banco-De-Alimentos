@@ -172,7 +172,7 @@
                 android:textStyle="bold"
                 android:textColor="#004E7C"
                 app:cornerRadius="26dp"
-                app:backgroundTint="#FFD73A"/>
+                app:backgroundTint="#FFF1B100"/>
 
             <!-- "Esqueceu sua senha?" (mantém id, mas escondido) -->
             <TextView

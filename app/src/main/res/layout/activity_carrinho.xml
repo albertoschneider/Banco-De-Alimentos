@@ -1,153 +1,136 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#004E7C"
-    tools:context=".carrinho">
+    android:background="#EAF0F6">
 
-    <!-- Header -->
-    <LinearLayout
+    <!-- HEADER amarelo com título centralizado -->
+    <RelativeLayout
         android:id="@+id/header"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="56dp"
         android:background="#FFF1B100"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:padding="20dp"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
         <ImageButton
             android:id="@+id/btn_voltar"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_centerVertical="true"
+            android:adjustViewBounds="true"
             android:background="@android:color/transparent"
-            android:contentDescription="Voltar"
-            android:src="@drawable/back_button" />
+            android:contentDescription="@string/sem_descricao"
+            android:scaleType="fitCenter"
+            android:src="@drawable/arrow_back_png" />
 
-        <ImageView
-            android:id="@+id/img_voluntariar"
-            android:layout_width="56dp"
-            android:layout_height="56dp"
-            android:layout_marginStart="16dp"
-            android:contentDescription="Ícone Voluntariar"
-            android:src="@drawable/ic_cart_black" />
-
-        <LinearLayout
-            android:layout_width="0dp"
+        <TextView
+            android:id="@+id/tvTitulo"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_weight="1"
-            android:orientation="vertical">
+            android:layout_centerInParent="true"
+            android:text="Carrinho de Doação"
+            android:textColor="#004E7C"
+            android:textStyle="bold"
+            android:textSize="18sp"/>
+    </RelativeLayout>
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Carrinho"
-                android:textColor="#000000"
-                android:textSize="20sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Conclua sua doação para o BARC!"
-                android:textColor="#000000"
-                android:textSize="16sp" />
-        </LinearLayout>
-    </LinearLayout>
-
-    <!-- Card do carrinho (preenche entre header e bottomArea) -->
-    <androidx.cardview.widget.CardView
-        android:id="@+id/cardCart"
+    <!-- LISTA de itens do carrinho -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvCarrinho"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginStart="12dp"
-        android:layout_marginEnd="12dp"
-        app:cardBackgroundColor="@android:color/white"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="4dp"
+        android:clipToPadding="false"
+        android:paddingStart="10dp"
+        android:paddingEnd="10dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
         app:layout_constraintTop_toBottomOf="@id/header"
-        app:layout_constraintBottom_toTopOf="@id/bottomArea"
+        app:layout_constraintBottom_toTopOf="@id/footer"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:listitem="@layout/item_carrinho"/>
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:padding="16dp">
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rvCarrinho"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:clipToPadding="false" />
-
-            <LinearLayout
-                android:id="@+id/rowTotal"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Total"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/tvTotal"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="R$ 0,00"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnContinuar"
-                style="?attr/materialButtonOutlinedStyle"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="8dp"
-                app:backgroundTint="#008917"
-                android:text="Continuar  →"
-                android:textAllCaps="false"
-                android:textColor="@android:color/white" />
-        </LinearLayout>
-    </androidx.cardview.widget.CardView>
-
-    <!-- Área de baixo (somente na borda inferior) -->
+    <!-- RODAPÉ: total + 2 botões (cinza e amarelo) -->
     <LinearLayout
-        android:id="@+id/bottomArea"
+        android:id="@+id/footer"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:gravity="center"
         android:orientation="vertical"
-        android:padding="16dp"
+        android:background="#FFFFFF"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="12dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <Button
-            android:id="@+id/btnVoltar"
+        <!-- Linha do total -->
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="44dp"
-            android:backgroundTint="@android:color/white"
-            android:text="Voltar ao Menu"
-            android:textAllCaps="false"
-            android:textColor="@color/black" />
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Total:"
+                android:textColor="#4B5563"
+                android:textStyle="bold"
+                android:textSize="14sp"/>
+
+            <TextView
+                android:id="@+id/tvTotal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="R$ 0,00"
+                android:textColor="#1E3A8A"
+                android:textStyle="bold"
+                android:textSize="16sp"/>
+        </LinearLayout>
+
+        <!-- Botões lado a lado -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/btnVoltar"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="Voltar ao Menu"
+                android:textStyle="bold"
+                android:textColor="#004E7C"
+                android:background="@drawable/bg_button_gray"/>
+
+            <Space
+                android:layout_width="10dp"
+                android:layout_height="0dp"/>
+
+            <TextView
+                android:id="@+id/btnContinuar"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="Ir para Pagamento"
+                android:textStyle="bold"
+                android:textColor="#004E7C"
+                android:background="@drawable/bg_button_yellow"/>
+        </LinearLayout>
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

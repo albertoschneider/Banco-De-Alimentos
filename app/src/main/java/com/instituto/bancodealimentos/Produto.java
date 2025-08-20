@@ -1,64 +1,29 @@
-// Produto.java
 package com.instituto.bancodealimentos;
 
-import android.os.Parcel;
-import android.os.Parcelable;
+import java.io.Serializable;
 
-public class Produto implements Parcelable {
+public class Produto implements Serializable {
+    private String id;
     private String nome;
-    private double preco;
-    private int imagemResId;
-    private int quantidade;
+    private Double preco;
+    private String imagemUrl;
 
-    public Produto(String nome, double preco, int imagemResId) {
+    public Produto() {}
+
+    public Produto(String id, String nome, Double preco, String imagemUrl) {
+        this.id = id;
         this.nome = nome;
         this.preco = preco;
-        this.imagemResId = imagemResId;
-        this.quantidade = 0;
+        this.imagemUrl = imagemUrl;
     }
 
-    // 🔹 Construtor usado pelo Parcelable
-    protected Produto(Parcel in) {
-        nome = in.readString();
-        preco = in.readDouble();
-        imagemResId = in.readInt();
-        quantidade = in.readInt();
-    }
-
-    // 🔹 CREATOR obrigatório
-    public static final Creator<Produto> CREATOR = new Creator<Produto>() {
-        @Override
-        public Produto createFromParcel(Parcel in) {
-            return new Produto(in);
-        }
-
-        @Override
-        public Produto[] newArray(int size) {
-            return new Produto[size];
-        }
-    };
-
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    @Override
-    public void writeToParcel(Parcel parcel, int flags) {
-        parcel.writeString(nome);
-        parcel.writeDouble(preco);
-        parcel.writeInt(imagemResId);
-        parcel.writeInt(quantidade);
-    }
-
-    // Getters e Setters
+    public String getId() { return id; }
     public String getNome() { return nome; }
-    public void setNome(String nome) { this.nome = nome; }
-    public double getPreco() { return preco; }
-    public void setPreco(double preco) { this.preco = preco; }
-    public int getImagemResId() { return imagemResId; }
-    public void setImagemResId(int imagemResId) { this.imagemResId = imagemResId; }
-    public int getQuantidade() { return quantidade; }
-    public void setQuantidade(int quantidade) { this.quantidade = quantidade; }
-}
+    public Double getPreco() { return preco; }
+    public String getImagemUrl() { return imagemUrl; }
 
+    public void setId(String id) { this.id = id; }
+    public void setNome(String nome) { this.nome = nome; }
+    public void setPreco(Double preco) { this.preco = preco; }
+    public void setImagemUrl(String imagemUrl) { this.imagemUrl = imagemUrl; }
+}
