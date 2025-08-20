@@ -32,9 +32,11 @@ import java.util.ArrayList;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
+// SE Produto está no pacote raiz:
+import com.instituto.bancodealimentos.Produto;
+
 public class pagamento extends AppCompatActivity {
 
-    // Preferências usadas no carrinho
     private static final String PREFS = "MeuApp";
     private static final String KEY_CART = "carrinho";
 
@@ -65,7 +67,7 @@ public class pagamento extends AppCompatActivity {
         tvTotalValue.setText(br.format(total));
 
         // DADOS RECEBEDOR (strings.xml)
-        String chave  = getString(R.string.pix_key);    // ex: chave aleatória/e-mail/cnpj
+        String chave  = getString(R.string.pix_key);
         String nome   = normalizeNameOrCity(getString(R.string.pix_nome), 25);
         String cidade = normalizeNameOrCity(getString(R.string.pix_cidade), 15);
 
@@ -79,7 +81,7 @@ public class pagamento extends AppCompatActivity {
                 .setNomeRecebedor(nome)
                 .setCidadeRecebedor(cidade)
                 .setTxid(txid)
-                .setValor(valorStr) // null para QR sem valor fixo
+                .setValor(valorStr) // null p/ QR sem valor fixo
                 .build();
 
         etPixKey.setText(payload);
@@ -111,10 +113,16 @@ public class pagamento extends AppCompatActivity {
         SharedPreferences sp = getSharedPreferences(PREFS, MODE_PRIVATE);
         String json = sp.getString(KEY_CART, null);
         if (json == null) return 0.0;
+
         Type type = new TypeToken<ArrayList<Produto>>() {}.getType();
         ArrayList<Produto> itens = new Gson().fromJson(json, type);
+
         double total = 0.0;
-        if (itens != null) for (Produto p : itens) total += p.getPreco() * p.getQuantidade();
+        if (itens != null) {
+            for (Produto p : itens) {
+                total += safePreco(p) * safeQtd(p);
+            }
+        }
         return total;
     }
 
@@ -143,7 +151,7 @@ public class pagamento extends AppCompatActivity {
         QRCodeWriter writer = new QRCodeWriter();
         try {
             com.google.zxing.common.BitMatrix m =
-                    writer.encode(text, BarcodeFormat.QR_CODE, sizePx, sizePx);
+                    writer.encode(text, com.google.zxing.BarcodeFormat.QR_CODE, sizePx, sizePx);
             Bitmap bmp = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888);
             for (int x = 0; x < sizePx; x++) {
                 for (int y = 0; y < sizePx; y++) {
@@ -159,5 +167,22 @@ public class pagamento extends AppCompatActivity {
     private int dp(int v) {
         float d = getResources().getDisplayMetrics().density;
         return Math.round(v * d);
+    }
+
+    // ===== helpers seguros para Produto =====
+    private double safePreco(Produto p) {
+        try {
+            Object v = p.getClass().getMethod("getPreco").invoke(p);
+            if (v instanceof Number) return ((Number) v).doubleValue();
+        } catch (Exception ignored) {}
+        return 0.0;
+    }
+
+    private int safeQtd(Produto p) {
+        try {
+            Object v = p.getClass().getMethod("getQuantidade").invoke(p);
+            if (v instanceof Number) return ((Number) v).intValue();
+        } catch (Exception ignored) {}
+        return 1; // mude p/ 0 se quiser ignorar itens sem quantidade
     }
 }

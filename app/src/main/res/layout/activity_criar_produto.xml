@@ -8,7 +8,7 @@
     android:layout_height="match_parent"
     android:background="#EAF0F6">
 
-    <!-- HEADER: voltar (esq) e título central -->
+    <!-- HEADER -->
     <RelativeLayout
         android:id="@+id/header"
         android:layout_width="0dp"
@@ -35,13 +35,13 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
-            android:text="Editar Produto"
+            android:text="Adicionar Produto"
             android:textColor="#004E7C"
             android:textStyle="bold"
             android:textSize="18sp"/>
     </RelativeLayout>
 
-    <!-- CONTEÚDO -->
+    <!-- CONTEÚDO SCROLLÁVEL -->
     <ScrollView
         android:id="@+id/scroll"
         android:layout_width="0dp"
@@ -49,7 +49,7 @@
         android:fillViewport="true"
         android:padding="16dp"
         app:layout_constraintTop_toBottomOf="@id/header"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/btnCriar"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
@@ -58,33 +58,53 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- Imagem do produto com botão de edição sobreposto -->
+            <!-- Área de imagem com placeholder + FAB de câmera -->
             <FrameLayout
                 android:id="@+id/flImage"
                 android:layout_width="160dp"
                 android:layout_height="160dp"
                 android:layout_gravity="center_horizontal"
-                android:layout_marginTop="16dp">
+                android:layout_marginTop="12dp">
 
                 <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/cardImage"
+                    android:id="@+id/cardAddImage"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    app:cardCornerRadius="16dp"
                     app:cardUseCompatPadding="true"
-                    app:cardPreventCornerOverlap="true">
+                    app:cardPreventCornerOverlap="true"
+                    app:cardCornerRadius="16dp"
+                    app:strokeColor="#D6DEE6"
+                    app:strokeWidth="1dp">
 
-                    <ImageView
-                        android:id="@+id/imgProduto"
+                    <FrameLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:scaleType="centerCrop"
-                        tools:src="@mipmap/ic_launcher"/>
+                        android:background="#F4F6F9">
+
+                        <ImageView
+                            android:id="@+id/imgPreview"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:scaleType="centerCrop"
+                            android:visibility="gone"
+                            tools:visibility="visible"
+                            tools:src="@mipmap/ic_launcher"/>
+
+                        <TextView
+                            android:id="@+id/tvAddHint"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:gravity="center"
+                            android:text="Adicionar\nimagem"
+                            android:textColor="#9AA9B8"
+                            android:textSize="14sp"
+                            android:visibility="visible"
+                            tools:visibility="visible"/>
+                    </FrameLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- Botão pequeno de edição (circular), canto inferior direito -->
                 <com.google.android.material.floatingactionbutton.FloatingActionButton
-                    android:id="@+id/btn_editar_imagem"
+                    android:id="@+id/btn_pick_image"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="bottom|end"
@@ -92,15 +112,15 @@
                     app:fabCustomSize="36dp"
                     app:backgroundTint="#173A6A"
                     app:tint="@android:color/white"
-                    app:srcCompat="@drawable/ic_edit_24"/>
+                    app:srcCompat="@drawable/ic_menu_camera"/>
             </FrameLayout>
 
-            <!-- Label: Nome do Produto -->
+            <!-- Label: Nome -->
             <TextView
                 android:id="@+id/lblNome"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
+                android:layout_marginTop="18dp"
                 android:text="Nome do Produto"
                 android:textColor="#7A8A9C"
                 android:textSize="12sp"/>
@@ -122,8 +142,8 @@
                     android:id="@+id/etNome"
                     android:layout_width="match_parent"
                     android:layout_height="48dp"
-                    android:inputType="textCapSentences"
-                    tools:text="Arroz (1kg)"/>
+                    android:hint="Ex: Arroz (1kg)"
+                    android:inputType="textCapSentences"/>
             </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Label: Preço -->
@@ -154,27 +174,26 @@
                     android:id="@+id/etPreco"
                     android:layout_width="match_parent"
                     android:layout_height="48dp"
-                    android:inputType="numberDecimal"
-                    tools:text="5,00"/>
+                    android:hint="0,00"
+                    android:inputType="numberDecimal"/>
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Botão: Salvar Alterações -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnSalvar"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="28dp"
-                android:layout_marginBottom="12dp"
-                android:text="Salvar Alterações"
-                android:textAllCaps="false"
-                android:textColor="@android:color/white"
-                app:cornerRadius="12dp"
-                app:icon="@android:drawable/ic_menu_save"
-                app:iconGravity="textStart"
-                app:iconPadding="10dp"
-                app:backgroundTint="#173A6A"
-                app:rippleColor="@android:color/white"/>
         </LinearLayout>
     </ScrollView>
 
+    <!-- BOTÃO FIXO NA BASE -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnCriar"
+        android:layout_width="0dp"
+        android:layout_height="56dp"
+        android:layout_margin="16dp"
+        android:text="Criar Produto"
+        android:textAllCaps="false"
+        android:textColor="@android:color/white"
+        app:cornerRadius="12dp"
+        app:backgroundTint="#173A6A"
+        app:rippleColor="@android:color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
 </androidx.constraintlayout.widget.ConstraintLayout>

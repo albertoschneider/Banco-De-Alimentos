@@ -25,6 +25,12 @@
         android:theme="@style/Theme.BancoDeAlimentos"
         tools:targetApi="31">
         <activity
+            android:name=".criar_produto"
+            android:exported="false" />
+        <activity
+            android:name=".editar_produto"
+            android:exported="false" />
+        <activity
             android:name=".admin_produtos"
             android:exported="false" />
         <activity

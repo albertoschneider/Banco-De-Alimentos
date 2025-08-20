@@ -28,7 +28,7 @@
             android:background="@android:color/transparent"
             android:contentDescription="@string/sem_descricao"
             android:scaleType="fitCenter"
-            android:src="@drawable/arrow_back_png"/>
+            android:src="@drawable/arrow_back_png" />
 
         <TextView
             android:id="@+id/tvTitulo"

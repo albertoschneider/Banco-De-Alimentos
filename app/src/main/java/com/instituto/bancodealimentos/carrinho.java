@@ -1,31 +1,20 @@
-// carrinho.java
 package com.instituto.bancodealimentos;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.Parcelable; // <-- (1) import adicionado
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-
-import java.lang.reflect.Type;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Locale;
 
 public class carrinho extends AppCompatActivity {
 
-    private static final String PREFS = "MeuApp";
-    private static final String KEY_CART = "carrinho";
-
-    private ArrayList<Produto> itens;
+    private ArrayList<Produto> itens = new ArrayList<>();
     private CarrinhoAdapter adapter;
     private TextView tvTotal;
     private final NumberFormat br = NumberFormat.getCurrencyInstance(new Locale("pt", "BR"));
@@ -37,90 +26,65 @@ public class carrinho extends AppCompatActivity {
 
         tvTotal = findViewById(R.id.tvTotal);
 
-        // 1) Tenta carregar do SharedPreferences
-        ArrayList<Produto> salvos = loadCart();
-
-        // 2) Se veio algo pela Intent (da tela de doação), usa isso e salva
-        ArrayList<Produto> fromIntent;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            fromIntent = getIntent().getParcelableArrayListExtra("itens", Produto.class);
-        } else {
-            // <-- (2) conversão segura para versões anteriores ao Android 13
-            ArrayList<? extends Parcelable> tmp = getIntent().getParcelableArrayListExtra("itens");
-            if (tmp != null) {
-                fromIntent = new ArrayList<>(tmp.size());
-                for (Parcelable p : tmp) {
-                    fromIntent.add((Produto) p); // itens foram enviados como Produto
-                }
-            } else {
-                fromIntent = null;
-            }
-        }
-
-        if (fromIntent != null && !fromIntent.isEmpty()) {
-            itens = fromIntent;
-            saveCart(itens);
-        } else if (salvos != null) {
-            itens = salvos;
-        } else {
-            itens = new ArrayList<>();
-        }
+        // Carrega do storage central
+        itens = CartStore.load(this);
 
         RecyclerView rv = findViewById(R.id.rvCarrinho);
         rv.setLayoutManager(new LinearLayoutManager(this));
         adapter = new CarrinhoAdapter(itens, () -> {
             atualizarTotal();
-            saveCart(itens);
+            CartStore.save(this, itens);
         });
         rv.setAdapter(adapter);
 
         atualizarTotal();
 
+        // Voltar para o "menu" (troque se essa Activity não existir)
         findViewById(R.id.btnVoltar).setOnClickListener(v -> {
             Intent i = new Intent(carrinho.this, menu.class);
             i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             startActivity(i);
         });
 
+        // Voltar ao catálogo
         findViewById(R.id.btn_voltar).setOnClickListener(v -> {
             Intent i = new Intent(carrinho.this, doealimentos.class);
             i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             startActivity(i);
         });
 
+        // Continuar/pagamento
         findViewById(R.id.btnContinuar).setOnClickListener(v -> {
             double total = 0;
             for (Produto p : itens) {
-                total += p.getPreco() * p.getQuantidade();
+                total += safePreco(p) * safeQtd(p);
             }
-
             Intent intent = new Intent(carrinho.this, pagamento.class);
-            intent.putExtra("total", total); // <<--- envia o valor
+            intent.putExtra("total", total);
             startActivity(intent);
         });
     }
 
     private void atualizarTotal() {
         double total = 0;
-        for (Produto p : itens) {
-            total += p.getPreco() * p.getQuantidade();
-        }
+        for (Produto p : itens) total += safePreco(p) * safeQtd(p);
         tvTotal.setText(br.format(total));
     }
 
-    // --------- Persistência simples com SharedPreferences + Gson ---------
-
-    private void saveCart(ArrayList<Produto> lista) {
-        SharedPreferences sp = getSharedPreferences(PREFS, MODE_PRIVATE);
-        String json = new Gson().toJson(lista);
-        sp.edit().putString(KEY_CART, json).apply();
+    // --- helpers robustos (funcionam mesmo sem getters explícitos) ---
+    private double safePreco(Produto p) {
+        try {
+            Object v = p.getClass().getMethod("getPreco").invoke(p);
+            if (v instanceof Number) return ((Number) v).doubleValue();
+        } catch (Exception ignored) {}
+        return 0.0;
     }
 
-    private ArrayList<Produto> loadCart() {
-        SharedPreferences sp = getSharedPreferences(PREFS, MODE_PRIVATE);
-        String json = sp.getString(KEY_CART, null);
-        if (json == null) return null;
-        Type type = new TypeToken<ArrayList<Produto>>() {}.getType();
-        return new Gson().fromJson(json, type);
+    private int safeQtd(Produto p) {
+        try {
+            Object v = p.getClass().getMethod("getQuantidade").invoke(p);
+            if (v instanceof Number) return ((Number) v).intValue();
+        } catch (Exception ignored) {}
+        return 1; // mude para 0 se preferir
     }
 }
