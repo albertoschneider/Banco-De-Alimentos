@@ -2,6 +2,7 @@ package com.instituto.bancodealimentos;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Patterns;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -9,6 +10,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -24,6 +26,7 @@ import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.HashMap;
@@ -35,141 +38,119 @@ public class telaregistro extends AppCompatActivity {
     private FirebaseFirestore db;
     private EditText edtNome, edtEmail, edtSenha, edtConfirmarSenha;
 
-    // Google Sign-In
     private GoogleSignInClient mGoogleSignInClient;
-    private final int RC_SIGN_IN = 9001;
+    private static final int RC_SIGN_IN = 9001;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_telaregistro);
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            Insets sb = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(sb.left, sb.top, sb.right, sb.bottom);
             return insets;
         });
 
-        // Firebase
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
 
-        // Inputs
         edtNome = findViewById(R.id.et_username);
         edtEmail = findViewById(R.id.et_email);
         edtSenha = findViewById(R.id.et_password);
         edtConfirmarSenha = findViewById(R.id.et_confirm_password);
 
-        // Botões
-        ImageButton imgBtnBack = findViewById(R.id.btn_back);
-        TextView btnLogin = findViewById(R.id.tv_login_here);
-        Button btnRegistro = findViewById(R.id.btn_login);
-        Button btnGoogle = findViewById(R.id.btn_google); // botão Google
+        ImageButton btnBack = findViewById(R.id.btn_back);
+        TextView tvLoginHere = findViewById(R.id.tv_login_here);
+        Button btnRegistrar = findViewById(R.id.btn_login);
+        Button btnGoogle = findViewById(R.id.btn_google);
 
-        // Registro Email/Senha
-        btnRegistro.setOnClickListener(v -> registrarUsuario());
+        btnBack.setOnClickListener(v -> startActivity(new Intent(this, MainActivity.class)));
+        tvLoginHere.setOnClickListener(v -> startActivity(new Intent(this, telalogin.class)));
+        btnRegistrar.setOnClickListener(v -> registrarUsuarioEmailSenha());
 
-        // Voltar para login
-        btnLogin.setOnClickListener(v -> startActivity(new Intent(telaregistro.this, telalogin.class)));
-
-        imgBtnBack.setOnClickListener(v -> startActivity(new Intent(telaregistro.this, MainActivity.class)));
-
-        // Configurar Google Sign-In
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken(getString(R.string.default_web_client_id))
                 .requestEmail()
                 .build();
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
-
-        // Login com Google
-        btnGoogle.setOnClickListener(v -> signInWithGoogle());
+        btnGoogle.setOnClickListener(v -> startActivityForResult(mGoogleSignInClient.getSignInIntent(), RC_SIGN_IN));
     }
 
-    // Registro Email/Senha
-    private void registrarUsuario() {
+    private void registrarUsuarioEmailSenha() {
         String nome = edtNome.getText().toString().trim();
         String email = edtEmail.getText().toString().trim();
         String senha = edtSenha.getText().toString().trim();
         String confirmar = edtConfirmarSenha.getText().toString().trim();
 
-        if (nome.isEmpty() || email.isEmpty() || senha.isEmpty() || confirmar.isEmpty()) {
-            Toast.makeText(this, "Preencha todos os campos!", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        if (!senha.equals(confirmar)) {
-            Toast.makeText(this, "As senhas não coincidem!", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        if (nome.isEmpty() || email.isEmpty() || senha.isEmpty() || confirmar.isEmpty()) { toast("Preencha todos os campos!"); return; }
+        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) { toast("E-mail inválido."); return; }
+        if (!senha.equals(confirmar)) { toast("As senhas não coincidem!"); return; }
 
-        mAuth.createUserWithEmailAndPassword(email, senha)
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        String uid = mAuth.getCurrentUser().getUid();
-                        Map<String, Object> usuario = new HashMap<>();
-                        usuario.put("nome", nome);
-                        usuario.put("email", email);
+        mAuth.createUserWithEmailAndPassword(email, senha).addOnCompleteListener(task -> {
+            if (!task.isSuccessful()) { toast("Erro no cadastro: " + (task.getException()!=null?task.getException().getMessage():"")); return; }
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            if (user == null) { toast("Erro inesperado: usuário nulo."); return; }
 
-                        db.collection("usuarios").document(uid).set(usuario)
-                                .addOnSuccessListener(aVoid -> {
-                                    Toast.makeText(this, "Cadastro realizado com sucesso!", Toast.LENGTH_SHORT).show();
-                                    startActivity(new Intent(telaregistro.this, menu.class));
-                                    finish();
-                                })
-                                .addOnFailureListener(e -> Toast.makeText(this, "Erro ao salvar no banco: " + e.getMessage(), Toast.LENGTH_SHORT).show());
-                    } else {
-                        Toast.makeText(this, "Erro no cadastro: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
-                    }
-                });
-    }
+            String uid = user.getUid();
+            Map<String,Object> usuario = new HashMap<>();
+            usuario.put("nome", nome);
+            usuario.put("email", email);
+            usuario.put("createdAt", com.google.firebase.Timestamp.now());
 
-    // Login Google
-    private void signInWithGoogle() {
-        Intent signInIntent = mGoogleSignInClient.getSignInIntent();
-        startActivityForResult(signInIntent, RC_SIGN_IN);
+            db.collection("usuarios").document(uid).set(usuario, com.google.firebase.firestore.SetOptions.merge())
+                    .addOnSuccessListener(a -> checarAdminENavegar(uid))
+                    .addOnFailureListener(e -> { toast("Erro ao salvar no banco: " + e.getMessage()); checarAdminENavegar(uid); });
+        });
     }
 
     @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-
         if (requestCode == RC_SIGN_IN) {
             Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
             try {
                 GoogleSignInAccount account = task.getResult(ApiException.class);
-                firebaseAuthWithGoogle(account.getIdToken());
-            } catch (ApiException e) {
-                Toast.makeText(this, "Falha no login com Google: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-            }
+                if (account != null) firebaseAuthWithGoogle(account.getIdToken());
+                else toast("Conta Google inválida.");
+            } catch (ApiException e) { toast("Falha no login com Google: " + e.getMessage()); }
         }
     }
 
     private void firebaseAuthWithGoogle(String idToken) {
         AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
-        mAuth.signInWithCredential(credential)
-                .addOnCompleteListener(this, task -> {
-                    if (task.isSuccessful()) {
-                        FirebaseUser user = mAuth.getCurrentUser();
-                        if (user != null) {
-                            String uid = user.getUid();
-                            String nome = user.getDisplayName();
-                            String email = user.getEmail();
+        mAuth.signInWithCredential(credential).addOnCompleteListener(this, task -> {
+            if (!task.isSuccessful()) { toast("Falha na autenticação Firebase: " + (task.getException()!=null?task.getException().getMessage():"")); return; }
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            if (user == null) { toast("Erro inesperado: usuário nulo."); return; }
 
-                            Map<String, Object> usuario = new HashMap<>();
-                            usuario.put("nome", nome);
-                            usuario.put("email", email);
+            String uid = user.getUid();
+            String nome = user.getDisplayName() != null ? user.getDisplayName() : "";
+            String email = user.getEmail() != null ? user.getEmail() : "";
 
-                            db.collection("usuarios").document(uid).set(usuario)
-                                    .addOnSuccessListener(aVoid -> {
-                                        Toast.makeText(this, "Login com Google realizado!", Toast.LENGTH_SHORT).show();
-                                        startActivity(new Intent(this, menu.class));
-                                        finish();
-                                    })
-                                    .addOnFailureListener(e -> Toast.makeText(this, "Erro ao salvar no banco: " + e.getMessage(), Toast.LENGTH_SHORT).show());
-                        }
-                    } else {
-                        Toast.makeText(this, "Falha na autenticação Firebase: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
-                    }
-                });
+            Map<String,Object> usuario = new HashMap<>();
+            usuario.put("nome", nome);
+            usuario.put("email", email);
+            usuario.put("createdAt", com.google.firebase.Timestamp.now());
+
+            db.collection("usuarios").document(uid).set(usuario, com.google.firebase.firestore.SetOptions.merge())
+                    .addOnSuccessListener(a -> checarAdminENavegar(uid))
+                    .addOnFailureListener(e -> { toast("Erro ao salvar no banco: " + e.getMessage()); checarAdminENavegar(uid); });
+        });
     }
+
+    private void checarAdminENavegar(String uid) {
+        db.collection("admins").document(uid).get()
+                .addOnSuccessListener((DocumentSnapshot snap) -> goToNextScreen(snap != null && snap.exists()))
+                .addOnFailureListener(e -> goToNextScreen(false));
+    }
+
+    private void goToNextScreen(boolean isAdmin) {
+        Intent it = new Intent(this, isAdmin ? menu_admin.class : menu.class);
+        startActivity(it);
+        finish();
+    }
+
+    private void toast(String s) { Toast.makeText(this, s, Toast.LENGTH_SHORT).show(); }
 }
