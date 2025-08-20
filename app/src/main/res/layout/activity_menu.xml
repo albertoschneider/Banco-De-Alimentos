@@ -37,15 +37,6 @@
                 android:paddingEnd="6dp"
                 android:background="@android:color/transparent">
 
-                <ImageView
-                    android:id="@+id/avatar"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:background="@drawable/bg_circle_white"
-                    android:src="@drawable/ic_user_light"
-                    android:padding="8dp"
-                    android:contentDescription="@string/sem_descricao"/>
-
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
