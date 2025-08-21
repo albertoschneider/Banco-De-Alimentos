@@ -8,7 +8,6 @@
     android:layout_height="match_parent"
     android:background="#EAF0F6">
 
-    <!-- HEADER -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/header"
         android:layout_width="0dp"
@@ -46,7 +45,6 @@
             app:layout_constraintEnd_toEndOf="parent"/>
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- CONTEÚDO SCROLLÁVEL -->
     <androidx.core.widget.NestedScrollView
         android:id="@+id/scroll"
         android:layout_width="0dp"
@@ -63,21 +61,17 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Nome + Email + Senha (sem foto e sem link de alterar senha) -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilNome"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                style="@style/BDA_TextInputLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="Nome"
-                app:boxCornerRadiusTopStart="12dp"
-                app:boxCornerRadiusTopEnd="12dp"
-                app:boxCornerRadiusBottomStart="12dp"
-                app:boxCornerRadiusBottomEnd="12dp"
                 android:layout_marginTop="12dp">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/edtNome"
+                    style="@style/BDA_EditText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="textPersonName"
@@ -86,18 +80,15 @@
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilEmail"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                style="@style/BDA_TextInputLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="E-mail"
-                app:boxCornerRadiusTopStart="12dp"
-                app:boxCornerRadiusTopEnd="12dp"
-                app:boxCornerRadiusBottomStart="12dp"
-                app:boxCornerRadiusBottomEnd="12dp"
                 android:layout_marginTop="12dp">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/edtEmail"
+                    style="@style/BDA_EditText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="textEmailAddress"
@@ -106,27 +97,22 @@
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilSenha"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                style="@style/BDA_TextInputLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="Senha"
                 app:endIconMode="password_toggle"
-                app:passwordToggleEnabled="true"
-                app:boxCornerRadiusTopStart="12dp"
-                app:boxCornerRadiusTopEnd="12dp"
-                app:boxCornerRadiusBottomStart="12dp"
-                app:boxCornerRadiusBottomEnd="12dp"
                 android:layout_marginTop="12dp">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/edtSenha"
+                    style="@style/BDA_EditText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="textPassword"
                     tools:text="••••••••"/>
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Botão Sair -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnSair"
                 android:layout_width="match_parent"
@@ -140,7 +126,6 @@
                 app:backgroundTint="#FFF1B100"
                 android:textColor="#004E7C"/>
 
-            <!-- Salvar Alterações (azul) -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnSalvar"
                 android:layout_width="match_parent"
@@ -153,7 +138,6 @@
                 app:backgroundTint="#1E3A8A"
                 android:textColor="@android:color/white"/>
 
-            <!-- Excluir Conta (vermelho) -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnExcluir"
                 android:layout_width="match_parent"
@@ -166,5 +150,4 @@
                 android:textColor="@android:color/white"/>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
-
 </androidx.constraintlayout.widget.ConstraintLayout>

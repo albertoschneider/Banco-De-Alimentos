@@ -38,22 +38,17 @@ public class menu extends AppCompatActivity {
             return insets;
         });
 
-        // inicializa Firebase
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
 
-        // pega referência do TextView
         tvName = findViewById(R.id.tvName);
-
         btnSettings = findViewById(R.id.btnSettings);
         if (btnSettings != null) {
-            btnSettings.setOnClickListener(v -> openSettings(false)); // false = origem: usuário comum
+            btnSettings.setOnClickListener(v -> openSettings(false));
         }
 
-        // chama o método para buscar o nome
         carregarNomeUsuario();
 
-        // --- seus cards continuam iguais ---
         MaterialCardView cardPontos = findViewById(R.id.cardPontos);
         MaterialCardView cardDoe = findViewById(R.id.cardDoe);
         MaterialCardView cardVoluntario = findViewById(R.id.cardVoluntario);
@@ -68,12 +63,10 @@ public class menu extends AppCompatActivity {
     }
 
     private void carregarNomeUsuario() {
-        if (mAuth.getCurrentUser() == null) {
-            tvName.setText("Usuário não logado");
-            return;
-        }
+        FirebaseUser fu = mAuth.getCurrentUser();
+        if (fu == null) { tvName.setText("Usuário não logado"); return; }
 
-        String uid = mAuth.getCurrentUser().getUid();
+        String uid = fu.getUid();
         DocumentReference docRef = db.collection("usuarios").document(uid);
 
         docRef.get().addOnSuccessListener(document -> {
@@ -81,11 +74,17 @@ public class menu extends AppCompatActivity {
                 String nome = document.getString("nome");
                 if (nome != null && !nome.isEmpty()) {
                     tvName.setText(nome);
-                } else {
-                    tvName.setText("Nome não definido");
+                    return;
                 }
+            }
+            // Fallback
+            if (fu.getDisplayName() != null && !fu.getDisplayName().isEmpty()) {
+                tvName.setText(fu.getDisplayName());
+            } else if (fu.getEmail() != null && fu.getEmail().contains("@")) {
+                String first = fu.getEmail().substring(0, fu.getEmail().indexOf("@"));
+                tvName.setText(first.substring(0,1).toUpperCase() + first.substring(1));
             } else {
-                tvName.setText("Usuário não encontrado");
+                tvName.setText("Nome não definido");
             }
         }).addOnFailureListener(e -> tvName.setText("Erro ao carregar nome"));
     }
@@ -106,7 +105,7 @@ public class menu extends AppCompatActivity {
 
         Class<?> next = hasPassword ? configuracoes_email_senha.class : configuracoes_google.class;
         Intent i = new Intent(this, next);
-        i.putExtra("from_admin", fromAdmin); // apenas informativo, se quiser usar
+        i.putExtra("from_admin", fromAdmin);
         startActivity(i);
     }
 }

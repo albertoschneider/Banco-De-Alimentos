@@ -1,5 +1,6 @@
 package com.instituto.bancodealimentos;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.ImageButton;
 import android.widget.TextView;
@@ -40,7 +41,10 @@ public class doealimentos extends AppCompatActivity {
         recyclerView.setAdapter(adapter);
 
         ImageButton back = findViewById(R.id.btn_voltar);
-        if (back != null) back.setOnClickListener(v -> onBackPressed());
+        if (back != null) back.setOnClickListener(v -> {
+            Intent intent = new Intent(doealimentos.this, menu.class);
+            startActivity(intent);
+        });
 
         findViewById(R.id.btnContinuar).setOnClickListener(v -> {
             // Aqui você pode abrir a tela de checkout/carrinho se quiser

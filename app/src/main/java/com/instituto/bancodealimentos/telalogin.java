@@ -56,7 +56,8 @@ public class telalogin extends AppCompatActivity {
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
 
-        edtEmail = findViewById(R.id.edtNome);
+        // >>> id corrigido
+        edtEmail = findViewById(R.id.edtEmail);
         edtSenha = findViewById(R.id.edtSenha);
 
         ImageButton btnBack = findViewById(R.id.btnBack);
@@ -132,7 +133,7 @@ public class telalogin extends AppCompatActivity {
 
         db.collection("usuarios").document(uid).set(usuario, com.google.firebase.firestore.SetOptions.merge())
                 .addOnSuccessListener(a -> checkAdminAndGo(uid))
-                .addOnFailureListener(e -> { /* tenta mesmo assim */ checkAdminAndGo(uid); });
+                .addOnFailureListener(e -> { checkAdminAndGo(uid); });
     }
 
     private void checkAdminAndGo(String uid) {

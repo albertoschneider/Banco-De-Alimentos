@@ -9,7 +9,6 @@
     android:background="#004E7C"
     tools:context=".telaregistro">
 
-    <!-- Scroll para telas pequenas -->
     <androidx.core.widget.NestedScrollView
         android:id="@+id/scroll"
         android:layout_width="0dp"
@@ -30,7 +29,6 @@
             android:paddingBottom="24dp"
             android:gravity="center_horizontal">
 
-            <!-- Botão Voltar (usa seu PNG) -->
             <ImageButton
                 android:id="@+id/btn_back"
                 android:layout_width="40dp"
@@ -43,7 +41,6 @@
                 app:srcCompat="@drawable/arrow_back_png"
                 app:tint="#FFFFFF" />
 
-            <!-- Logo (sua imagem branca) -->
             <ImageView
                 android:id="@+id/logo_image"
                 android:layout_width="180dp"
@@ -56,112 +53,71 @@
                 android:src="@drawable/logoinicio"
                 app:tint="#FFFFFF" />
 
-            <!-- Nome completo -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/til_username"
-                style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox.Dense"
+                style="@style/BDA_TextInputLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:boxBackgroundColor="#FFFFFF"
-                app:boxCornerRadiusTopStart="12dp"
-                app:boxCornerRadiusTopEnd="12dp"
-                app:boxCornerRadiusBottomStart="12dp"
-                app:boxCornerRadiusBottomEnd="12dp"
-                app:boxStrokeWidth="0dp">
+                android:hint="Nome completo">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/et_username"
+                    style="@style/BDA_EditText"
                     android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:hint="Nome completo"
-                    android:inputType="textPersonName"
-                    android:textColor="#000000"
-                    android:textColorHint="#9EB9D4"
-                    android:paddingStart="14dp"
-                    android:paddingEnd="14dp"/>
+                    android:layout_height="wrap_content"
+                    android:inputType="textPersonName"/>
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Email -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/til_email"
-                style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox.Dense"
+                style="@style/BDA_TextInputLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                app:boxBackgroundColor="#FFFFFF"
-                app:boxCornerRadiusTopStart="12dp"
-                app:boxCornerRadiusTopEnd="12dp"
-                app:boxCornerRadiusBottomStart="12dp"
-                app:boxCornerRadiusBottomEnd="12dp"
-                app:boxStrokeWidth="0dp">
+                android:hint="E-mail">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/et_email"
+                    style="@style/BDA_EditText"
                     android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:hint="Email"
-                    android:inputType="textEmailAddress"
-                    android:textColor="#000000"
-                    android:textColorHint="#9EB9D4"
-                    android:paddingStart="14dp"
-                    android:paddingEnd="14dp"/>
+                    android:layout_height="wrap_content"
+                    android:inputType="textEmailAddress"/>
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Senha -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/til_password"
-                style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox.Dense"
+                style="@style/BDA_TextInputLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                app:boxBackgroundColor="#FFFFFF"
-                app:boxCornerRadiusTopStart="12dp"
-                app:boxCornerRadiusTopEnd="12dp"
-                app:boxCornerRadiusBottomStart="12dp"
-                app:boxCornerRadiusBottomEnd="12dp"
-                app:boxStrokeWidth="0dp"
+                android:hint="Senha"
                 app:endIconMode="password_toggle">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/et_password"
+                    style="@style/BDA_EditText"
                     android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:hint="Senha"
-                    android:inputType="textPassword"
-                    android:textColor="#000000"
-                    android:textColorHint="#9EB9D4"
-                    android:paddingStart="14dp"
-                    android:paddingEnd="14dp"/>
+                    android:layout_height="wrap_content"
+                    android:inputType="textPassword"/>
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Confirmar Senha (novo id) -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/til_confirm_password"
-                style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox.Dense"
+                style="@style/BDA_TextInputLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                app:boxBackgroundColor="#FFFFFF"
-                app:boxCornerRadiusTopStart="12dp"
-                app:boxCornerRadiusTopEnd="12dp"
-                app:boxCornerRadiusBottomStart="12dp"
-                app:boxCornerRadiusBottomEnd="12dp"
-                app:boxStrokeWidth="0dp"
+                android:hint="Confirmar senha"
                 app:endIconMode="password_toggle">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/et_confirm_password"
+                    style="@style/BDA_EditText"
                     android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:hint="Confirmar senha"
-                    android:inputType="textPassword"
-                    android:textColor="#000000"
-                    android:textColorHint="#9EB9D4"
-                    android:paddingStart="14dp"
-                    android:paddingEnd="14dp"/>
+                    android:layout_height="wrap_content"
+                    android:inputType="textPassword"/>
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Registrar-se (amarelo, pill) -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_login"
                 android:layout_width="match_parent"
@@ -174,18 +130,6 @@
                 app:cornerRadius="26dp"
                 app:backgroundTint="#FFF1B100"/>
 
-            <!-- "Esqueceu sua senha?" (mantém id, mas escondido) -->
-            <TextView
-                android:id="@+id/tv_forgot_password"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="Esqueceu sua senha?"
-                android:textColor="#CFE3F6"
-                android:textSize="12sp"
-                android:visibility="gone"/>
-
-            <!-- Divisor "ou" -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -214,7 +158,6 @@
                     android:background="#CFE3F6" />
             </LinearLayout>
 
-            <!-- Registrar com Google (mantendo seus IDs) -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_google"
                 android:layout_width="match_parent"
@@ -234,8 +177,6 @@
                 android:backgroundTint="#FFFFFF"
                 android:foreground="?attr/selectableItemBackground" />
 
-
-            <!-- Rodapé: já possui conta? Entre -->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -260,7 +201,6 @@
                     android:clickable="true"
                     android:focusable="true" />
             </LinearLayout>
-
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>

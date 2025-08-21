@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- TextInputLayout com alto contraste -->
+    <style name="BDA_TextInputLayout" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        <item name="boxBackgroundColor">@android:color/white</item>
+        <item name="boxStrokeColor">@color/box_stroke_colors</item>
+        <item name="boxStrokeWidth">1dp</item>
+        <item name="boxStrokeWidthFocused">2dp</item>
+        <item name="hintTextColor">@color/hint_text_colors</item>
+        <item name="helperTextTextColor">@color/hint_text_colors</item>
+        <item name="endIconTint">#374151</item>
+        <item name="startIconTint">#374151</item>
+        <item name="counterTextColor">#374151</item>
+        <item name="counterOverflowTextColor">#DC2626</item>
+        <!-- Se quiser cantos mais arredondados sem depender de Material3:
+             <item name="shapeAppearanceOverlay">@style/ShapeAppearanceOverlay.MaterialComponents.MediumComponent</item> -->
+    </style>
+
+    <!-- EditText com texto forte e hint visível -->
+    <style name="BDA_EditText">
+        <item name="android:textColor">#111827</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:padding">12dp</item>
+        <item name="android:textColorHint">@color/hint_text_colors</item>
+    </style>
+
+</resources>

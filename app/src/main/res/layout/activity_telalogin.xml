@@ -24,9 +24,6 @@
         app:srcCompat="@drawable/arrow_back_png"
         app:tint="#FFFFFF" />
 
-
-
-    <!-- Bloco central -->
     <LinearLayout
         android:id="@+id/centerBlock"
         android:layout_width="0dp"
@@ -40,7 +37,6 @@
         android:layout_marginStart="24dp"
         android:layout_marginEnd="24dp">
 
-        <!-- LOGO quadrada, sem contorno -->
         <ImageView
             android:id="@+id/imgLogo"
             android:layout_width="180dp"
@@ -54,56 +50,38 @@
         <!-- E-mail -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/tilEmail"
-            style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox.Dense"
+            style="@style/BDA_TextInputLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="18dp"
-            app:boxBackgroundColor="#FFFFFF"
-            app:boxCornerRadiusTopStart="12dp"
-            app:boxCornerRadiusTopEnd="12dp"
-            app:boxCornerRadiusBottomStart="12dp"
-            app:boxCornerRadiusBottomEnd="12dp"
-            app:boxStrokeWidth="0dp">
+            android:hint="E-mail">
 
             <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/edtNome"
+                android:id="@+id/edtEmail"
+                style="@style/BDA_EditText"
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:hint="Email"
-                android:inputType="textEmailAddress"
-                android:textColor="#000000"
-                android:textColorHint="#9EB9D4"
-                android:paddingStart="14dp"
-                android:paddingEnd="14dp"/>
+                android:layout_height="wrap_content"
+                android:inputType="textEmailAddress"/>
         </com.google.android.material.textfield.TextInputLayout>
 
         <!-- Senha -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/tilSenha"
-            style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox.Dense"
+            style="@style/BDA_TextInputLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            app:boxBackgroundColor="#FFFFFF"
-            app:boxCornerRadiusTopStart="12dp"
-            app:boxCornerRadiusTopEnd="12dp"
-            app:boxCornerRadiusBottomStart="12dp"
-            app:boxCornerRadiusBottomEnd="12dp"
-            app:boxStrokeWidth="0dp">
+            android:hint="Senha"
+            app:endIconMode="password_toggle">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/edtSenha"
+                style="@style/BDA_EditText"
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:hint="Senha"
-                android:inputType="textPassword"
-                android:textColor="#000000"
-                android:textColorHint="#9EB9D4"
-                android:paddingStart="14dp"
-                android:paddingEnd="14dp"/>
+                android:layout_height="wrap_content"
+                android:inputType="textPassword"/>
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Entrar (amarelo, pill) -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnEntrar"
             android:layout_width="match_parent"
@@ -116,7 +94,6 @@
             app:backgroundTint="#FFF1B100"
             app:cornerRadius="26dp" />
 
-        <!-- Entrar com Google (branco, pill) -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnGoogle"
             android:layout_width="match_parent"
@@ -134,7 +111,6 @@
             app:iconGravity="textStart"
             android:backgroundTint="#FFFFFF"/>
 
-        <!-- Esqueci minha senha -->
         <TextView
             android:id="@+id/txtForgot"
             android:layout_width="wrap_content"
@@ -148,7 +124,6 @@
             android:padding="6dp"/>
     </LinearLayout>
 
-    <!-- Rodapé -->
     <LinearLayout
         android:id="@+id/footerBlock"
         android:layout_width="wrap_content"
