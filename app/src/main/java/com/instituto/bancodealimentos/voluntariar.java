@@ -17,6 +17,10 @@ import android.widget.LinearLayout;
 import java.util.Arrays;
 import java.util.List;
 
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.graphics.Insets;
+
 public class voluntariar extends AppCompatActivity {
 
     private ViewPager2 viewPager;
@@ -27,6 +31,14 @@ public class voluntariar extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_voluntariar); // substitua pelo nome do seu layout XML
+
+        View header = findViewById(R.id.header); // o ConstraintLayout do topo
+        ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
+            Insets sb = insets.getInsets(WindowInsetsCompat.Type.statusBars());
+            v.setPadding(v.getPaddingLeft(), v.getPaddingTop() + sb.top, v.getPaddingRight(), v.getPaddingBottom());
+            return insets;
+        });
+        ViewCompat.requestApplyInsets(header);
 
         viewPager = findViewById(R.id.viewPager);
         ImageButton btnNext = findViewById(R.id.btn_next);

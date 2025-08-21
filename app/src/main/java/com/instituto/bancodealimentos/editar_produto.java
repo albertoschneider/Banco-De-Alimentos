@@ -2,6 +2,7 @@ package com.instituto.bancodealimentos;
 
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Toast;
@@ -20,6 +21,10 @@ import com.google.firebase.firestore.DocumentSnapshot;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.graphics.Insets;
 
 public class editar_produto extends AppCompatActivity {
 
@@ -45,6 +50,14 @@ public class editar_produto extends AppCompatActivity {
     @Override protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_editar_produto);
+
+        View header = findViewById(R.id.header); // o ConstraintLayout do topo
+        ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
+            Insets sb = insets.getInsets(WindowInsetsCompat.Type.statusBars());
+            v.setPadding(v.getPaddingLeft(), v.getPaddingTop() + sb.top, v.getPaddingRight(), v.getPaddingBottom());
+            return insets;
+        });
+        ViewCompat.requestApplyInsets(header);
 
         ImageButton back = findViewById(R.id.btn_voltar);
         if (back != null) back.setOnClickListener(v -> onBackPressed());

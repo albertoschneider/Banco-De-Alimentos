@@ -2,6 +2,7 @@ package com.instituto.bancodealimentos;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -19,6 +20,10 @@ import com.google.firebase.firestore.Query;
 import java.util.ArrayList;
 import java.util.List;
 
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.graphics.Insets;
+
 public class doealimentos extends AppCompatActivity {
 
     private RecyclerView recyclerView;
@@ -32,6 +37,14 @@ public class doealimentos extends AppCompatActivity {
     @Override protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_doealimentos);
+
+        View header = findViewById(R.id.header); // o ConstraintLayout do topo
+        ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
+            Insets sb = insets.getInsets(WindowInsetsCompat.Type.statusBars());
+            v.setPadding(v.getPaddingLeft(), v.getPaddingTop() + sb.top, v.getPaddingRight(), v.getPaddingBottom());
+            return insets;
+        });
+        ViewCompat.requestApplyInsets(header);
 
         tvValorTotal = findViewById(R.id.tvValorTotal);
         recyclerView = findViewById(R.id.recyclerView);
@@ -52,6 +65,7 @@ public class doealimentos extends AppCompatActivity {
         });
 
         escutar();
+
     }
 
     private void escutar() {

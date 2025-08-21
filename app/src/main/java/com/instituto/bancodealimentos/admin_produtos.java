@@ -26,6 +26,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.graphics.Insets;
+
 /**
  * Lista de produtos para o ADMIN. Funciona mesmo que o layout não tenha
  * 'recyclerView' nem 'btn_add' (cria o RecyclerView programaticamente se faltar).
@@ -85,6 +89,14 @@ public class admin_produtos extends AppCompatActivity {
         recyclerView.setAdapter(adapter);
 
         escutarProdutos();
+
+        View header = findViewById(R.id.header); // o ConstraintLayout do topo
+        ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
+            Insets sb = insets.getInsets(WindowInsetsCompat.Type.statusBars());
+            v.setPadding(v.getPaddingLeft(), v.getPaddingTop() + sb.top, v.getPaddingRight(), v.getPaddingBottom());
+            return insets;
+        });
+        ViewCompat.requestApplyInsets(header);
     }
 
     private void escutarProdutos() {

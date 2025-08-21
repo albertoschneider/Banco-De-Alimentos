@@ -2,6 +2,7 @@ package com.instituto.bancodealimentos;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -11,6 +12,10 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Locale;
+
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.graphics.Insets;
 
 public class carrinho extends AppCompatActivity {
 
@@ -24,6 +29,14 @@ public class carrinho extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_carrinho);
 
+        View header = findViewById(R.id.header); // o ConstraintLayout do topo
+        ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
+            Insets sb = insets.getInsets(WindowInsetsCompat.Type.statusBars());
+            v.setPadding(v.getPaddingLeft(), v.getPaddingTop() + sb.top, v.getPaddingRight(), v.getPaddingBottom());
+            return insets;
+        });
+        ViewCompat.requestApplyInsets(header);
+
         tvTotal = findViewById(R.id.tvTotal);
 
         // Carrega do storage central
@@ -36,6 +49,7 @@ public class carrinho extends AppCompatActivity {
             CartStore.save(this, itens);
         });
         rv.setAdapter(adapter);
+
 
         atualizarTotal();
 
@@ -63,6 +77,7 @@ public class carrinho extends AppCompatActivity {
             intent.putExtra("total", total);
             startActivity(intent);
         });
+
     }
 
     private void atualizarTotal() {
