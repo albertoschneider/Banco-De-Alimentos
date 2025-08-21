@@ -19,6 +19,9 @@ import com.google.android.material.card.MaterialCardView;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.UserInfo;
+
 public class menu_admin extends AppCompatActivity {
 
     private TextView tvWelcome, tvName;
@@ -75,6 +78,12 @@ public class menu_admin extends AppCompatActivity {
 
         // Preencher nome no header
         bindAdminNameToHeader();
+
+        btnSettings = findViewById(R.id.btnSettings);
+
+        if (btnSettings != null) {
+            btnSettings.setOnClickListener(v -> openSettings(true)); // true = origem: admin
+        }
     }
 
     @Override
@@ -116,6 +125,26 @@ public class menu_admin extends AppCompatActivity {
                         fetchNameFromAdminsThenFallback(uid, fu);
                     }
                 });
+    }
+
+    private void openSettings(boolean fromAdmin) {
+        FirebaseUser fu = auth.getCurrentUser();
+        if (fu == null) {
+            startActivity(new Intent(this, MainActivity.class));
+            return;
+        }
+
+        boolean hasGoogle = false, hasPassword = false;
+        for (UserInfo info : fu.getProviderData()) {
+            String p = info.getProviderId();
+            if ("google.com".equals(p)) hasGoogle = true;
+            if ("password".equals(p))   hasPassword = true;
+        }
+
+        Class<?> next = hasPassword ? configuracoes_email_senha.class : configuracoes_google.class;
+        Intent i = new Intent(this, next);
+        i.putExtra("from_admin", fromAdmin); // se quiser usar na tela de configs
+        startActivity(i);
     }
 
     private void fetchNameFromAdminsThenFallback(String uid, FirebaseUser fu) {
