@@ -16,7 +16,7 @@ public class SplashActivity extends AppCompatActivity {
         FirebaseUser u = FirebaseAuth.getInstance().getCurrentUser();
         if (u == null) {
             // não logado -> vai pro login
-            startActivity(new Intent(this, telalogin.class));
+            startActivity(new Intent(this, MainActivity.class));
             finish();
             return;
         }
