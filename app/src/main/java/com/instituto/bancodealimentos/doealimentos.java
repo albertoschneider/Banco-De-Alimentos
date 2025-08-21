@@ -1,6 +1,7 @@
 package com.instituto.bancodealimentos;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageButton;
@@ -9,6 +10,11 @@ import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -19,10 +25,6 @@ import com.google.firebase.firestore.Query;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
-import androidx.core.graphics.Insets;
 
 public class doealimentos extends AppCompatActivity {
 
@@ -36,15 +38,37 @@ public class doealimentos extends AppCompatActivity {
 
     @Override protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // --- Edge-to-edge estável ---
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+        getWindow().setStatusBarColor(Color.TRANSPARENT);
         setContentView(R.layout.activity_doealimentos);
 
-        View header = findViewById(R.id.header); // o ConstraintLayout do topo
-        ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
-            Insets sb = insets.getInsets(WindowInsetsCompat.Type.statusBars());
-            v.setPadding(v.getPaddingLeft(), v.getPaddingTop() + sb.top, v.getPaddingRight(), v.getPaddingBottom());
-            return insets;
-        });
-        ViewCompat.requestApplyInsets(header);
+        // Header recebe padding = altura da status bar (NÃO somar)
+        View header = findViewById(R.id.header);
+        if (header != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
+                Insets sb = insets.getInsets(WindowInsetsCompat.Type.statusBars());
+                v.setPadding(v.getPaddingLeft(), sb.top, v.getPaddingRight(), v.getPaddingBottom());
+                return insets;
+            });
+            ViewCompat.requestApplyInsets(header);
+
+            // Ícones escuros na status bar (porque seu header é claro)
+            WindowInsetsControllerCompat c = ViewCompat.getWindowInsetsController(getWindow().getDecorView());
+            if (c != null) c.setAppearanceLightStatusBars(true);
+        }
+
+        // Opcional: empurra conteúdo/rodapé pelo tamanho da barra de navegação
+        View root = findViewById(R.id.main); // use o root da sua tela
+        if (root != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
+                Insets nb = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
+                v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), v.getPaddingRight(), nb.bottom);
+                return insets;
+            });
+            ViewCompat.requestApplyInsets(root);
+        }
 
         tvValorTotal = findViewById(R.id.tvValorTotal);
         recyclerView = findViewById(R.id.recyclerView);
@@ -55,17 +79,15 @@ public class doealimentos extends AppCompatActivity {
 
         ImageButton back = findViewById(R.id.btn_voltar);
         if (back != null) back.setOnClickListener(v -> {
-            Intent intent = new Intent(doealimentos.this, menu.class);
-            startActivity(intent);
+            startActivity(new Intent(doealimentos.this, menu.class));
+            finish();
         });
 
-        findViewById(R.id.btnContinuar).setOnClickListener(v -> {
-            // Aqui você pode abrir a tela de checkout/carrinho se quiser
-            Toast.makeText(this, "Continuar com total: " + tvValorTotal.getText(), Toast.LENGTH_SHORT).show();
-        });
+        findViewById(R.id.btnContinuar).setOnClickListener(v ->
+                Toast.makeText(this, "Continuar com total: " + tvValorTotal.getText(), Toast.LENGTH_SHORT).show()
+        );
 
         escutar();
-
     }
 
     private void escutar() {

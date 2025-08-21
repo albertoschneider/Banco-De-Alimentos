@@ -8,8 +8,11 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import androidx.appcompat.app.AppCompatDelegate;
+
 public class SplashActivity extends AppCompatActivity {
     @Override protected void onCreate(Bundle savedInstanceState) {
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
         super.onCreate(savedInstanceState);
 
         // 1) Checa sessão

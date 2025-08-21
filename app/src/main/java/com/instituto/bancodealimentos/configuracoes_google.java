@@ -8,7 +8,6 @@ import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.Gravity;
-import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageButton;
@@ -27,10 +26,6 @@ import com.google.android.gms.auth.api.signin.*;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.material.button.MaterialButton;
 import com.google.firebase.auth.*;
-
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
-import androidx.core.graphics.Insets;
 
 public class configuracoes_google extends AppCompatActivity {
 
@@ -70,19 +65,11 @@ public class configuracoes_google extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_configuracoes_google);
 
-        View header = findViewById(R.id.header); // o ConstraintLayout do topo
-        ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
-            Insets sb = insets.getInsets(WindowInsetsCompat.Type.statusBars());
-            v.setPadding(v.getPaddingLeft(), v.getPaddingTop() + sb.top, v.getPaddingRight(), v.getPaddingBottom());
-            return insets;
-        });
-        ViewCompat.requestApplyInsets(header);
-
         auth = FirebaseAuth.getInstance();
         user = auth.getCurrentUser();
         if (user == null) { goToStart(); return; }
 
-        // Para reautenticar com Google quando necessário
+        // Cliente Google para reautenticar e fazer signOut
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestEmail()
                 .requestIdToken(getString(R.string.default_web_client_id))
@@ -99,7 +86,11 @@ public class configuracoes_google extends AppCompatActivity {
         tvNome.setText(user.getDisplayName() != null ? user.getDisplayName() : "");
         tvEmail.setText(user.getEmail() != null ? user.getEmail() : "");
         Uri photo = user.getPhotoUrl();
-        Glide.with(this).load(photo).placeholder(R.drawable.ic_person_24).error(R.drawable.ic_person_24).circleCrop().into(imgFoto);
+        Glide.with(this).load(photo)
+                .placeholder(R.drawable.ic_person_24)
+                .error(R.drawable.ic_person_24)
+                .circleCrop()
+                .into(imgFoto);
 
         btn_voltar.setOnClickListener(v -> finish());
         btnDesconectarGoogle.setOnClickListener(v -> mostrarDialogDesconectar());
@@ -141,7 +132,7 @@ public class configuracoes_google extends AppCompatActivity {
         titulo.setTextColor(0xFF111827);
 
         TextView msg = new TextView(this);
-        msg.setText("Tem certeza de que deseja desvincular sua conta do Google?\nEsta ação afeta o acesso por este provedor.");
+        msg.setText("Tem certeza de que deseja desvincular sua conta do Google?\nVocê será desconectado.");
         msg.setTextSize(14);
         msg.setTextColor(0xFF4B5563);
         msg.setGravity(Gravity.CENTER);
@@ -186,12 +177,15 @@ public class configuracoes_google extends AppCompatActivity {
         });
     }
 
-    /* ===== UNLINK GOOGLE — sem criar senha ===== */
+    /* ===== UNLINK GOOGLE — agora também faz sign-out e volta pra Main ===== */
     private void unlinkGoogleSomente() {
+        if (user == null) { goToStart(); return; }
+
         user.unlink("google.com")
                 .addOnSuccessListener(result -> {
                     toast("Conta do Google desvinculada.");
-                    // Mantém o usuário logado com os provedores restantes (se houver).
+                    // Desconecta do Google e do Firebase, e volta para MainActivity
+                    signOutAndGoHome();
                 })
                 .addOnFailureListener(e -> {
                     if (e instanceof FirebaseAuthRecentLoginRequiredException) {
@@ -201,6 +195,29 @@ public class configuracoes_google extends AppCompatActivity {
                         toast("Falha ao desvincular: " + e.getMessage());
                     }
                 });
+    }
+
+    /* ===== Sign-out completo + navegação ===== */
+    private void signOutAndGoHome() {
+        // 1) signOut do Google (assíncrono)
+        if (googleClient != null) {
+            googleClient.signOut()
+                    .addOnCompleteListener(t -> {
+                        // 2) signOut do Firebase
+                        FirebaseAuth.getInstance().signOut();
+                        // 3) Ir para tela inicial limpando a pilha
+                        goToStart();
+                    })
+                    .addOnFailureListener(err -> {
+                        // Mesmo se falhar, garante signOut do Firebase e navegação
+                        FirebaseAuth.getInstance().signOut();
+                        goToStart();
+                    });
+        } else {
+            // Fallback: se por algum motivo o client for nulo
+            FirebaseAuth.getInstance().signOut();
+            goToStart();
+        }
     }
 
     /* ===== Reautenticação Google quando exigida ===== */
