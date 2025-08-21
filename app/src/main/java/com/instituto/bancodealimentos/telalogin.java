@@ -56,7 +56,7 @@ public class telalogin extends AppCompatActivity {
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
 
-        edtEmail = findViewById(R.id.edtEmail);
+        edtEmail = findViewById(R.id.edtNome);
         edtSenha = findViewById(R.id.edtSenha);
 
         ImageButton btnBack = findViewById(R.id.btnBack);

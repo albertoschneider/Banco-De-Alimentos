@@ -66,7 +66,7 @@
             app:boxStrokeWidth="0dp">
 
             <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/edtEmail"
+                android:id="@+id/edtNome"
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:hint="Email"
