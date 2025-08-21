@@ -8,4 +8,7 @@
     <color name="gray_100">#ECEFF3</color>
     <color name="text_primary">#212121</color>
     <color name="text_secondary">#80212121</color>
+    <color name="bda_icon_tint">#374151</color>
+    <color name="bda_counter_text">#374151</color>
+    <color name="bda_counter_overflow_text">#DC2626</color>
 </resources>
