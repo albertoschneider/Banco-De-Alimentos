@@ -11,9 +11,11 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -40,9 +42,10 @@ import androidx.core.graphics.Insets;
 
 public class pontosdecoleta extends AppCompatActivity {
 
-    // ===== Config =====
-    private static final int RC_LOCATION = 1010;
-    private static final String COLECAO = "pontos"; // Firestore collection
+    // ===== Firestore =====
+    private static final String COLECAO = "pontos";
+    private final FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private ListenerRegistration pontosListener;
 
     // ===== UI =====
     private RecyclerView rv;
@@ -50,14 +53,10 @@ public class pontosdecoleta extends AppCompatActivity {
     private ImageButton btnVoltar;
     private PontoColetaAdapter adapter;
 
-    // ===== Dados =====
-    private final List<PontoColeta> allData = new ArrayList<>();     // lista completa vinda do Firestore
-    private final List<PontoColeta> visibleData = new ArrayList<>(); // lista exibida (após filtro/ordenação)
-    private String currentQuery = "";                                 // texto do filtro
-
-    // ===== Firestore =====
-    private final FirebaseFirestore db = FirebaseFirestore.getInstance();
-    private ListenerRegistration pontosListener; // para remover no onDestroy
+    // ===== Dados em memória =====
+    private final List<PontoColeta> allData = new ArrayList<>();
+    private final List<PontoColeta> visibleData = new ArrayList<>();
+    private String currentQuery = "";
 
     // ===== Localização =====
     private FusedLocationProviderClient fused;
@@ -65,18 +64,39 @@ public class pontosdecoleta extends AppCompatActivity {
     private LocationCallback locCallback;
     private Location lastLocation;
 
+    // ===== Permissões (Activity Result API) =====
+    private final ActivityResultLauncher<String[]> locationPermsLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
+                boolean fine = Boolean.TRUE.equals(result.get(Manifest.permission.ACCESS_FINE_LOCATION));
+                boolean coarse = Boolean.TRUE.equals(result.get(Manifest.permission.ACCESS_COARSE_LOCATION));
+                boolean granted = fine || coarse;
+
+                if (granted) {
+                    fetchLastLocationSafe();
+                    startLocationUpdatesSafe();
+                } else {
+                    Toast.makeText(this, "Permissão de localização negada.", Toast.LENGTH_SHORT).show();
+                    // Sem localização: lista funciona, só ordena por nome
+                    lastLocation = null;
+                    aplicarFiltroEOrdenacao();
+                }
+            });
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pontosdecoleta);
 
-        View header = findViewById(R.id.header); // o ConstraintLayout do topo
-        ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
-            Insets sb = insets.getInsets(WindowInsetsCompat.Type.statusBars());
-            v.setPadding(v.getPaddingLeft(), v.getPaddingTop() + sb.top, v.getPaddingRight(), v.getPaddingBottom());
-            return insets;
-        });
-        ViewCompat.requestApplyInsets(header);
+        // Cabeçalho: aplica inset sem somar repetidamente (evita “encolher”/“cortar”)
+        View header = findViewById(R.id.header);
+        if (header != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
+                Insets sb = insets.getInsets(WindowInsetsCompat.Type.statusBars());
+                v.setPadding(v.getPaddingLeft(), sb.top, v.getPaddingRight(), v.getPaddingBottom());
+                return insets;
+            });
+            ViewCompat.requestApplyInsets(header);
+        }
 
         // ---- Bind UI
         btnVoltar = findViewById(R.id.btn_voltar);
@@ -90,7 +110,7 @@ public class pontosdecoleta extends AppCompatActivity {
         adapter = new PontoColetaAdapter(visibleData);
         rv.setAdapter(adapter);
 
-        // ---- Filtro de busca (nome/endereço)
+        // ---- Filtro
         if (etBusca != null) {
             etBusca.addTextChangedListener(new TextWatcher() {
                 @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -102,7 +122,7 @@ public class pontosdecoleta extends AppCompatActivity {
             });
         }
 
-        // ---- Localização
+        // ---- Localização (configura; não inicia ainda)
         fused = LocationServices.getFusedLocationProviderClient(this);
         locRequest = LocationRequest.create()
                 .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
@@ -110,23 +130,75 @@ public class pontosdecoleta extends AppCompatActivity {
                 .setFastestInterval(2000);
 
         locCallback = new LocationCallback() {
-            @Override public void onLocationResult(LocationResult result) {
-                if (result == null) return;
+            @Override public void onLocationResult(@NonNull LocationResult result) {
                 Location loc = result.getLastLocation();
                 if (loc != null) {
                     lastLocation = loc;
-                    // Recalcula distâncias e reordena com base na nova localização
                     recalcDistances(allData);
                     aplicarFiltroEOrdenacao();
                 }
             }
         };
 
-        // ---- Firestore (tempo real)
+        // ---- Firestore em tempo real
         iniciarListenerFirestore();
 
-        // ---- Uma última localização rápida para já popular distâncias iniciais
-        obterUltimaLocalizacao();
+        // ---- Primeiro fluxo de permissão/loc
+        ensureLocationFlow();
+    }
+
+    // ===================== Permissões & Localização (seguros) =====================
+    private void ensureLocationFlow() {
+        if (hasLocationPermission()) {
+            fetchLastLocationSafe();
+            startLocationUpdatesSafe();
+        } else {
+            locationPermsLauncher.launch(new String[]{
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+            });
+        }
+    }
+
+    private boolean hasLocationPermission() {
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                || ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void fetchLastLocationSafe() {
+        if (!hasLocationPermission() || fused == null) return;
+        try {
+            fused.getLastLocation()
+                    .addOnSuccessListener(loc -> {
+                        if (loc != null) {
+                            lastLocation = loc;
+                            recalcDistances(allData);
+                            aplicarFiltroEOrdenacao();
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        // Sem stress; segue sem localização
+                    });
+        } catch (SecurityException ignored) {
+            // Caso extremo: permissão foi revogada entre a checagem e a chamada
+        }
+    }
+
+    private void startLocationUpdatesSafe() {
+        if (!hasLocationPermission() || fused == null || locCallback == null || locRequest == null) return;
+        try {
+            fused.requestLocationUpdates(locRequest, locCallback, getMainLooper());
+        } catch (SecurityException ignored) {
+            // Protege contra race condition após o diálogo de permissão
+        }
+    }
+
+    private void stopLocationUpdatesSafe() {
+        if (fused != null && locCallback != null) {
+            try {
+                fused.removeLocationUpdates(locCallback);
+            } catch (Exception ignored) {}
+        }
     }
 
     // ===================== Firestore =====================
@@ -161,10 +233,7 @@ public class pontosdecoleta extends AppCompatActivity {
             allData.add(p);
         }
 
-        // Calcula distâncias na lista completa
         recalcDistances(allData);
-
-        // Aplica filtro + ordenação e atualiza a UI
         aplicarFiltroEOrdenacao();
     }
 
@@ -188,7 +257,6 @@ public class pontosdecoleta extends AppCompatActivity {
     }
 
     private void ordenar(List<PontoColeta> list) {
-        // Se tiver localização, ordena por distância; senão, por nome (alfabético)
         if (lastLocation != null) {
             Collections.sort(list, (a, b) -> Double.compare(a.getDistanciaKm(), b.getDistanciaKm()));
         } else {
@@ -202,7 +270,6 @@ public class pontosdecoleta extends AppCompatActivity {
 
     private void recalcDistances(List<PontoColeta> list) {
         if (lastLocation == null) {
-            // Sem localização — zera as distâncias só para não exibir valores antigos
             for (PontoColeta p : list) p.setDistanciaKm(0.0);
             return;
         }
@@ -220,58 +287,18 @@ public class pontosdecoleta extends AppCompatActivity {
         }
     }
 
-    // ===================== Localização =====================
-    private boolean temPermissaoLocalizacao() {
-        return ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                || ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
-    }
-
-    private void pedirPermissao() {
-        ActivityCompat.requestPermissions(
-                this,
-                new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
-                RC_LOCATION
-        );
-    }
-
-    private void obterUltimaLocalizacao() {
-        if (!temPermissaoLocalizacao()) {
-            pedirPermissao();
-            return;
-        }
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            return;
-        }
-        fused.getLastLocation().addOnSuccessListener(loc -> {
-            if (loc != null) {
-                lastLocation = loc;
-                recalcDistances(allData);
-                aplicarFiltroEOrdenacao();
-            }
-        });
-    }
-
+    // ===================== Ciclo de Vida =====================
     @Override
     protected void onResume() {
         super.onResume();
-        if (!temPermissaoLocalizacao()) {
-            pedirPermissao();
-            return;
-        }
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            return;
-        }
-        fused.requestLocationUpdates(locRequest, locCallback, getMainLooper());
+        // Se já tem permissão, retomamos updates; senão, deixamos o usuário acionar o fluxo natural
+        if (hasLocationPermission()) startLocationUpdatesSafe();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        if (fused != null && locCallback != null) {
-            fused.removeLocationUpdates(locCallback);
-        }
+        stopLocationUpdatesSafe();
     }
 
     @Override
@@ -280,26 +307,7 @@ public class pontosdecoleta extends AppCompatActivity {
             pontosListener.remove();
             pontosListener = null;
         }
+        stopLocationUpdatesSafe();
         super.onDestroy();
-    }
-
-    @Override
-    public void onRequestPermissionsResult(
-            int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == RC_LOCATION) {
-            boolean granted = true;
-            for (int r : grantResults) granted &= (r == PackageManager.PERMISSION_GRANTED);
-            if (granted) {
-                obterUltimaLocalizacao();
-                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                        || ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                    fused.requestLocationUpdates(locRequest, locCallback, getMainLooper());
-                }
-            } else {
-                Toast.makeText(this, "Permissão de localização negada.", Toast.LENGTH_SHORT).show();
-            }
-        }
     }
 }
