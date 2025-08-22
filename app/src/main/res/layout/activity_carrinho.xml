@@ -57,7 +57,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         tools:listitem="@layout/item_carrinho"/>
 
-    <!-- RODAPÉ: total + 2 botões (cinza e amarelo) -->
+    <!-- RODAPÉ: total + aviso + 2 botões (cinza e amarelo) -->
     <LinearLayout
         android:id="@+id/footer"
         android:layout_width="0dp"
@@ -97,6 +97,17 @@
                 android:textStyle="bold"
                 android:textSize="16sp"/>
         </LinearLayout>
+
+        <!-- AVISO de carrinho vazio (invisível por padrão) -->
+        <TextView
+            android:id="@+id/tvErroVazio"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="*O carrinho está vazio. Adicione algum item para realizar a doação."
+            android:textColor="#DC2626"
+            android:textSize="12sp"
+            android:visibility="gone" />
 
         <!-- Botões lado a lado -->
         <LinearLayout

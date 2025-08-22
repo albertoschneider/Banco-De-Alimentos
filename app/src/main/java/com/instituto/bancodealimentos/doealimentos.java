@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -39,36 +40,43 @@ public class doealimentos extends AppCompatActivity {
     @Override protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // --- Edge-to-edge estável ---
+        // Edge-to-edge
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         getWindow().setStatusBarColor(Color.TRANSPARENT);
+
         setContentView(R.layout.activity_doealimentos);
 
-        // Header recebe padding = altura da status bar (NÃO somar)
-        View header = findViewById(R.id.header);
-        if (header != null) {
-            ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
-                Insets sb = insets.getInsets(WindowInsetsCompat.Type.statusBars());
-                v.setPadding(v.getPaddingLeft(), sb.top, v.getPaddingRight(), v.getPaddingBottom());
-                return insets;
-            });
-            ViewCompat.requestApplyInsets(header);
+        // ---- Inset fix: usa MARGEM no header e no footer ----
+        final View header = findViewById(R.id.header);
+        final View footer = findViewById(R.id.footer);
 
-            // Ícones escuros na status bar (porque seu header é claro)
+        ViewCompat.setOnApplyWindowInsetsListener(getWindow().getDecorView(), (v, insets) -> {
+            Insets sb = insets.getInsets(WindowInsetsCompat.Type.statusBars());
+            Insets nb = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
+
+            if (header != null) {
+                ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) header.getLayoutParams();
+                if (lp.topMargin != sb.top) {
+                    lp.topMargin = sb.top;
+                    header.setLayoutParams(lp);
+                }
+            }
+            if (footer != null) {
+                ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) footer.getLayoutParams();
+                if (lp.bottomMargin != nb.bottom) {
+                    lp.bottomMargin = nb.bottom;
+                    footer.setLayoutParams(lp);
+                }
+            }
+
+            // Ícones escuros na status bar (header claro)
             WindowInsetsControllerCompat c = ViewCompat.getWindowInsetsController(getWindow().getDecorView());
             if (c != null) c.setAppearanceLightStatusBars(true);
-        }
 
-        // Opcional: empurra conteúdo/rodapé pelo tamanho da barra de navegação
-        View root = findViewById(R.id.main); // use o root da sua tela
-        if (root != null) {
-            ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
-                Insets nb = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
-                v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), v.getPaddingRight(), nb.bottom);
-                return insets;
-            });
-            ViewCompat.requestApplyInsets(root);
-        }
+            return insets;
+        });
+        ViewCompat.requestApplyInsets(getWindow().getDecorView());
+        // ------------------------------------------------------
 
         tvValorTotal = findViewById(R.id.tvValorTotal);
         recyclerView = findViewById(R.id.recyclerView);
@@ -83,13 +91,10 @@ public class doealimentos extends AppCompatActivity {
             finish();
         });
 
-        // *** FINALIZAR DOAÇÃO -> SALVA O CARRINHO E ABRE A TELA DE CARRINHO ***
+        // Finalizar Doação -> salva carrinho e abre carrinho
         findViewById(R.id.btnContinuar).setOnClickListener(v -> {
             salvarCarrinhoLocal();
-            Intent it = new Intent(doealimentos.this, carrinho.class);
-            // se quiser limpar o histórico entre as telas, pode usar flags:
-            // it.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            startActivity(it);
+            startActivity(new Intent(doealimentos.this, carrinho.class));
         });
 
         escutar();
@@ -129,24 +134,14 @@ public class doealimentos extends AppCompatActivity {
         tvValorTotal.setText(Money.fmt(total));
     }
 
-    /**
-     * Varre a lista + quantidades do adapter, monta a lista de itens selecionados
-     * e salva no storage central (CartStore) para o carrinho abrir populado.
-     */
     private void salvarCarrinhoLocal() {
         ArrayList<Produto> selecionados = new ArrayList<>();
         for (int i = 0; i < lista.size(); i++) {
             Produto p = lista.get(i);
             int qtd = adapter.getQuantidadeByPosition(i);
             if (qtd > 0) {
-                // cria uma cópia “leve” do produto e tenta setar a quantidade (se existir o setter)
                 Produto copy = new Produto(p.getId(), p.getNome(), p.getPreco(), p.getImagemUrl());
-                try {
-                    copy.getClass().getMethod("setQuantidade", int.class).invoke(copy, qtd);
-                } catch (Exception ignored) {
-                    // se sua classe Produto não tiver setQuantidade, pode ajustar o CartStore
-                    // para salvar a quantidade em paralelo (mas normalmente essa classe tem)
-                }
+                try { copy.getClass().getMethod("setQuantidade", int.class).invoke(copy, qtd); } catch (Exception ignored) {}
                 selecionados.add(copy);
             }
         }

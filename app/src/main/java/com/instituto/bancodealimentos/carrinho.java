@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -25,48 +26,49 @@ public class carrinho extends AppCompatActivity {
     private ArrayList<Produto> itens = new ArrayList<>();
     private CarrinhoAdapter adapter;
     private TextView tvTotal;
+    private TextView tvErroVazio;
     private final NumberFormat br = NumberFormat.getCurrencyInstance(new Locale("pt", "BR"));
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // ---- Edge-to-edge estável (desenha sob status bar) ----
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         getWindow().setStatusBarColor(Color.TRANSPARENT);
-
         setContentView(R.layout.activity_carrinho);
 
-        // Header recebe exatamente a altura da status bar (SEM somar de novo)
-        View header = findViewById(R.id.header);
-        if (header != null) {
-            ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
-                Insets sb = insets.getInsets(WindowInsetsCompat.Type.statusBars());
-                v.setPadding(v.getPaddingLeft(), sb.top, v.getPaddingRight(), v.getPaddingBottom());
-                return insets;
-            });
-            ViewCompat.requestApplyInsets(header);
+        final View header = findViewById(R.id.header);
+        final View footer = findViewById(R.id.footer);
 
-            // Ícones escuros na status bar (ajuste para false se o header for escuro)
-            WindowInsetsControllerCompat c =
-                    ViewCompat.getWindowInsetsController(getWindow().getDecorView());
+        // Inset fix: margem no topo e embaixo
+        ViewCompat.setOnApplyWindowInsetsListener(getWindow().getDecorView(), (v, insets) -> {
+            Insets sb = insets.getInsets(WindowInsetsCompat.Type.statusBars());
+            Insets nb = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
+
+            if (header != null) {
+                ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) header.getLayoutParams();
+                if (lp.topMargin != sb.top) {
+                    lp.topMargin = sb.top;
+                    header.setLayoutParams(lp);
+                }
+            }
+            if (footer != null) {
+                ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) footer.getLayoutParams();
+                if (lp.bottomMargin != nb.bottom) {
+                    lp.bottomMargin = nb.bottom;
+                    footer.setLayoutParams(lp);
+                }
+            }
+
+            WindowInsetsControllerCompat c = ViewCompat.getWindowInsetsController(getWindow().getDecorView());
             if (c != null) c.setAppearanceLightStatusBars(true);
-        }
-
-        // (Opcional) Empurra o root pelo tamanho da barra de navegação inferior
-        View root = findViewById(R.id.main); // use o id do root do seu layout
-        if (root != null) {
-            ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
-                Insets nb = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
-                v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), v.getPaddingRight(), nb.bottom);
-                return insets;
-            });
-            ViewCompat.requestApplyInsets(root);
-        }
+            return insets;
+        });
+        ViewCompat.requestApplyInsets(getWindow().getDecorView());
 
         tvTotal = findViewById(R.id.tvTotal);
+        tvErroVazio = findViewById(R.id.tvErroVazio);
 
-        // Carrega do storage central (preenchido pela tela de doealimentos)
         itens = CartStore.load(this);
 
         RecyclerView rv = findViewById(R.id.rvCarrinho);
@@ -79,7 +81,6 @@ public class carrinho extends AppCompatActivity {
 
         atualizarTotal();
 
-        // Voltar ao catálogo (doealimentos)
         View btnVoltarTopo = findViewById(R.id.btn_voltar);
         if (btnVoltarTopo != null) {
             btnVoltarTopo.setOnClickListener(v -> {
@@ -90,7 +91,6 @@ public class carrinho extends AppCompatActivity {
             });
         }
 
-        // Ir para o MENU (botão "Voltar" inferior)
         View btnVoltar = findViewById(R.id.btnVoltar);
         if (btnVoltar != null) {
             btnVoltar.setOnClickListener(v -> {
@@ -101,10 +101,13 @@ public class carrinho extends AppCompatActivity {
             });
         }
 
-        // Continuar/pagamento
         View btnContinuar = findViewById(R.id.btnContinuar);
         if (btnContinuar != null) {
             btnContinuar.setOnClickListener(v -> {
+                if (isCartEmpty()) {
+                    if (tvErroVazio != null) tvErroVazio.setVisibility(View.VISIBLE);
+                    return;
+                }
                 double total = 0;
                 for (Produto p : itens) total += safePreco(p) * safeQtd(p);
                 Intent intent = new Intent(carrinho.this, pagamento.class);
@@ -116,11 +119,21 @@ public class carrinho extends AppCompatActivity {
 
     private void atualizarTotal() {
         double total = 0;
-        for (Produto p : itens) total += safePreco(p) * safeQtd(p);
+        int somaQtd = 0;
+        for (Produto p : itens) {
+            int q = safeQtd(p);
+            somaQtd += q;
+            total += safePreco(p) * q;
+        }
         tvTotal.setText(br.format(total));
+        if (tvErroVazio != null) tvErroVazio.setVisibility(somaQtd <= 0 ? View.VISIBLE : View.GONE);
     }
 
-    // --- helpers robustos (funcionam mesmo sem getters explícitos) ---
+    private boolean isCartEmpty() {
+        for (Produto p : itens) if (safeQtd(p) > 0) return false;
+        return true;
+    }
+
     private double safePreco(Produto p) {
         try {
             Object v = p.getClass().getMethod("getPreco").invoke(p);
@@ -134,6 +147,6 @@ public class carrinho extends AppCompatActivity {
             Object v = p.getClass().getMethod("getQuantidade").invoke(p);
             if (v instanceof Number) return ((Number) v).intValue();
         } catch (Exception ignored) {}
-        return 1; // se preferir que itens sem quantidade não contem, mude para 0
+        return 0;
     }
 }

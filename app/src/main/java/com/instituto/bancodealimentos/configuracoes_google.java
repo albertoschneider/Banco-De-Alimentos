@@ -2,14 +2,19 @@ package com.instituto.bancodealimentos;
 
 import android.app.Dialog;
 import android.content.Intent;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.Typeface;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.CheckBox;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -33,6 +38,7 @@ public class configuracoes_google extends AppCompatActivity {
     private ImageView imgFoto;
     private TextView tvNome, tvEmail;
     private MaterialButton btnDesconectarGoogle;
+    private MaterialButton btnSairGoogle;
 
     private FirebaseAuth auth;
     private FirebaseUser user;
@@ -69,7 +75,7 @@ public class configuracoes_google extends AppCompatActivity {
         user = auth.getCurrentUser();
         if (user == null) { goToStart(); return; }
 
-        // Cliente Google para reautenticar e fazer signOut
+        // Cliente Google
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestEmail()
                 .requestIdToken(getString(R.string.default_web_client_id))
@@ -81,8 +87,9 @@ public class configuracoes_google extends AppCompatActivity {
         tvNome  = findViewById(R.id.tvNome);
         tvEmail = findViewById(R.id.tvEmail);
         btnDesconectarGoogle = findViewById(R.id.btnDesconectarGoogle);
+        btnSairGoogle = findViewById(R.id.btnSairGoogle);
 
-        // Preenche (somente leitura)
+        // Preenche
         tvNome.setText(user.getDisplayName() != null ? user.getDisplayName() : "");
         tvEmail.setText(user.getEmail() != null ? user.getEmail() : "");
         Uri photo = user.getPhotoUrl();
@@ -93,11 +100,12 @@ public class configuracoes_google extends AppCompatActivity {
                 .into(imgFoto);
 
         btn_voltar.setOnClickListener(v -> finish());
-        btnDesconectarGoogle.setOnClickListener(v -> mostrarDialogDesconectar());
+        btnDesconectarGoogle.setOnClickListener(v -> mostrarDialogDesvincular());
+        btnSairGoogle.setOnClickListener(v -> mostrarDialogSairGoogle());
     }
 
-    /* ===== POP-UP "Desvincular Google" ===== */
-    private void mostrarDialogDesconectar() {
+    /* ===== POP-UP "Desvincular Google" (com checkbox) ===== */
+    private void mostrarDialogDesvincular() {
         final Dialog dialog = new Dialog(this);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
 
@@ -137,37 +145,64 @@ public class configuracoes_google extends AppCompatActivity {
         msg.setTextColor(0xFF4B5563);
         msg.setGravity(Gravity.CENTER);
 
+        // Checkbox de confirmação
+        CheckBox cb = new CheckBox(this);
+        cb.setText("*Entendo que, uma vez desvinculada, a conta não poderá ser recuperada automaticamente.");
+        cb.setTextColor(0xFF6B7280);
+        cb.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+
         MaterialButton btnSim = new MaterialButton(this);
         btnSim.setText("Sim, desvincular");
         btnSim.setAllCaps(false);
         btnSim.setTypeface(Typeface.DEFAULT_BOLD);
-        btnSim.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFD32F2F));
-        btnSim.setTextColor(0xFFFFFFFF);
         btnSim.setCornerRadius(dp(12));
+        // começa DESABILITADO
+        btnSim.setEnabled(false);
+        btnSim.setBackgroundTintList(ColorStateList.valueOf(0xFFD1D5DB));
+        btnSim.setTextColor(0xFF9CA3AF);
+
+        // quando marcar, habilita (vermelho)
+        cb.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            btnSim.setEnabled(isChecked);
+            btnSim.setBackgroundTintList(ColorStateList.valueOf(isChecked ? 0xFFD32F2F : 0xFFD1D5DB));
+            btnSim.setTextColor(isChecked ? 0xFFFFFFFF : 0xFF9CA3AF);
+        });
 
         MaterialButton btnCancelar = new MaterialButton(this);
         btnCancelar.setText("Cancelar");
         btnCancelar.setAllCaps(false);
-        btnCancelar.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFE5E7EB));
+        btnCancelar.setBackgroundTintList(ColorStateList.valueOf(0xFFE5E7EB));
         btnCancelar.setTextColor(0xFF374151);
         btnCancelar.setCornerRadius(dp(12));
 
         card.addView(circle, lpCircle);
-        LinearLayout.LayoutParams lpTit = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        LinearLayout.LayoutParams lpTit = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         lpTit.topMargin = dp(12);
         card.addView(titulo, lpTit);
-        LinearLayout.LayoutParams lpMsg = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+
+        LinearLayout.LayoutParams lpMsg = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         lpMsg.topMargin = dp(8);
         card.addView(msg, lpMsg);
-        LinearLayout.LayoutParams lpB1 = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(48));
+
+        LinearLayout.LayoutParams lpCb = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpCb.topMargin = dp(10);
+        card.addView(cb, lpCb);
+
+        LinearLayout.LayoutParams lpB1 = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, dp(48));
         lpB1.topMargin = dp(16);
         card.addView(btnSim, lpB1);
-        LinearLayout.LayoutParams lpB2 = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(48));
+
+        LinearLayout.LayoutParams lpB2 = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, dp(48));
         lpB2.topMargin = dp(8);
         card.addView(btnCancelar, lpB2);
 
         dialog.setContentView(card);
-        dimDialog(dialog);
+        sizeAndDimDialog(dialog, 0.9f);
         dialog.show();
 
         btnCancelar.setOnClickListener(v -> dialog.dismiss());
@@ -177,14 +212,82 @@ public class configuracoes_google extends AppCompatActivity {
         });
     }
 
-    /* ===== UNLINK GOOGLE — agora também faz sign-out e volta pra Main ===== */
+    /* ===== POP-UP "Sair da conta" (Google) – menor largura ===== */
+    private void mostrarDialogSairGoogle() {
+        final Dialog dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(dp(20), dp(20), dp(20), dp(16));
+        card.setGravity(Gravity.CENTER_HORIZONTAL);
+
+        GradientDrawable bg = new GradientDrawable();
+        bg.setCornerRadius(dp(16));
+        bg.setColor(0xFFFFFFFF);
+        card.setBackground(bg);
+
+        TextView titulo = new TextView(this);
+        titulo.setText("Sair");
+        titulo.setTextSize(18);
+        titulo.setTypeface(Typeface.DEFAULT_BOLD);
+        titulo.setTextColor(0xFF111827);
+
+        TextView msg = new TextView(this);
+        msg.setText("Tem certeza de que deseja sair?\nSua conta não será excluída, mas você precisará fazer login novamente.");
+        msg.setTextSize(14);
+        msg.setTextColor(0xFF4B5563);
+        msg.setGravity(Gravity.CENTER);
+
+        MaterialButton btnConfirmar = new MaterialButton(this);
+        btnConfirmar.setText("Sair");
+        btnConfirmar.setAllCaps(false);
+        btnConfirmar.setTypeface(Typeface.DEFAULT_BOLD);
+        btnConfirmar.setCornerRadius(dp(12));
+        btnConfirmar.setBackgroundTintList(ColorStateList.valueOf(0xFF1E3A8A));
+        btnConfirmar.setTextColor(0xFFFFFFFF);
+
+        MaterialButton btnCancelar = new MaterialButton(this);
+        btnCancelar.setText("Cancelar");
+        btnCancelar.setAllCaps(false);
+        btnCancelar.setCornerRadius(dp(12));
+        btnCancelar.setBackgroundTintList(ColorStateList.valueOf(0xFFE5E7EB));
+        btnCancelar.setTextColor(0xFF374151);
+
+        card.addView(titulo);
+        LinearLayout.LayoutParams lpMsg = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpMsg.topMargin = dp(8);
+        card.addView(msg, lpMsg);
+
+        LinearLayout.LayoutParams lpB1 = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, dp(48));
+        lpB1.topMargin = dp(16);
+        card.addView(btnConfirmar, lpB1);
+
+        LinearLayout.LayoutParams lpB2 = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, dp(48));
+        lpB2.topMargin = dp(8);
+        card.addView(btnCancelar, lpB2);
+
+        dialog.setContentView(card);
+        sizeAndDimDialog(dialog, 0.9f);
+        dialog.show();
+
+        btnCancelar.setOnClickListener(v -> dialog.dismiss());
+        btnConfirmar.setOnClickListener(v -> {
+            dialog.dismiss();
+            signOutAndGoHome();
+        });
+    }
+
+    /* ===== UNLINK GOOGLE — também faz sign-out e volta pra Main ===== */
     private void unlinkGoogleSomente() {
         if (user == null) { goToStart(); return; }
 
         user.unlink("google.com")
                 .addOnSuccessListener(result -> {
                     toast("Conta do Google desvinculada.");
-                    // Desconecta do Google e do Firebase, e volta para MainActivity
                     signOutAndGoHome();
                 })
                 .addOnFailureListener(e -> {
@@ -199,28 +302,22 @@ public class configuracoes_google extends AppCompatActivity {
 
     /* ===== Sign-out completo + navegação ===== */
     private void signOutAndGoHome() {
-        // 1) signOut do Google (assíncrono)
         if (googleClient != null) {
             googleClient.signOut()
                     .addOnCompleteListener(t -> {
-                        // 2) signOut do Firebase
                         FirebaseAuth.getInstance().signOut();
-                        // 3) Ir para tela inicial limpando a pilha
                         goToStart();
                     })
                     .addOnFailureListener(err -> {
-                        // Mesmo se falhar, garante signOut do Firebase e navegação
                         FirebaseAuth.getInstance().signOut();
                         goToStart();
                     });
         } else {
-            // Fallback: se por algum motivo o client for nulo
             FirebaseAuth.getInstance().signOut();
             goToStart();
         }
     }
 
-    /* ===== Reautenticação Google quando exigida ===== */
     private void reauthWithGoogle() {
         Intent it = googleClient.getSignInIntent();
         reauthGoogleLauncher.launch(it);
@@ -239,11 +336,13 @@ public class configuracoes_google extends AppCompatActivity {
         return (int) (v * d + 0.5f);
     }
 
-    private void dimDialog(Dialog d) {
+    private void sizeAndDimDialog(Dialog d, float widthPercent) {
         Window w = d.getWindow();
         if (w != null) {
-            w.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT);
-            w.setBackgroundDrawable(new GradientDrawable());
+            int screenW = getResources().getDisplayMetrics().widthPixels;
+            int desiredW = (int) (screenW * widthPercent);
+            w.setLayout(desiredW, WindowManager.LayoutParams.WRAP_CONTENT);
+            w.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
             WindowManager.LayoutParams lp = w.getAttributes();
             lp.dimAmount = 0.6f;
             w.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);

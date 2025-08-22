@@ -18,7 +18,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- Botão voltar (16dp, sem fundo, seta PNG) -->
         <ImageButton
             android:id="@+id/btn_voltar"
             android:layout_width="16dp"
@@ -54,7 +53,7 @@
         android:layout_height="0dp"
         android:fillViewport="true"
         app:layout_constraintTop_toBottomOf="@id/header"
-        app:layout_constraintBottom_toTopOf="@id/btnDesconectarGoogle"
+        app:layout_constraintBottom_toTopOf="@id/btnSairGoogle"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
@@ -68,7 +67,6 @@
             android:paddingBottom="24dp"
             android:gravity="center_horizontal">
 
-            <!-- Avatar (foto da conta Google) -->
             <ImageView
                 android:id="@+id/imgFoto"
                 android:layout_width="84dp"
@@ -78,7 +76,6 @@
                 android:clipToOutline="true"
                 tools:src="@drawable/ic_person_24" />
 
-            <!-- Nome -->
             <TextView
                 android:id="@+id/tvNome"
                 android:layout_width="wrap_content"
@@ -89,7 +86,6 @@
                 android:textColor="#111827"
                 tools:text="John Doe" />
 
-            <!-- E-mail -->
             <TextView
                 android:id="@+id/tvEmail"
                 android:layout_width="wrap_content"
@@ -99,7 +95,6 @@
                 android:textColor="#6B7280"
                 tools:text="johndoe@example.com" />
 
-            <!-- Card: Conectado com o Google -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardGoogle"
                 android:layout_width="match_parent"
@@ -119,15 +114,13 @@
                     android:gravity="center_vertical"
                     android:padding="14dp">
 
-                    <!-- Ícone Google (substitua o drawable pelo seu vetor do Google) -->
                     <ImageView
                         android:id="@+id/icGoogle"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_marginEnd="12dp"
                         android:contentDescription="@string/sem_descricao"
-                        android:src="@drawable/google_g_png"
-                        tools:src="@drawable/google_g_png" />
+                        android:src="@drawable/google_g_png" />
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -159,13 +152,31 @@
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <!-- Botão fixo inferior: Desconectar Conta do Google -->
+    <!-- Botão Sair (inferior) -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSairGoogle"
+        android:layout_width="0dp"
+        android:layout_height="52dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="8dp"
+        android:text="Sair da Conta"
+        android:textAllCaps="false"
+        android:textStyle="bold"
+        android:textColor="#004E7C"
+        app:cornerRadius="12dp"
+        app:backgroundTint="#FFF1B100"
+        app:layout_constraintBottom_toTopOf="@id/btnDesconectarGoogle"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <!-- Botão Desvincular (inferior) -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnDesconectarGoogle"
         android:layout_width="0dp"
         android:layout_height="52dp"
         android:layout_margin="16dp"
-        android:text="Desconectar Conta do Google"
+        android:text="Desvincular Conta do Google"
         android:textAllCaps="false"
         android:textStyle="bold"
         android:textColor="@android:color/white"

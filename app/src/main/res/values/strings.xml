@@ -2,8 +2,8 @@
     <string name="app_name">Banco De Alimentos</string>
     <string name="back">Voltar</string>
     <string name="pix_key">+5551991591769</string>
-    <string name="pix_nome">ALBERTO PEREIRA SCHNEIDER</string>   <!-- máx. 25 caracteres -->
-    <string name="pix_cidade">ESTANCIA VELHA</string>         <!-- máx. 15 caracteres (sem acentos idealmente) -->
+    <string name="pix_nome">ALBERTO PEREIRA SCHNEIDER</string>
+    <string name="pix_cidade">ESTANCIA VELHA</string>
     <string name="sem_descricao">Sem descrição</string>
     <string name="bem_vindo">Bem-vindo,</string>
     <string name="nome_usuario">Ademir Rodrigues</string>
@@ -19,5 +19,7 @@
     <string name="historico_subtitulo">Veja suas doações</string>
     <string name="historico_subtitulo_admin">Veja todas as doações realizadas pelos usuários do Aplicativo</string>
     <string name="voltar">Voltar</string>
-    <string name="default_web_client_id">603787073561-2taj3fargl9c4l7g902l29255d5vvpa3.apps.googleusercontent.com</string>
+
+    <!-- ATENÇÃO: use o CLIENT WEB (type 3) do google-services.json -->
+    <string name="default_web_client_id">603787073561-i6d78b6r8u284hvc91davf738n0bceu3.apps.googleusercontent.com</string>
 </resources>
