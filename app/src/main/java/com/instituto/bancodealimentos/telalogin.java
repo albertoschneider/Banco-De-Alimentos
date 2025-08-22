@@ -2,6 +2,8 @@ package com.instituto.bancodealimentos;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Patterns;
 import android.widget.Button;
 import android.widget.EditText;
@@ -37,6 +39,7 @@ public class telalogin extends AppCompatActivity {
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
     private EditText edtEmail, edtSenha;
+    private TextView tvLoginError;
 
     private GoogleSignInClient mGoogleSignInClient;
     private static final int RC_SIGN_IN = 9001;
@@ -56,9 +59,9 @@ public class telalogin extends AppCompatActivity {
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
 
-        // >>> id corrigido
         edtEmail = findViewById(R.id.edtEmail);
         edtSenha = findViewById(R.id.edtSenha);
+        tvLoginError = findViewById(R.id.tvLoginError);
 
         ImageButton btnBack = findViewById(R.id.btnBack);
         Button btnEntrar = findViewById(R.id.btnEntrar);
@@ -68,6 +71,17 @@ public class telalogin extends AppCompatActivity {
 
         btnBack.setOnClickListener(v -> startActivity(new Intent(this, MainActivity.class)));
         tvRegister.setOnClickListener(v -> startActivity(new Intent(this, telaregistro.class)));
+
+        // limpa o erro ao digitar novamente
+        TextWatcher clearErrorWatcher = new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                hideInlineError();
+            }
+            @Override public void afterTextChanged(Editable s) {}
+        };
+        edtEmail.addTextChangedListener(clearErrorWatcher);
+        edtSenha.addTextChangedListener(clearErrorWatcher);
 
         tvForgot.setOnClickListener(v -> {
             String email = edtEmail.getText().toString().trim();
@@ -88,12 +102,21 @@ public class telalogin extends AppCompatActivity {
     }
 
     private void loginEmailSenha() {
+        hideInlineError();
+
         String email = edtEmail.getText().toString().trim();
         String senha = edtSenha.getText().toString().trim();
-        if (email.isEmpty() || senha.isEmpty()) { toast("Preencha todos os campos!"); return; }
+        if (email.isEmpty() || senha.isEmpty()) {
+            toast("Preencha todos os campos!");
+            return;
+        }
 
         mAuth.signInWithEmailAndPassword(email, senha).addOnCompleteListener(task -> {
-            if (!task.isSuccessful()) { toast("Erro no login: " + (task.getException()!=null?task.getException().getMessage():"")); return; }
+            if (!task.isSuccessful()) {
+                // erro inline em vermelho
+                showInlineError("*E-mail ou senha incorretos");
+                return;
+            }
             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
             if (user == null) { toast("Erro inesperado: usuário nulo."); return; }
             ensureUserDocExistsThenNavigate(user);
@@ -109,14 +132,20 @@ public class telalogin extends AppCompatActivity {
                 GoogleSignInAccount account = task.getResult(ApiException.class);
                 if (account != null) firebaseAuthWithGoogle(account.getIdToken());
                 else toast("Conta Google inválida.");
-            } catch (ApiException e) { toast("Falha no login com Google: " + e.getMessage()); }
+            } catch (ApiException e) {
+                toast("Falha no login com Google: " + e.getMessage());
+            }
         }
     }
 
     private void firebaseAuthWithGoogle(String idToken) {
+        hideInlineError();
         AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
         mAuth.signInWithCredential(credential).addOnCompleteListener(this, task -> {
-            if (!task.isSuccessful()) { toast("Falha na autenticação Firebase: " + (task.getException()!=null?task.getException().getMessage():"")); return; }
+            if (!task.isSuccessful()) {
+                toast("Falha na autenticação Firebase: " + (task.getException()!=null?task.getException().getMessage():""));
+                return;
+            }
             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
             if (user == null) { toast("Erro inesperado: usuário nulo."); return; }
             ensureUserDocExistsThenNavigate(user);
@@ -147,6 +176,19 @@ public class telalogin extends AppCompatActivity {
         it.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(it);
         finish();
+    }
+
+    private void showInlineError(String msg) {
+        if (tvLoginError != null) {
+            tvLoginError.setText(msg);
+            tvLoginError.setVisibility(android.view.View.VISIBLE);
+        }
+    }
+
+    private void hideInlineError() {
+        if (tvLoginError != null && tvLoginError.getVisibility() == android.view.View.VISIBLE) {
+            tvLoginError.setVisibility(android.view.View.GONE);
+        }
     }
 
     private void toast(String s) { Toast.makeText(this, s, Toast.LENGTH_SHORT).show(); }

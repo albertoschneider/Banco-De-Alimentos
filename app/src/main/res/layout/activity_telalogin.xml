@@ -82,6 +82,18 @@
                 android:inputType="textPassword"/>
         </com.google.android.material.textfield.TextInputLayout>
 
+        <!-- ERRO INLINE (vermelho) -->
+        <TextView
+            android:id="@+id/tvLoginError"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="*E-mail ou senha incorretos"
+            android:textSize="12sp"
+            android:textColor="#DC2626"
+            android:visibility="gone"/>
+
+        <!-- Entrar -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnEntrar"
             android:layout_width="match_parent"
@@ -94,6 +106,7 @@
             app:backgroundTint="#FFF1B100"
             app:cornerRadius="26dp" />
 
+        <!-- Entrar com Google -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnGoogle"
             android:layout_width="match_parent"
