@@ -66,7 +66,7 @@ public class carrinho extends AppCompatActivity {
 
         tvTotal = findViewById(R.id.tvTotal);
 
-        // Carrega do storage central
+        // Carrega do storage central (preenchido pela tela de doealimentos)
         itens = CartStore.load(this);
 
         RecyclerView rv = findViewById(R.id.rvCarrinho);
@@ -79,7 +79,7 @@ public class carrinho extends AppCompatActivity {
 
         atualizarTotal();
 
-        // Voltar para o "menu"
+        // Voltar ao catálogo (doealimentos)
         View btnVoltarTopo = findViewById(R.id.btn_voltar);
         if (btnVoltarTopo != null) {
             btnVoltarTopo.setOnClickListener(v -> {
@@ -90,6 +90,7 @@ public class carrinho extends AppCompatActivity {
             });
         }
 
+        // Ir para o MENU (botão "Voltar" inferior)
         View btnVoltar = findViewById(R.id.btnVoltar);
         if (btnVoltar != null) {
             btnVoltar.setOnClickListener(v -> {
@@ -133,6 +134,6 @@ public class carrinho extends AppCompatActivity {
             Object v = p.getClass().getMethod("getQuantidade").invoke(p);
             if (v instanceof Number) return ((Number) v).intValue();
         } catch (Exception ignored) {}
-        return 1; // mude para 0 se preferir
+        return 1; // se preferir que itens sem quantidade não contem, mude para 0
     }
 }

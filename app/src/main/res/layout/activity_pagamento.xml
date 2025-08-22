@@ -106,15 +106,43 @@
                         android:layout_marginTop="16dp"
                         android:layout_gravity="center"/>
 
-                    <TextView
-                        android:id="@+id/tvPixExpira"
-                        android:layout_width="wrap_content"
+                    <!-- BLOCO DE CONTAGEM REGRESSIVA -->
+                    <LinearLayout
+                        android:id="@+id/timerBlock"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Este código expira em 20 minutos."
-                        android:textColor="#6B778C"
-                        android:textSize="12sp"
-                        android:layout_marginTop="2dp"
-                        android:layout_gravity="center"/>
+                        android:orientation="vertical"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center_horizontal">
+
+                        <TextView
+                            android:id="@+id/tvPixExpiraLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Expira em"
+                            android:textColor="#6B778C"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/tvCountdown"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="10:00"
+                            android:textStyle="bold"
+                            android:textSize="18sp"
+                            android:textColor="#1B1F3B"
+                            android:layout_marginTop="2dp" />
+
+                        <ProgressBar
+                            android:id="@+id/timeProgress"
+                            style="?android:attr/progressBarStyleHorizontal"
+                            android:layout_width="match_parent"
+                            android:layout_height="6dp"
+                            android:layout_marginTop="8dp"
+                            android:max="600"
+                            android:progress="600"
+                            android:indeterminate="false"/>
+                    </LinearLayout>
 
                     <!-- ÁREA DO QR CODE -->
                     <LinearLayout
@@ -180,6 +208,18 @@
 
                     </androidx.constraintlayout.widget.ConstraintLayout>
 
+                    <!-- Botão aparece somente se expirar enquanto a tela está aberta -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnGerarNovoPix"
+                        android:layout_width="match_parent"
+                        android:layout_height="46dp"
+                        android:layout_marginTop="12dp"
+                        android:text="Gerar novo PIX"
+                        android:textAllCaps="false"
+                        android:textStyle="bold"
+                        android:visibility="gone"
+                        app:backgroundTint="#EF4444"
+                        app:cornerRadius="14dp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

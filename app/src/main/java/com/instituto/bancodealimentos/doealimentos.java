@@ -83,9 +83,14 @@ public class doealimentos extends AppCompatActivity {
             finish();
         });
 
-        findViewById(R.id.btnContinuar).setOnClickListener(v ->
-                Toast.makeText(this, "Continuar com total: " + tvValorTotal.getText(), Toast.LENGTH_SHORT).show()
-        );
+        // *** FINALIZAR DOAÇÃO -> SALVA O CARRINHO E ABRE A TELA DE CARRINHO ***
+        findViewById(R.id.btnContinuar).setOnClickListener(v -> {
+            salvarCarrinhoLocal();
+            Intent it = new Intent(doealimentos.this, carrinho.class);
+            // se quiser limpar o histórico entre as telas, pode usar flags:
+            // it.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            startActivity(it);
+        });
 
         escutar();
     }
@@ -122,6 +127,30 @@ public class doealimentos extends AppCompatActivity {
             total += (p.getPreco() == null ? 0.0 : p.getPreco()) * qtd;
         }
         tvValorTotal.setText(Money.fmt(total));
+    }
+
+    /**
+     * Varre a lista + quantidades do adapter, monta a lista de itens selecionados
+     * e salva no storage central (CartStore) para o carrinho abrir populado.
+     */
+    private void salvarCarrinhoLocal() {
+        ArrayList<Produto> selecionados = new ArrayList<>();
+        for (int i = 0; i < lista.size(); i++) {
+            Produto p = lista.get(i);
+            int qtd = adapter.getQuantidadeByPosition(i);
+            if (qtd > 0) {
+                // cria uma cópia “leve” do produto e tenta setar a quantidade (se existir o setter)
+                Produto copy = new Produto(p.getId(), p.getNome(), p.getPreco(), p.getImagemUrl());
+                try {
+                    copy.getClass().getMethod("setQuantidade", int.class).invoke(copy, qtd);
+                } catch (Exception ignored) {
+                    // se sua classe Produto não tiver setQuantidade, pode ajustar o CartStore
+                    // para salvar a quantidade em paralelo (mas normalmente essa classe tem)
+                }
+                selecionados.add(copy);
+            }
+        }
+        CartStore.save(this, selecionados);
     }
 
     @Override protected void onDestroy() {
