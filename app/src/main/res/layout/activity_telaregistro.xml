@@ -118,11 +118,24 @@
                     android:inputType="textPassword"/>
             </com.google.android.material.textfield.TextInputLayout>
 
+            <!-- AVISO DE ERRO (início: invisível) -->
+            <TextView
+                android:id="@+id/tvAuthErrorRegister"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:layout_marginBottom="4dp"
+                android:text="*Este E-mail ja está sendo usado. Tente Fazer Login"
+                android:textColor="#DC2626"
+                android:textSize="12sp"
+                android:textStyle="italic"
+                android:visibility="gone"/>
+
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_login"
                 android:layout_width="match_parent"
                 android:layout_height="52dp"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="12dp"
                 android:text="Registrar-se"
                 android:textAllCaps="false"
                 android:textStyle="bold"

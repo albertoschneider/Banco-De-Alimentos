@@ -3,6 +3,7 @@ package com.instituto.bancodealimentos;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Patterns;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -24,6 +25,8 @@ import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthException;
+import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -37,6 +40,7 @@ public class telaregistro extends AppCompatActivity {
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
     private EditText edtNome, edtEmail, edtSenha, edtConfirmarSenha;
+    private TextView tvAuthErrorRegister;
 
     private GoogleSignInClient mGoogleSignInClient;
     private static final int RC_SIGN_IN = 9001;
@@ -60,6 +64,7 @@ public class telaregistro extends AppCompatActivity {
         edtEmail = findViewById(R.id.et_email);
         edtSenha = findViewById(R.id.et_password);
         edtConfirmarSenha = findViewById(R.id.et_confirm_password);
+        tvAuthErrorRegister = findViewById(R.id.tvAuthErrorRegister);
 
         ImageButton btnBack = findViewById(R.id.btn_back);
         TextView tvLoginHere = findViewById(R.id.tv_login_here);
@@ -68,7 +73,12 @@ public class telaregistro extends AppCompatActivity {
 
         btnBack.setOnClickListener(v -> startActivity(new Intent(this, MainActivity.class)));
         tvLoginHere.setOnClickListener(v -> startActivity(new Intent(this, telalogin.class)));
-        btnRegistrar.setOnClickListener(v -> registrarUsuarioEmailSenha());
+
+        btnRegistrar.setOnClickListener(v -> {
+            // Esconde o aviso antes de tentar
+            if (tvAuthErrorRegister != null) tvAuthErrorRegister.setVisibility(View.GONE);
+            registrarUsuarioEmailSenha();
+        });
 
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken(getString(R.string.default_web_client_id))
@@ -89,7 +99,25 @@ public class telaregistro extends AppCompatActivity {
         if (!senha.equals(confirmar)) { toast("As senhas não coincidem!"); return; }
 
         mAuth.createUserWithEmailAndPassword(email, senha).addOnCompleteListener(task -> {
-            if (!task.isSuccessful()) { toast("Erro no cadastro: " + (task.getException()!=null?task.getException().getMessage():"")); return; }
+            if (!task.isSuccessful()) {
+                // E-mail já em uso? → mostra o aviso em vermelho abaixo do confirmar senha
+                Throwable ex = task.getException();
+                if (ex instanceof FirebaseAuthUserCollisionException) {
+                    showEmailEmUso();
+                    return;
+                }
+                if (ex instanceof FirebaseAuthException) {
+                    String code = ((FirebaseAuthException) ex).getErrorCode();
+                    if ("ERROR_EMAIL_ALREADY_IN_USE".equalsIgnoreCase(code)) {
+                        showEmailEmUso();
+                        return;
+                    }
+                }
+                // Outros erros → mantém via Toast
+                toast("Erro no cadastro: " + (ex != null ? ex.getMessage() : ""));
+                return;
+            }
+
             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
             if (user == null) { toast("Erro inesperado: usuário nulo."); return; }
 
@@ -103,6 +131,13 @@ public class telaregistro extends AppCompatActivity {
                     .addOnSuccessListener(a -> checarAdminENavegar(uid))
                     .addOnFailureListener(e -> { toast("Erro ao salvar no banco: " + e.getMessage()); checarAdminENavegar(uid); });
         });
+    }
+
+    private void showEmailEmUso() {
+        if (tvAuthErrorRegister != null) {
+            tvAuthErrorRegister.setText("*Este E-mail ja está sendo usado. Tente Fazer Login");
+            tvAuthErrorRegister.setVisibility(View.VISIBLE);
+        }
     }
 
     @Override
@@ -119,25 +154,28 @@ public class telaregistro extends AppCompatActivity {
     }
 
     private void firebaseAuthWithGoogle(String idToken) {
-        AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
-        mAuth.signInWithCredential(credential).addOnCompleteListener(this, task -> {
-            if (!task.isSuccessful()) { toast("Falha na autenticação Firebase: " + (task.getException()!=null?task.getException().getMessage():"")); return; }
-            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-            if (user == null) { toast("Erro inesperado: usuário nulo."); return; }
+        mAuth.signInWithCredential(GoogleAuthProvider.getCredential(idToken, null))
+                .addOnCompleteListener(this, task -> {
+                    if (!task.isSuccessful()) {
+                        toast("Falha na autenticação Firebase: " + (task.getException()!=null?task.getException().getMessage():""));
+                        return;
+                    }
+                    FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                    if (user == null) { toast("Erro inesperado: usuário nulo."); return; }
 
-            String uid = user.getUid();
-            String nome = user.getDisplayName() != null ? user.getDisplayName() : "";
-            String email = user.getEmail() != null ? user.getEmail() : "";
+                    String uid = user.getUid();
+                    String nome = user.getDisplayName() != null ? user.getDisplayName() : "";
+                    String email = user.getEmail() != null ? user.getEmail() : "";
 
-            Map<String,Object> usuario = new HashMap<>();
-            usuario.put("nome", nome);
-            usuario.put("email", email);
-            usuario.put("createdAt", com.google.firebase.Timestamp.now());
+                    Map<String,Object> usuario = new HashMap<>();
+                    usuario.put("nome", nome);
+                    usuario.put("email", email);
+                    usuario.put("createdAt", com.google.firebase.Timestamp.now());
 
-            db.collection("usuarios").document(uid).set(usuario, com.google.firebase.firestore.SetOptions.merge())
-                    .addOnSuccessListener(a -> checarAdminENavegar(uid))
-                    .addOnFailureListener(e -> { toast("Erro ao salvar no banco: " + e.getMessage()); checarAdminENavegar(uid); });
-        });
+                    db.collection("usuarios").document(uid).set(usuario, com.google.firebase.firestore.SetOptions.merge())
+                            .addOnSuccessListener(a -> checarAdminENavegar(uid))
+                            .addOnFailureListener(e -> { toast("Erro ao salvar no banco: " + e.getMessage()); checarAdminENavegar(uid); });
+                });
     }
 
     private void checarAdminENavegar(String uid) {
