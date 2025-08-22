@@ -29,6 +29,7 @@ import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.auth.UserProfileChangeRequest;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -120,6 +121,11 @@ public class telaregistro extends AppCompatActivity {
 
             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
             if (user == null) { toast("Erro inesperado: usuário nulo."); return; }
+
+            user.updateProfile(new UserProfileChangeRequest.Builder()
+                    .setDisplayName(nome)
+                    .build()
+            );
 
             String uid = user.getUid();
             Map<String,Object> usuario = new HashMap<>();

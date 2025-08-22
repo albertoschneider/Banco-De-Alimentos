@@ -27,10 +27,18 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.bumptech.glide.Glide;
-import com.google.android.gms.auth.api.signin.*;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.material.button.MaterialButton;
-import com.google.firebase.auth.*;
+import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 public class configuracoes_google extends AppCompatActivity {
 
@@ -54,7 +62,7 @@ public class configuracoes_google extends AppCompatActivity {
                     GoogleSignInAccount acct = GoogleSignIn.getSignedInAccountFromIntent(data)
                             .getResult(ApiException.class);
                     String idToken = acct.getIdToken();
-                    if (idToken == null) { toast("Falha ao obter token do Google."); return; }
+                    if (idToken == null) { toast("Falha ao obter token do Google. Verifique o SHA-1/SHA-256 e o google-services.json."); return; }
                     AuthCredential cred = GoogleAuthProvider.getCredential(idToken, null);
                     user.reauthenticate(cred)
                             .addOnSuccessListener(unused -> {
@@ -71,16 +79,29 @@ public class configuracoes_google extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_configuracoes_google);
 
+        // Status bar amarela e ícones escuros
+        getWindow().setStatusBarColor(android.graphics.Color.parseColor("#FFF1B100"));
+        androidx.core.view.WindowInsetsControllerCompat c =
+                androidx.core.view.ViewCompat.getWindowInsetsController(getWindow().getDecorView());
+        if (c != null) c.setAppearanceLightStatusBars(true);
+
         auth = FirebaseAuth.getInstance();
         user = auth.getCurrentUser();
         if (user == null) { goToStart(); return; }
 
-        // Cliente Google
-        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestEmail()
-                .requestIdToken(getString(R.string.default_web_client_id))
-                .build();
-        googleClient = GoogleSignIn.getClient(this, gso);
+        // === GoogleSignInClient DINÂMICO (sem depender de R.string.default_web_client_id em compile-time) ===
+        String webClientId = getWebClientIdOrNull();
+        GoogleSignInOptions.Builder gsoBuilder =
+                new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                        .requestEmail();
+
+        if (webClientId != null && !webClientId.isEmpty()) {
+            gsoBuilder.requestIdToken(webClientId);
+        } else {
+            toast("Atenção: WEB CLIENT ID não encontrado nos recursos.\n" +
+                    "Adicione SHA-1/SHA-256 no Firebase e baixe o google-services.json atualizado.");
+        }
+        googleClient = GoogleSignIn.getClient(this, gsoBuilder.build());
 
         btn_voltar = findViewById(R.id.btn_voltar);
         imgFoto = findViewById(R.id.imgFoto);
@@ -89,7 +110,7 @@ public class configuracoes_google extends AppCompatActivity {
         btnDesconectarGoogle = findViewById(R.id.btnDesconectarGoogle);
         btnSairGoogle = findViewById(R.id.btnSairGoogle);
 
-        // Preenche
+        // Preenche (Auth)
         tvNome.setText(user.getDisplayName() != null ? user.getDisplayName() : "");
         tvEmail.setText(user.getEmail() != null ? user.getEmail() : "");
         Uri photo = user.getPhotoUrl();
@@ -99,9 +120,31 @@ public class configuracoes_google extends AppCompatActivity {
                 .circleCrop()
                 .into(imgFoto);
 
+        // Fallback: busca nome no Firestore se displayName veio vazio
+        FirebaseFirestore.getInstance()
+                .collection("usuarios")
+                .document(user.getUid())
+                .get()
+                .addOnSuccessListener(doc -> {
+                    CharSequence atual = tvNome.getText();
+                    boolean vazio = (atual == null || atual.toString().trim().isEmpty());
+                    if (vazio && doc != null && doc.exists()) {
+                        String nomeFS = doc.getString("nome");
+                        if (nomeFS != null && !nomeFS.trim().isEmpty()) {
+                            tvNome.setText(nomeFS);
+                        }
+                    }
+                });
+
         btn_voltar.setOnClickListener(v -> finish());
         btnDesconectarGoogle.setOnClickListener(v -> mostrarDialogDesvincular());
         btnSairGoogle.setOnClickListener(v -> mostrarDialogSairGoogle());
+    }
+
+    /** Busca o recurso gerado automaticamente pelo plugin (sem referenciar R.string em compile-time). */
+    private String getWebClientIdOrNull() {
+        int resId = getResources().getIdentifier("default_web_client_id", "string", getPackageName());
+        return (resId != 0) ? getString(resId) : null;
     }
 
     /* ===== POP-UP "Desvincular Google" (com checkbox) ===== */
@@ -319,8 +362,16 @@ public class configuracoes_google extends AppCompatActivity {
     }
 
     private void reauthWithGoogle() {
-        Intent it = googleClient.getSignInIntent();
-        reauthGoogleLauncher.launch(it);
+        // Garante que o client usado para reautenticar tenha requestIdToken se o recurso existir
+        String webClientId = getWebClientIdOrNull();
+        GoogleSignInOptions.Builder builder =
+                new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                        .requestEmail();
+        if (webClientId != null && !webClientId.isEmpty()) {
+            builder.requestIdToken(webClientId);
+        }
+        googleClient = GoogleSignIn.getClient(this, builder.build());
+        reauthGoogleLauncher.launch(googleClient.getSignInIntent());
     }
 
     /* ===== Utilidades ===== */

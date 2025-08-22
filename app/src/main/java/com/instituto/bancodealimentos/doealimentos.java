@@ -4,17 +4,14 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
-import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -40,43 +37,13 @@ public class doealimentos extends AppCompatActivity {
     @Override protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Edge-to-edge
-        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
-        getWindow().setStatusBarColor(Color.TRANSPARENT);
+        // Conteúdo fora da status bar e barra amarela
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), true);
+        getWindow().setStatusBarColor(Color.parseColor("#FFF1B100"));
+        WindowInsetsControllerCompat c = ViewCompat.getWindowInsetsController(getWindow().getDecorView());
+        if (c != null) c.setAppearanceLightStatusBars(true);
 
         setContentView(R.layout.activity_doealimentos);
-
-        // ---- Inset fix: usa MARGEM no header e no footer ----
-        final View header = findViewById(R.id.header);
-        final View footer = findViewById(R.id.footer);
-
-        ViewCompat.setOnApplyWindowInsetsListener(getWindow().getDecorView(), (v, insets) -> {
-            Insets sb = insets.getInsets(WindowInsetsCompat.Type.statusBars());
-            Insets nb = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
-
-            if (header != null) {
-                ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) header.getLayoutParams();
-                if (lp.topMargin != sb.top) {
-                    lp.topMargin = sb.top;
-                    header.setLayoutParams(lp);
-                }
-            }
-            if (footer != null) {
-                ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) footer.getLayoutParams();
-                if (lp.bottomMargin != nb.bottom) {
-                    lp.bottomMargin = nb.bottom;
-                    footer.setLayoutParams(lp);
-                }
-            }
-
-            // Ícones escuros na status bar (header claro)
-            WindowInsetsControllerCompat c = ViewCompat.getWindowInsetsController(getWindow().getDecorView());
-            if (c != null) c.setAppearanceLightStatusBars(true);
-
-            return insets;
-        });
-        ViewCompat.requestApplyInsets(getWindow().getDecorView());
-        // ------------------------------------------------------
 
         tvValorTotal = findViewById(R.id.tvValorTotal);
         recyclerView = findViewById(R.id.recyclerView);

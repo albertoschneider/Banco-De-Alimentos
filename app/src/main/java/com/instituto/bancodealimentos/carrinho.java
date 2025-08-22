@@ -4,22 +4,18 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Locale;
-
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowCompat;
-import androidx.core.view.WindowInsetsCompat;
-import androidx.core.view.WindowInsetsControllerCompat;
 
 public class carrinho extends AppCompatActivity {
 
@@ -33,38 +29,13 @@ public class carrinho extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
-        getWindow().setStatusBarColor(Color.TRANSPARENT);
+        // Conteúdo fora da status bar e barra amarela
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), true);
+        getWindow().setStatusBarColor(Color.parseColor("#FFF1B100"));
+        WindowInsetsControllerCompat c = ViewCompat.getWindowInsetsController(getWindow().getDecorView());
+        if (c != null) c.setAppearanceLightStatusBars(true);
+
         setContentView(R.layout.activity_carrinho);
-
-        final View header = findViewById(R.id.header);
-        final View footer = findViewById(R.id.footer);
-
-        // Inset fix: margem no topo e embaixo
-        ViewCompat.setOnApplyWindowInsetsListener(getWindow().getDecorView(), (v, insets) -> {
-            Insets sb = insets.getInsets(WindowInsetsCompat.Type.statusBars());
-            Insets nb = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
-
-            if (header != null) {
-                ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) header.getLayoutParams();
-                if (lp.topMargin != sb.top) {
-                    lp.topMargin = sb.top;
-                    header.setLayoutParams(lp);
-                }
-            }
-            if (footer != null) {
-                ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) footer.getLayoutParams();
-                if (lp.bottomMargin != nb.bottom) {
-                    lp.bottomMargin = nb.bottom;
-                    footer.setLayoutParams(lp);
-                }
-            }
-
-            WindowInsetsControllerCompat c = ViewCompat.getWindowInsetsController(getWindow().getDecorView());
-            if (c != null) c.setAppearanceLightStatusBars(true);
-            return insets;
-        });
-        ViewCompat.requestApplyInsets(getWindow().getDecorView());
 
         tvTotal = findViewById(R.id.tvTotal);
         tvErroVazio = findViewById(R.id.tvErroVazio);

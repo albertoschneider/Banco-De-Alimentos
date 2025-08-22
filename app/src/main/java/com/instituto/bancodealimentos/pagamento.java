@@ -8,19 +8,19 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
-import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.google.gson.Gson;
@@ -39,68 +39,78 @@ public class pagamento extends AppCompatActivity {
 
     private static final String PREFS = "MeuApp";
     private static final String KEY_CART = "carrinho";
+    private static final String KEY_PIX_EXPIRE_AT = "pix_expire_at"; // epoch millis
+    private static final long WINDOW_MS = 10 * 60 * 1000L; // 10 minutos
 
     private TextView tvTotalValue;
     private EditText etPixKey;
     private ImageView ivQrCode;
 
+    // timer
+    private TextView tvCountdown;
+    private ProgressBar timeProgress;
+    private View btnGerarNovoPix;
+
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private final Runnable tick = new Runnable() {
+        @Override public void run() {
+            long now = System.currentTimeMillis();
+            long exp = getSharedPreferences(PREFS, MODE_PRIVATE).getLong(KEY_PIX_EXPIRE_AT, 0L);
+            if (exp <= 0L) exp = now + WINDOW_MS; // segurança
+
+            long remainMs = exp - now;
+            if (remainMs <= 0) {
+                tvCountdown.setText("00:00");
+                timeProgress.setProgress(0);
+                btnGerarNovoPix.setVisibility(View.VISIBLE);
+                handler.removeCallbacks(this);
+                return;
+            }
+
+            int sec = (int) Math.ceil(remainMs / 1000.0);
+            int mm = sec / 60;
+            int ss = sec % 60;
+            tvCountdown.setText(String.format(Locale.getDefault(), "%02d:%02d", mm, ss));
+
+            if (timeProgress.getMax() != 600) timeProgress.setMax(600);
+            timeProgress.setProgress(sec);
+
+            handler.postDelayed(this, 1000);
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Edge-to-edge
-        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
-        getWindow().setStatusBarColor(Color.TRANSPARENT);
+        // Conteúdo fora da status bar e barra amarela
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), true);
         setContentView(R.layout.activity_pagamento);
+        getWindow().setStatusBarColor(Color.parseColor("#FFF1B100"));
+        WindowInsetsControllerCompat c = ViewCompat.getWindowInsetsController(getWindow().getDecorView());
+        if (c != null) c.setAppearanceLightStatusBars(true);
 
-        final View header = findViewById(R.id.header);
-        final View btnVoltarMenu = findViewById(R.id.btnVoltarMenu);
-
-        // Inset fix (margens)
-        ViewCompat.setOnApplyWindowInsetsListener(getWindow().getDecorView(), (v, insets) -> {
-            Insets sb = insets.getInsets(WindowInsetsCompat.Type.statusBars());
-            Insets nb = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
-
-            if (header != null) {
-                ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) header.getLayoutParams();
-                if (lp.topMargin != sb.top) {
-                    lp.topMargin = sb.top;
-                    header.setLayoutParams(lp);
-                }
-            }
-            if (btnVoltarMenu != null) {
-                ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) btnVoltarMenu.getLayoutParams();
-                if (lp.bottomMargin != nb.bottom + dp(0)) {
-                    lp.bottomMargin = nb.bottom; // já há 16dp no XML; aqui somamos só o inset
-                    btnVoltarMenu.setLayoutParams(lp);
-                }
-            }
-
-            WindowInsetsControllerCompat c = ViewCompat.getWindowInsetsController(getWindow().getDecorView());
-            if (c != null) c.setAppearanceLightStatusBars(true);
-            return insets;
-        });
-        ViewCompat.requestApplyInsets(getWindow().getDecorView());
-
-        tvTotalValue = findViewById(R.id.tvTotalValue);
-        etPixKey     = findViewById(R.id.etPixKey);
-        ivQrCode     = findViewById(R.id.ivQrCode);
+        tvTotalValue   = findViewById(R.id.tvTotalValue);
+        etPixKey       = findViewById(R.id.etPixKey);
+        ivQrCode       = findViewById(R.id.ivQrCode);
         ImageButton btnCopyPix = findViewById(R.id.btnCopyPix);
+
+        tvCountdown    = findViewById(R.id.tvCountdown);
+        timeProgress   = findViewById(R.id.timeProgress);
+        btnGerarNovoPix= findViewById(R.id.btnGerarNovoPix);
 
         // TOTAL
         double total = getTotal();
         NumberFormat br = NumberFormat.getCurrencyInstance(new Locale("pt", "BR"));
         tvTotalValue.setText(br.format(total));
 
-        // DADOS RECEBEDOR (strings.xml)
+        // Dados recebedor
         String chave  = getString(R.string.pix_key);
         String nome   = normalizeNameOrCity(getString(R.string.pix_nome), 25);
         String cidade = normalizeNameOrCity(getString(R.string.pix_cidade), 15);
 
-        // PAYLOAD PIX
         String valorStr = String.format(Locale.US, "%.2f", total);
         String txid = makeTxid();
-
         String payload = new PixPayloadBuilder()
                 .setChavePix(chave)
                 .setDescricao("Doacao BARC")
@@ -119,15 +129,53 @@ public class pagamento extends AppCompatActivity {
             Toast.makeText(this, "Chave PIX copiada!", Toast.LENGTH_SHORT).show();
         });
 
-        View backTop = findViewById(R.id.btn_voltar);
-        if (backTop != null) backTop.setOnClickListener(v -> finish());
+        View back = findViewById(R.id.btn_voltar);
+        if (back != null) back.setOnClickListener(v -> finish());
 
-        if (findViewById(R.id.btnVoltarMenu) != null) {
-            findViewById(R.id.btnVoltarMenu).setOnClickListener(v -> {
-                Intent intent = new Intent(pagamento.this, menu.class);
-                startActivity(intent);
-            });
+        View btnVoltarMenu = findViewById(R.id.btnVoltarMenu);
+        if (btnVoltarMenu != null) btnVoltarMenu.setOnClickListener(v -> {
+            startActivity(new Intent(pagamento.this, menu.class));
+        });
+
+        ensureExpireAt();
+
+        btnGerarNovoPix.setOnClickListener(v -> {
+            setNewExpireAt();
+            btnGerarNovoPix.setVisibility(View.GONE);
+            startTimerLoop();
+        });
+    }
+
+    @Override protected void onResume() {
+        super.onResume();
+        startTimerLoop();
+    }
+
+    @Override protected void onPause() {
+        super.onPause();
+        handler.removeCallbacks(tick);
+    }
+
+    private void ensureExpireAt() {
+        SharedPreferences sp = getSharedPreferences(PREFS, MODE_PRIVATE);
+        long exp = sp.getLong(KEY_PIX_EXPIRE_AT, 0L);
+        long now = System.currentTimeMillis();
+        if (exp <= now) {
+            setNewExpireAt();
         }
+    }
+
+    private void setNewExpireAt() {
+        long exp = System.currentTimeMillis() + WINDOW_MS;
+        getSharedPreferences(PREFS, MODE_PRIVATE)
+                .edit()
+                .putLong(KEY_PIX_EXPIRE_AT, exp)
+                .apply();
+    }
+
+    private void startTimerLoop() {
+        handler.removeCallbacks(tick);
+        handler.post(tick);
     }
 
     private double getTotal() {
@@ -198,7 +246,6 @@ public class pagamento extends AppCompatActivity {
         } catch (Exception ignored) {}
         return 0.0;
     }
-
     private int safeQtd(Produto p) {
         try {
             Object v = p.getClass().getMethod("getQuantidade").invoke(p);

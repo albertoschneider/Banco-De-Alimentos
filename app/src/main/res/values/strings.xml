@@ -19,7 +19,4 @@
     <string name="historico_subtitulo">Veja suas doações</string>
     <string name="historico_subtitulo_admin">Veja todas as doações realizadas pelos usuários do Aplicativo</string>
     <string name="voltar">Voltar</string>
-
-    <!-- ATENÇÃO: use o CLIENT WEB (type 3) do google-services.json -->
-    <string name="default_web_client_id">603787073561-i6d78b6r8u284hvc91davf738n0bceu3.apps.googleusercontent.com</string>
 </resources>

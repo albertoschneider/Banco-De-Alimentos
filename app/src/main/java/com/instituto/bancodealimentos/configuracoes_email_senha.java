@@ -56,13 +56,12 @@ public class configuracoes_email_senha extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_configuracoes_email_senha);
 
-        View header = findViewById(R.id.header);
-        ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
-            Insets sb = insets.getInsets(WindowInsetsCompat.Type.statusBars());
-            v.setPadding(v.getPaddingLeft(), v.getPaddingTop() + sb.top, v.getPaddingRight(), v.getPaddingBottom());
-            return insets;
+        getWindow().setStatusBarColor(Color.parseColor("#FFF1B100"));
+        getWindow().getDecorView().post(() -> {
+            androidx.core.view.WindowInsetsControllerCompat c =
+                    androidx.core.view.ViewCompat.getWindowInsetsController(getWindow().getDecorView());
+            if (c != null) c.setAppearanceLightStatusBars(true);
         });
-        ViewCompat.requestApplyInsets(header);
 
         auth = FirebaseAuth.getInstance();
         user = auth.getCurrentUser();
@@ -90,8 +89,25 @@ public class configuracoes_email_senha extends AppCompatActivity {
     }
 
     private void preencherDados() {
-        if (user.getDisplayName() != null) edtNome.setText(user.getDisplayName());
-        if (user.getEmail() != null)       edtEmail.setText(user.getEmail());
+        String nomeAuth = user.getDisplayName();
+        if (nomeAuth != null && !nomeAuth.trim().isEmpty()) {
+            edtNome.setText(nomeAuth);
+        } else {
+            FirebaseFirestore.getInstance()
+                    .collection("usuarios")
+                    .document(user.getUid())
+                    .get()
+                    .addOnSuccessListener(doc -> {
+                        if (doc != null && doc.exists()) {
+                            String nomeFS = doc.getString("nome");
+                            if (nomeFS != null && !nomeFS.trim().isEmpty()) {
+                                edtNome.setText(nomeFS);
+                            }
+                        }
+                    });
+        }
+
+        if (user.getEmail() != null) edtEmail.setText(user.getEmail());
         edtSenha.setText("");
     }
 
