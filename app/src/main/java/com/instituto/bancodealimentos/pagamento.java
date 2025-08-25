@@ -6,7 +6,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -19,9 +18,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowCompat;
-import androidx.core.view.WindowInsetsControllerCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -46,7 +45,6 @@ public class pagamento extends AppCompatActivity {
     private EditText etPixKey;
     private ImageView ivQrCode;
 
-    // timer
     private TextView tvCountdown;
     private ProgressBar timeProgress;
     private View btnGerarNovoPix;
@@ -56,7 +54,7 @@ public class pagamento extends AppCompatActivity {
         @Override public void run() {
             long now = System.currentTimeMillis();
             long exp = getSharedPreferences(PREFS, MODE_PRIVATE).getLong(KEY_PIX_EXPIRE_AT, 0L);
-            if (exp <= 0L) exp = now + WINDOW_MS; // segurança
+            if (exp <= 0L) exp = now + WINDOW_MS;
 
             long remainMs = exp - now;
             if (remainMs <= 0) {
@@ -82,13 +80,18 @@ public class pagamento extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // Conteúdo fora da status bar e barra amarela
-        WindowCompat.setDecorFitsSystemWindows(getWindow(), true);
         setContentView(R.layout.activity_pagamento);
-        getWindow().setStatusBarColor(Color.parseColor("#FFF1B100"));
-        WindowInsetsControllerCompat c = ViewCompat.getWindowInsetsController(getWindow().getDecorView());
-        if (c != null) c.setAppearanceLightStatusBars(true);
+
+        // Header com o MESMO tratamento de insets da tela de Pontos de Coleta
+        View header = findViewById(R.id.header);
+        if (header != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
+                Insets sb = insets.getInsets(WindowInsetsCompat.Type.statusBars());
+                v.setPadding(v.getPaddingLeft(), sb.top, v.getPaddingRight(), v.getPaddingBottom());
+                return insets;
+            });
+            ViewCompat.requestApplyInsets(header);
+        }
 
         tvTotalValue   = findViewById(R.id.tvTotalValue);
         etPixKey       = findViewById(R.id.etPixKey);
@@ -99,12 +102,10 @@ public class pagamento extends AppCompatActivity {
         timeProgress   = findViewById(R.id.timeProgress);
         btnGerarNovoPix= findViewById(R.id.btnGerarNovoPix);
 
-        // TOTAL
         double total = getTotal();
         NumberFormat br = NumberFormat.getCurrencyInstance(new Locale("pt", "BR"));
         tvTotalValue.setText(br.format(total));
 
-        // Dados recebedor
         String chave  = getString(R.string.pix_key);
         String nome   = normalizeNameOrCity(getString(R.string.pix_nome), 25);
         String cidade = normalizeNameOrCity(getString(R.string.pix_cidade), 15);
@@ -214,7 +215,7 @@ public class pagamento extends AppCompatActivity {
 
     private static String removeAccents(String s) {
         String norm = Normalizer.normalize(s, Normalizer.Form.NFD);
-        return Pattern.compile("\\p{InCombiningDiacriticalMarks}+").matcher(norm).replaceAll("");
+        return java.util.regex.Pattern.compile("\\p{InCombiningDiacriticalMarks}+").matcher(norm).replaceAll("");
     }
 
     private void gerarQr(String text, int sizePx) {
@@ -246,6 +247,7 @@ public class pagamento extends AppCompatActivity {
         } catch (Exception ignored) {}
         return 0.0;
     }
+
     private int safeQtd(Produto p) {
         try {
             Object v = p.getClass().getMethod("getQuantidade").invoke(p);

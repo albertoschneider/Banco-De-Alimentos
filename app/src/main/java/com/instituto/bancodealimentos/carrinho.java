@@ -1,15 +1,14 @@
 package com.instituto.bancodealimentos;
 
 import android.content.Intent;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowCompat;
-import androidx.core.view.WindowInsetsControllerCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -28,19 +27,23 @@ public class carrinho extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // Conteúdo fora da status bar e barra amarela
-        WindowCompat.setDecorFitsSystemWindows(getWindow(), true);
-        getWindow().setStatusBarColor(Color.parseColor("#FFF1B100"));
-        WindowInsetsControllerCompat c = ViewCompat.getWindowInsetsController(getWindow().getDecorView());
-        if (c != null) c.setAppearanceLightStatusBars(true);
-
         setContentView(R.layout.activity_carrinho);
+
+        // Header com o MESMO tratamento de insets
+        View header = findViewById(R.id.header);
+        if (header != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
+                Insets sb = insets.getInsets(WindowInsetsCompat.Type.statusBars());
+                v.setPadding(v.getPaddingLeft(), sb.top, v.getPaddingRight(), v.getPaddingBottom());
+                return insets;
+            });
+            ViewCompat.requestApplyInsets(header);
+        }
 
         tvTotal = findViewById(R.id.tvTotal);
         tvErroVazio = findViewById(R.id.tvErroVazio);
 
-        itens = CartStore.load(this);
+        itens = CartStore.load(this); // mantém sua persistência
 
         RecyclerView rv = findViewById(R.id.rvCarrinho);
         rv.setLayoutManager(new LinearLayoutManager(this));
@@ -69,6 +72,24 @@ public class carrinho extends AppCompatActivity {
                 i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
                 startActivity(i);
                 finish();
+            });
+        }
+
+        View btnLimpar = findViewById(R.id.btnLimpar);
+        if (btnLimpar != null) {
+            btnLimpar.setOnClickListener(v -> {
+                // zera quantidades (ou limpa lista, conforme sua modelagem)
+                try {
+                    for (Produto p : itens) {
+                        p.setQuantidade(0);
+                    }
+                } catch (Exception e) {
+                    // fallback: limpa a lista
+                    itens.clear();
+                }
+                CartStore.save(this, itens);
+                adapter.notifyDataSetChanged();
+                atualizarTotal();
             });
         }
 

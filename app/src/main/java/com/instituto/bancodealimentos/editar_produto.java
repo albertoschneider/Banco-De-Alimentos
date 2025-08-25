@@ -2,7 +2,6 @@ package com.instituto.bancodealimentos;
 
 import android.net.Uri;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Toast;
@@ -10,6 +9,7 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.bumptech.glide.Glide;
@@ -33,7 +33,7 @@ public class editar_produto extends AppCompatActivity {
 
     private ImageView imgProduto;
     private TextInputEditText etNome, etPreco;
-    private MaterialButton btnSalvar;
+    private MaterialButton btnSalvar, btnExcluir;
 
     private String produtoId;
     private String imagemUrlAtual;
@@ -51,13 +51,15 @@ public class editar_produto extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_editar_produto);
 
-        View header = findViewById(R.id.header); // o ConstraintLayout do topo
-        ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
-            Insets sb = insets.getInsets(WindowInsetsCompat.Type.statusBars());
-            v.setPadding(v.getPaddingLeft(), v.getPaddingTop() + sb.top, v.getPaddingRight(), v.getPaddingBottom());
-            return insets;
-        });
-        ViewCompat.requestApplyInsets(header);
+        android.view.View header = findViewById(R.id.header);
+        if (header != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
+                Insets sb = insets.getInsets(WindowInsetsCompat.Type.statusBars());
+                v.setPadding(v.getPaddingLeft(), sb.top, v.getPaddingRight(), v.getPaddingBottom());
+                return insets;
+            });
+            ViewCompat.requestApplyInsets(header);
+        }
 
         ImageButton back = findViewById(R.id.btn_voltar);
         if (back != null) back.setOnClickListener(v -> onBackPressed());
@@ -66,6 +68,7 @@ public class editar_produto extends AppCompatActivity {
         etNome = findViewById(R.id.etNome);
         etPreco = findViewById(R.id.etPreco);
         btnSalvar = findViewById(R.id.btnSalvar);
+        btnExcluir = findViewById(R.id.btnExcluir);
 
         findViewById(R.id.btn_editar_imagem).setOnClickListener(v -> pickImage.launch("image/*"));
 
@@ -79,6 +82,15 @@ public class editar_produto extends AppCompatActivity {
         carregar();
 
         btnSalvar.setOnClickListener(v -> salvar());
+
+        btnExcluir.setOnClickListener(v -> {
+            new AlertDialog.Builder(this)
+                    .setTitle("Excluir produto")
+                    .setMessage("Tem certeza que deseja excluir este produto?")
+                    .setPositiveButton("Excluir", (d, w) -> excluirProduto())
+                    .setNegativeButton("Cancelar", null)
+                    .show();
+        });
     }
 
     private void carregar() {
@@ -93,15 +105,17 @@ public class editar_produto extends AppCompatActivity {
         imagemUrlAtual = d.getString("imagemUrl");
 
         if (nome != null) etNome.setText(nome);
-        if (preco != null) etPreco.setText(String.format(java.util.Locale.US, "%.2f", preco).replace(".", ","));
+        if (preco != null) etPreco.setText(formatBR(preco));
         if (imagemUrlAtual != null && !imagemUrlAtual.isEmpty())
             Glide.with(this).load(imagemUrlAtual).into(imgProduto);
-        else imgProduto.setImageResource(android.R.color.darker_gray);
+        else
+            imgProduto.setImageResource(android.R.color.darker_gray);
     }
 
     private void salvar() {
         String nome = text(etNome);
-        double preco = Money.parse(text(etPreco));
+        double preco = parsePrecoBR(text(etPreco));
+
         if (nome.isEmpty()) { etNome.setError("Informe o nome"); return; }
         if (preco <= 0) { etPreco.setError("Informe um preço válido"); return; }
 
@@ -123,11 +137,25 @@ public class editar_produto extends AppCompatActivity {
         }
     }
 
+    private void excluirProduto() {
+        btnExcluir.setEnabled(false);
+        FirebaseFirestore.getInstance().collection("produtos").document(produtoId)
+                .delete()
+                .addOnSuccessListener(v -> {
+                    Toast.makeText(this, "Produto excluído!", Toast.LENGTH_SHORT).show();
+                    finish();
+                })
+                .addOnFailureListener(e -> {
+                    btnExcluir.setEnabled(true);
+                    Toast.makeText(this, "Erro ao excluir: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                });
+    }
+
     private void updateFirestore(String nome, double preco, String imagemUrl) {
         Map<String,Object> up = new HashMap<>();
         up.put("nome", nome);
         up.put("preco", preco);
-        if (imagemUrl != null) up.put("imagemUrl", imagemUrl);
+        if (imagemUrl != null && !imagemUrl.isEmpty()) up.put("imagemUrl", imagemUrl);
         up.put("atualizadoEm", FieldValue.serverTimestamp());
 
         FirebaseFirestore.getInstance().collection("produtos").document(produtoId)
@@ -144,5 +172,16 @@ public class editar_produto extends AppCompatActivity {
 
     private String text(TextInputEditText et) {
         return et.getText() == null ? "" : et.getText().toString().trim();
+    }
+
+    // "R$ 5,00" / "5,00" / "5.00" -> double
+    private double parsePrecoBR(String s) {
+        if (s == null) return 0.0;
+        s = s.replace("R$", "").replace(" ", "").replace(".", "").replace(",", ".");
+        try { return Double.parseDouble(s); } catch (Exception e) { return 0.0; }
+    }
+
+    private String formatBR(double v) {
+        return String.format(java.util.Locale.forLanguageTag("pt-BR"), "%.2f", v).replace(".", ",");
     }
 }

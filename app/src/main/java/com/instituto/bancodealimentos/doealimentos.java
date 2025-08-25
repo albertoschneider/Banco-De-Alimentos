@@ -10,8 +10,10 @@ import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -37,13 +39,25 @@ public class doealimentos extends AppCompatActivity {
     @Override protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Conteúdo fora da status bar e barra amarela
+        // (opcional) manter a status bar amarela e ícones escuros
         WindowCompat.setDecorFitsSystemWindows(getWindow(), true);
         getWindow().setStatusBarColor(Color.parseColor("#FFF1B100"));
         WindowInsetsControllerCompat c = ViewCompat.getWindowInsetsController(getWindow().getDecorView());
         if (c != null) c.setAppearanceLightStatusBars(true);
 
         setContentView(R.layout.activity_doealimentos);
+
+        // >>> EXATAMENTE como no Pontos de Coleta: aplica o paddingTop da status bar no header
+        View header = findViewById(R.id.header);
+        if (header != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
+                Insets sb = insets.getInsets(WindowInsetsCompat.Type.statusBars());
+                v.setPadding(v.getPaddingLeft(), sb.top, v.getPaddingRight(), v.getPaddingBottom());
+                return insets;
+            });
+            ViewCompat.requestApplyInsets(header);
+        }
+        // <<<
 
         tvValorTotal = findViewById(R.id.tvValorTotal);
         recyclerView = findViewById(R.id.recyclerView);

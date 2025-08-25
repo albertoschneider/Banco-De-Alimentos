@@ -4,10 +4,13 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.bumptech.glide.Glide;
 
 import java.text.NumberFormat;
 import java.util.HashMap;
@@ -22,8 +25,7 @@ public class CarrinhoAdapter extends RecyclerView.Adapter<CarrinhoAdapter.VH> {
     private final OnChangeListener listener;
     private final NumberFormat br = NumberFormat.getCurrencyInstance(new Locale("pt","BR"));
 
-    // Cache local de quantidades, caso Produto não tenha get/setQuantidade()
-    // Chave: id do produto (via getId()); se não houver, usa posição.
+    // Cache local de quantidades (se Produto não tiver get/setQuantidade)
     private final Map<String, Integer> qtdLocal = new HashMap<>();
 
     public CarrinhoAdapter(List<Produto> itens, OnChangeListener l) {
@@ -32,20 +34,24 @@ public class CarrinhoAdapter extends RecyclerView.Adapter<CarrinhoAdapter.VH> {
     }
 
     static class VH extends RecyclerView.ViewHolder {
+        ImageView ivFoto;
         TextView tvNome, tvPreco, tvQtd;
-        ImageButton btnMenos, btnMais;
+        ImageButton btnMenos, btnMais, btnRemover;
         VH(@NonNull View v) {
             super(v);
-            tvNome  = v.findViewById(R.id.tvNome);
-            tvPreco = v.findViewById(R.id.tvPreco);
-            tvQtd   = v.findViewById(R.id.tvQtd);
-            btnMenos= v.findViewById(R.id.btnMenos);
-            btnMais = v.findViewById(R.id.btnMais);
+            ivFoto     = v.findViewById(R.id.ivFoto);
+            tvNome     = v.findViewById(R.id.tvNome);
+            tvPreco    = v.findViewById(R.id.tvPreco);
+            tvQtd      = v.findViewById(R.id.tvQtd);
+            btnMenos   = v.findViewById(R.id.btnMenos);
+            btnMais    = v.findViewById(R.id.btnMais);
+            btnRemover = v.findViewById(R.id.btnRemover);
         }
     }
 
     @NonNull @Override public VH onCreateViewHolder(@NonNull ViewGroup p, int vt) {
-        View v = LayoutInflater.from(p.getContext()).inflate(R.layout.row_cart_item, p, false);
+        // ✅ Usa SEMPRE o layout correto do item do carrinho
+        View v = LayoutInflater.from(p.getContext()).inflate(R.layout.item_carrinho, p, false);
         return new VH(v);
     }
 
@@ -54,6 +60,14 @@ public class CarrinhoAdapter extends RecyclerView.Adapter<CarrinhoAdapter.VH> {
 
         h.tvNome.setText(safeNome(p));
         h.tvPreco.setText(br.format(safePreco(p)));
+
+        // Thumb do produto
+        Glide.with(h.ivFoto.getContext())
+                .load(safeImagemUrl(p))
+                .placeholder(R.drawable.bg_thumb_round)
+                .error(R.drawable.bg_thumb_round)
+                .centerCrop()
+                .into(h.ivFoto);
 
         int qtd = getQtd(position, p);
         h.tvQtd.setText(String.valueOf(qtd));
@@ -77,36 +91,43 @@ public class CarrinhoAdapter extends RecyclerView.Adapter<CarrinhoAdapter.VH> {
                 setQtd(pos, x, atual - 1);
                 notifyItemChanged(pos);
             } else {
-                itens.remove(pos);
-                // também remove do cache local
-                qtdLocal.remove(key(pos, x));
-                notifyItemRemoved(pos);
+                // Se quantidade cair para 0, remove item
+                removeAt(pos, x);
             }
+            if (listener != null) listener.onChanged();
+        });
+
+        h.btnRemover.setOnClickListener(v -> {
+            int pos = h.getBindingAdapterPosition();
+            if (pos == RecyclerView.NO_POSITION) return;
+            removeAt(pos, itens.get(pos));
             if (listener != null) listener.onChanged();
         });
     }
 
     @Override public int getItemCount() { return itens.size(); }
 
+    // ------- remoção helper -------
+    private void removeAt(int pos, Produto x) {
+        itens.remove(pos);
+        qtdLocal.remove(key(pos, x));
+        notifyItemRemoved(pos);
+    }
+
     // -------- helpers de compatibilidade --------
     private String key(int position, Produto p) {
-        // tenta id do produto
         try {
             Object v = p.getClass().getMethod("getId").invoke(p);
             if (v != null) return String.valueOf(v);
         } catch (Exception ignored) {}
-        // fallback: posição + hash
         return position + "_" + System.identityHashCode(p);
     }
 
     private int getQtd(int position, Produto p) {
-        // tenta getQuantidade()
         try {
             Object v = p.getClass().getMethod("getQuantidade").invoke(p);
             if (v instanceof Number) return Math.max(1, ((Number) v).intValue());
         } catch (Exception ignored) {}
-
-        // usa cache local
         String k = key(position, p);
         Integer q = qtdLocal.get(k);
         if (q == null || q < 1) {
@@ -117,12 +138,10 @@ public class CarrinhoAdapter extends RecyclerView.Adapter<CarrinhoAdapter.VH> {
     }
 
     private void setQtd(int position, Produto p, int nova) {
-        // tenta setQuantidade(int)
         try {
             p.getClass().getMethod("setQuantidade", int.class).invoke(p, nova);
-            return; // se deu certo, não precisa cache
+            return;
         } catch (Exception ignored) {}
-        // cache local
         qtdLocal.put(key(position, p), Math.max(1, nova));
     }
 
@@ -140,5 +159,13 @@ public class CarrinhoAdapter extends RecyclerView.Adapter<CarrinhoAdapter.VH> {
             if (v instanceof Number) return ((Number) v).doubleValue();
         } catch (Exception ignored) {}
         return 0.0;
+    }
+
+    private String safeImagemUrl(Produto p) {
+        try {
+            Object v = p.getClass().getMethod("getImagemUrl").invoke(p);
+            if (v != null) return String.valueOf(v);
+        } catch (Exception ignored) {}
+        return null;
     }
 }

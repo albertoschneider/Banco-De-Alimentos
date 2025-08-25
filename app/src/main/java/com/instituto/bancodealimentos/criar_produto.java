@@ -2,7 +2,6 @@ package com.instituto.bancodealimentos;
 
 import android.net.Uri;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Toast;
@@ -52,13 +51,15 @@ public class criar_produto extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_criar_produto);
 
-        View header = findViewById(R.id.header); // o ConstraintLayout do topo
-        ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
-            Insets sb = insets.getInsets(WindowInsetsCompat.Type.statusBars());
-            v.setPadding(v.getPaddingLeft(), v.getPaddingTop() + sb.top, v.getPaddingRight(), v.getPaddingBottom());
-            return insets;
-        });
-        ViewCompat.requestApplyInsets(header);
+        android.view.View header = findViewById(R.id.header);
+        if (header != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
+                Insets sb = insets.getInsets(WindowInsetsCompat.Type.statusBars());
+                v.setPadding(v.getPaddingLeft(), sb.top, v.getPaddingRight(), v.getPaddingBottom());
+                return insets;
+            });
+            ViewCompat.requestApplyInsets(header);
+        }
 
         ImageButton back = findViewById(R.id.btn_voltar);
         if (back != null) back.setOnClickListener(v -> onBackPressed());
@@ -93,7 +94,7 @@ public class criar_produto extends AppCompatActivity {
                             }
                         });
             } else {
-                salvar(nome, preco, imagemUrl); // imagemUrl pode ser null (produto sem imagem)
+                salvar(nome, preco, imagemUrl); // imagemUrl pode ser null
             }
         });
     }
