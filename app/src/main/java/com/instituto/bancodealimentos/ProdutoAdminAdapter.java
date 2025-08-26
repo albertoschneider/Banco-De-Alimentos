@@ -41,6 +41,10 @@ public class ProdutoAdminAdapter extends RecyclerView.Adapter<ProdutoAdminAdapte
             Glide.with(h.img.getContext()).load(p.getImagemUrl()).into(h.img);
         else h.img.setImageResource(android.R.color.darker_gray);
 
+        // Clique no card inteiro (itemView), não apenas no lápis
+        h.itemView.setOnClickListener(v -> onEdit.onEdit(p));
+
+        // Opcional: se quiser manter também no botão lápis
         h.btnEdit.setOnClickListener(v -> onEdit.onEdit(p));
     }
 

@@ -22,6 +22,11 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.functions.FirebaseFunctions;
+import com.google.firebase.functions.HttpsCallableResult;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.google.zxing.WriterException;
@@ -31,8 +36,9 @@ import java.lang.reflect.Type;
 import java.text.Normalizer;
 import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Locale;
-import java.util.regex.Pattern;
+import java.util.Map;
 
 public class pagamento extends AppCompatActivity {
 
@@ -49,6 +55,11 @@ public class pagamento extends AppCompatActivity {
     private ProgressBar timeProgress;
     private View btnGerarNovoPix;
 
+    // Backend / listener
+    private final FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private ListenerRegistration pagamentoListener;
+    private String pagamentoIdAtual;
+
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Runnable tick = new Runnable() {
         @Override public void run() {
@@ -60,7 +71,7 @@ public class pagamento extends AppCompatActivity {
             if (remainMs <= 0) {
                 tvCountdown.setText("00:00");
                 timeProgress.setProgress(0);
-                btnGerarNovoPix.setVisibility(View.VISIBLE);
+                if (btnGerarNovoPix != null) btnGerarNovoPix.setVisibility(View.VISIBLE);
                 handler.removeCallbacks(this);
                 return;
             }
@@ -82,7 +93,7 @@ public class pagamento extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pagamento);
 
-        // Header com o MESMO tratamento de insets da tela de Pontos de Coleta
+        // Header com insets
         View header = findViewById(R.id.header);
         if (header != null) {
             ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
@@ -106,6 +117,158 @@ public class pagamento extends AppCompatActivity {
         NumberFormat br = NumberFormat.getCurrencyInstance(new Locale("pt", "BR"));
         tvTotalValue.setText(br.format(total));
 
+        View back = findViewById(R.id.btn_voltar);
+        if (back != null) back.setOnClickListener(v -> finish());
+
+        View btnVoltarMenu = findViewById(R.id.btnVoltarMenu);
+        if (btnVoltarMenu != null) btnVoltarMenu.setOnClickListener(v -> {
+            startActivity(new Intent(pagamento.this, menu.class));
+        });
+
+        // Cria (ou renova) a cobrança NO BACKEND:
+        criarOuRenovarCobranca(total, /*orderId*/ null);
+
+        btnCopyPix.setOnClickListener(v -> {
+            CharSequence payload = etPixKey.getText();
+            if (payload == null || payload.toString().isEmpty()) return;
+            ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+            cm.setPrimaryClip(ClipData.newPlainText("PIX", payload));
+            Toast.makeText(this, "Chave PIX copiada!", Toast.LENGTH_SHORT).show();
+        });
+
+        if (btnGerarNovoPix != null) {
+            btnGerarNovoPix.setOnClickListener(v -> {
+                double totalAtual = getTotal();
+                criarOuRenovarCobranca(totalAtual, /*orderId*/ null);
+            });
+        }
+    }
+
+    @Override protected void onResume() {
+        super.onResume();
+        startTimerLoop();
+    }
+
+    @Override protected void onPause() {
+        super.onPause();
+        handler.removeCallbacks(tick);
+    }
+
+    @Override protected void onDestroy() {
+        if (pagamentoListener != null) pagamentoListener.remove();
+        handler.removeCallbacks(tick);
+        super.onDestroy();
+    }
+
+    // ===================== COBRANÇA | BACKEND + LISTENER =====================
+
+    private void criarOuRenovarCobranca(double total, String orderId) {
+        // Limpa listener antigo (se existir)
+        if (pagamentoListener != null) {
+            pagamentoListener.remove();
+            pagamentoListener = null;
+        }
+        pagamentoIdAtual = null;
+
+        // Chama a Cloud Function
+        Map<String, Object> data = new HashMap<>();
+        data.put("valor", total);
+        if (orderId != null) data.put("orderId", orderId);
+
+        FirebaseFunctions.getInstance()
+                .getHttpsCallable("criarCobranca")
+                .call(data)
+                .addOnSuccessListener(this::onCobrancaCriada)
+                .addOnFailureListener(err -> {
+                    // ---- FALLBACK LOCAL ----
+                    fallbackLocal(total);
+                });
+    }
+
+    private void onCobrancaCriada(HttpsCallableResult res) {
+        @SuppressWarnings("unchecked")
+        Map<String, Object> r = (Map<String, Object>) res.getData();
+        if (r == null) {
+            Toast.makeText(this, "Erro ao criar cobrança", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        // pagamentoId para observar status no Firestore
+        pagamentoIdAtual = asString(r.get("pagamentoId"));
+        String payload = asString(r.get("qrCodePayload"));
+
+        // Calcula expiração (preferindo millis numérico; senão, ISO 8601)
+        long expMillis = System.currentTimeMillis() + WINDOW_MS;
+
+        Object expNum = r.get("expiresAtMillis");
+        if (expNum instanceof Number) {
+            expMillis = ((Number) expNum).longValue();
+        } else {
+            String expiresAtIso = asString(r.get("expiresAt"));
+            if (expiresAtIso != null && !expiresAtIso.isEmpty()) {
+                try {
+                    if (android.os.Build.VERSION.SDK_INT >= 26) {
+                        expMillis = java.time.Instant.parse(expiresAtIso).toEpochMilli();
+                    } else {
+                        // Suporta "Z" e offsets com dois pontos no final
+                        String s = expiresAtIso;
+                        if (s.endsWith("Z")) s = s.substring(0, s.length() - 1) + "+0000";
+                        s = s.replaceFirst("([\\+\\-]\\d{2}):(\\d{2})$", "$1$2");
+                        java.text.SimpleDateFormat f =
+                                new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", java.util.Locale.US);
+                        expMillis = f.parse(s).getTime();
+                    }
+                } catch (Exception ignore) {
+                    // mantém expMillis como agora + 10min
+                }
+            }
+        }
+
+        getSharedPreferences(PREFS, MODE_PRIVATE)
+                .edit().putLong(KEY_PIX_EXPIRE_AT, expMillis).apply();
+
+        // Preenche UI
+        etPixKey.setText(payload);
+        gerarQr(payload, dp(220));
+        if (btnGerarNovoPix != null) btnGerarNovoPix.setVisibility(View.GONE);
+        startTimerLoop();
+
+        // Começa a observar o doc até virar PAGO / EXPIRADO
+        if (pagamentoIdAtual != null && !pagamentoIdAtual.isEmpty()) {
+            observarPagamento(pagamentoIdAtual);
+        }
+    }
+
+    private void observarPagamento(String pagamentoId) {
+        if (pagamentoListener != null) pagamentoListener.remove();
+
+        pagamentoListener = db.collection("pagamentos").document(pagamentoId)
+                .addSnapshotListener((snap, e) -> {
+                    if (e != null || snap == null || !snap.exists()) return;
+
+                    String status = snap.getString("status");
+                    if ("PAGO".equalsIgnoreCase(status)) {
+                        handler.removeCallbacks(tick);
+
+                        Double v = snap.getDouble("valor");
+                        Timestamp paidAt = snap.getTimestamp("paidAt");
+
+                        Intent i = new Intent(this, pedido_pago.class);
+                        i.putExtra("pagamentoId", snap.getId());
+                        if (v != null) i.putExtra("valor", v);
+                        if (paidAt != null) i.putExtra("paidAtMillis", paidAt.toDate().getTime());
+                        startActivity(i);
+                        finish();
+                    } else if ("EXPIRADO".equalsIgnoreCase(status)) {
+                        if (btnGerarNovoPix != null) btnGerarNovoPix.setVisibility(View.VISIBLE);
+                        Toast.makeText(this, "Pagamento expirado. Gere um novo QR.", Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    // ===================== FALLBACK LOCAL (sem backend) =====================
+
+    private void fallbackLocal(double total) {
         String chave  = getString(R.string.pix_key);
         String nome   = normalizeNameOrCity(getString(R.string.pix_nome), 25);
         String cidade = normalizeNameOrCity(getString(R.string.pix_cidade), 15);
@@ -124,55 +287,21 @@ public class pagamento extends AppCompatActivity {
         etPixKey.setText(payload);
         gerarQr(payload, dp(220));
 
-        btnCopyPix.setOnClickListener(v -> {
-            ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-            cm.setPrimaryClip(ClipData.newPlainText("PIX", payload));
-            Toast.makeText(this, "Chave PIX copiada!", Toast.LENGTH_SHORT).show();
-        });
-
-        View back = findViewById(R.id.btn_voltar);
-        if (back != null) back.setOnClickListener(v -> finish());
-
-        View btnVoltarMenu = findViewById(R.id.btnVoltarMenu);
-        if (btnVoltarMenu != null) btnVoltarMenu.setOnClickListener(v -> {
-            startActivity(new Intent(pagamento.this, menu.class));
-        });
-
-        ensureExpireAt();
-
-        btnGerarNovoPix.setOnClickListener(v -> {
-            setNewExpireAt();
-            btnGerarNovoPix.setVisibility(View.GONE);
-            startTimerLoop();
-        });
-    }
-
-    @Override protected void onResume() {
-        super.onResume();
-        startTimerLoop();
-    }
-
-    @Override protected void onPause() {
-        super.onPause();
-        handler.removeCallbacks(tick);
-    }
-
-    private void ensureExpireAt() {
-        SharedPreferences sp = getSharedPreferences(PREFS, MODE_PRIVATE);
-        long exp = sp.getLong(KEY_PIX_EXPIRE_AT, 0L);
-        long now = System.currentTimeMillis();
-        if (exp <= now) {
-            setNewExpireAt();
-        }
-    }
-
-    private void setNewExpireAt() {
         long exp = System.currentTimeMillis() + WINDOW_MS;
         getSharedPreferences(PREFS, MODE_PRIVATE)
-                .edit()
-                .putLong(KEY_PIX_EXPIRE_AT, exp)
-                .apply();
+                .edit().putLong(KEY_PIX_EXPIRE_AT, exp).apply();
+
+        if (btnGerarNovoPix != null) btnGerarNovoPix.setVisibility(View.GONE);
+        startTimerLoop();
+
+        Toast.makeText(this,
+                "Aviso: QR local (sem webhook). Configure a Cloud Function para confirmação automática.",
+                Toast.LENGTH_LONG).show();
     }
+
+    private static String asString(Object o) { return o == null ? null : String.valueOf(o); }
+
+    // ===================== UTILIDADES EXISTENTES =====================
 
     private void startTimerLoop() {
         handler.removeCallbacks(tick);

@@ -78,15 +78,7 @@ public class carrinho extends AppCompatActivity {
         View btnLimpar = findViewById(R.id.btnLimpar);
         if (btnLimpar != null) {
             btnLimpar.setOnClickListener(v -> {
-                // zera quantidades (ou limpa lista, conforme sua modelagem)
-                try {
-                    for (Produto p : itens) {
-                        p.setQuantidade(0);
-                    }
-                } catch (Exception e) {
-                    // fallback: limpa a lista
-                    itens.clear();
-                }
+                itens.clear();
                 CartStore.save(this, itens);
                 adapter.notifyDataSetChanged();
                 atualizarTotal();

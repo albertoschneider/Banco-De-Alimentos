@@ -56,12 +56,15 @@ public class configuracoes_email_senha extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_configuracoes_email_senha);
 
-        getWindow().setStatusBarColor(Color.parseColor("#FFF1B100"));
-        getWindow().getDecorView().post(() -> {
-            androidx.core.view.WindowInsetsControllerCompat c =
-                    androidx.core.view.ViewCompat.getWindowInsetsController(getWindow().getDecorView());
-            if (c != null) c.setAppearanceLightStatusBars(true);
-        });
+        View header = findViewById(R.id.header);
+        if (header != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
+                Insets sb = insets.getInsets(WindowInsetsCompat.Type.statusBars());
+                v.setPadding(v.getPaddingLeft(), sb.top, v.getPaddingRight(), v.getPaddingBottom());
+                return insets;
+            });
+            ViewCompat.requestApplyInsets(header);
+        }
 
         auth = FirebaseAuth.getInstance();
         user = auth.getCurrentUser();

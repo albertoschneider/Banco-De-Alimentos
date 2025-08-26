@@ -66,6 +66,7 @@
         tools:listitem="@layout/item_carrinho"/>
 
     <!-- RODAPÉ -->
+    <!-- RODAPÉ -->
     <LinearLayout
         android:id="@+id/footer"
         android:layout_width="match_parent"
@@ -80,6 +81,23 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
+        <!-- Botão grande vermelho -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnLimpar"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginBottom="10dp"
+            android:text="  Limpar Carrinho"
+            android:textAllCaps="false"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"
+            app:cornerRadius="10dp"
+            app:icon="@drawable/ic_trash"
+            app:iconGravity="textStart"
+            app:iconPadding="8dp"
+            app:backgroundTint="#DC2626" />
+
+        <!-- Linha Total -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -115,7 +133,7 @@
             android:textSize="12sp"
             android:visibility="gone" />
 
-        <!-- Linha de botões: Voltar | Limpar | Ir para Pagamento -->
+        <!-- Linha de botões: Voltar | Ir para Pagamento -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -132,19 +150,6 @@
                 android:textStyle="bold"
                 android:textColor="#004E7C"
                 android:background="@drawable/bg_button_gray"/>
-
-            <Space android:layout_width="10dp" android:layout_height="0dp"/>
-
-            <TextView
-                android:id="@+id/btnLimpar"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:text="Limpar Carrinho"
-                android:textStyle="bold"
-                android:textColor="#FFFFFF"
-                android:background="@drawable/bg_button_red"/>
 
             <Space android:layout_width="10dp" android:layout_height="0dp"/>
 

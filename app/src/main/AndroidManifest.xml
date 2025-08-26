@@ -26,6 +26,9 @@
         android:theme="@style/Theme.BancoDeAlimentos"
         tools:targetApi="31">
         <activity
+            android:name=".pedido_pago"
+            android:exported="false" />
+        <activity
             android:name=".historico"
             android:exported="false" />
         <activity
