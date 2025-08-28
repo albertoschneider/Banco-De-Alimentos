@@ -23,30 +23,42 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.google.firebase.Timestamp;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
-import com.google.firebase.functions.FirebaseFunctions;
-import com.google.firebase.functions.HttpsCallableResult;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.google.zxing.WriterException;
 import com.google.zxing.qrcode.QRCodeWriter;
 
+import org.json.JSONObject;
+
 import java.lang.reflect.Type;
 import java.text.Normalizer;
 import java.text.NumberFormat;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
+
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 public class pagamento extends AppCompatActivity {
 
+    // ================== CONFIG ==================
     private static final String PREFS = "MeuApp";
     private static final String KEY_CART = "carrinho";
     private static final String KEY_PIX_EXPIRE_AT = "pix_expire_at"; // epoch millis
     private static final long WINDOW_MS = 10 * 60 * 1000L; // 10 minutos
 
+    // Base do seu deploy Vercel (produção), SEM barra no final:
+    private static final String VERCEL_BASE =
+            "https://barc-webhooks-wrvde24re-albertos-projects-f9774983.vercel.app";
+
+    // ================== UI ==================
     private TextView tvTotalValue;
     private EditText etPixKey;
     private ImageView ivQrCode;
@@ -55,11 +67,12 @@ public class pagamento extends AppCompatActivity {
     private ProgressBar timeProgress;
     private View btnGerarNovoPix;
 
-    // Backend / listener
+    // ================== Backend / listener ==================
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
     private ListenerRegistration pagamentoListener;
     private String pagamentoIdAtual;
 
+    // ================== Timer ==================
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Runnable tick = new Runnable() {
         @Override public void run() {
@@ -69,8 +82,8 @@ public class pagamento extends AppCompatActivity {
 
             long remainMs = exp - now;
             if (remainMs <= 0) {
-                tvCountdown.setText("00:00");
-                timeProgress.setProgress(0);
+                if (tvCountdown != null) tvCountdown.setText("00:00");
+                if (timeProgress != null) timeProgress.setProgress(0);
                 if (btnGerarNovoPix != null) btnGerarNovoPix.setVisibility(View.VISIBLE);
                 handler.removeCallbacks(this);
                 return;
@@ -79,15 +92,20 @@ public class pagamento extends AppCompatActivity {
             int sec = (int) Math.ceil(remainMs / 1000.0);
             int mm = sec / 60;
             int ss = sec % 60;
-            tvCountdown.setText(String.format(Locale.getDefault(), "%02d:%02d", mm, ss));
+            if (tvCountdown != null) {
+                tvCountdown.setText(String.format(Locale.getDefault(), "%02d:%02d", mm, ss));
+            }
 
-            if (timeProgress.getMax() != 600) timeProgress.setMax(600);
-            timeProgress.setProgress(sec);
+            if (timeProgress != null) {
+                if (timeProgress.getMax() != 600) timeProgress.setMax(600);
+                timeProgress.setProgress(sec);
+            }
 
             handler.postDelayed(this, 1000);
         }
     };
 
+    // ================== Ciclo de vida ==================
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -115,7 +133,7 @@ public class pagamento extends AppCompatActivity {
 
         double total = getTotal();
         NumberFormat br = NumberFormat.getCurrencyInstance(new Locale("pt", "BR"));
-        tvTotalValue.setText(br.format(total));
+        if (tvTotalValue != null) tvTotalValue.setText(br.format(total));
 
         View back = findViewById(R.id.btn_voltar);
         if (back != null) back.setOnClickListener(v -> finish());
@@ -125,16 +143,18 @@ public class pagamento extends AppCompatActivity {
             startActivity(new Intent(pagamento.this, menu.class));
         });
 
-        // Cria (ou renova) a cobrança NO BACKEND:
+        // Cria (ou renova) a cobrança NO BACKEND (Vercel):
         criarOuRenovarCobranca(total, /*orderId*/ null);
 
-        btnCopyPix.setOnClickListener(v -> {
-            CharSequence payload = etPixKey.getText();
-            if (payload == null || payload.toString().isEmpty()) return;
-            ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-            cm.setPrimaryClip(ClipData.newPlainText("PIX", payload));
-            Toast.makeText(this, "Chave PIX copiada!", Toast.LENGTH_SHORT).show();
-        });
+        if (btnCopyPix != null) {
+            btnCopyPix.setOnClickListener(v -> {
+                CharSequence payload = etPixKey != null ? etPixKey.getText() : null;
+                if (payload == null || payload.toString().isEmpty()) return;
+                ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                cm.setPrimaryClip(ClipData.newPlainText("PIX", payload));
+                Toast.makeText(this, "Chave PIX copiada!", Toast.LENGTH_SHORT).show();
+            });
+        }
 
         if (btnGerarNovoPix != null) {
             btnGerarNovoPix.setOnClickListener(v -> {
@@ -160,8 +180,7 @@ public class pagamento extends AppCompatActivity {
         super.onDestroy();
     }
 
-    // ===================== COBRANÇA | BACKEND + LISTENER =====================
-
+    // ===================== COBRANÇA | VERCEL + LISTENER =====================
     private void criarOuRenovarCobranca(double total, String orderId) {
         // Limpa listener antigo (se existir)
         if (pagamentoListener != null) {
@@ -170,73 +189,68 @@ public class pagamento extends AppCompatActivity {
         }
         pagamentoIdAtual = null;
 
-        // Chama a Cloud Function
-        Map<String, Object> data = new HashMap<>();
-        data.put("valor", total);
-        if (orderId != null) data.put("orderId", orderId);
-
-        FirebaseFunctions.getInstance()
-                .getHttpsCallable("criarCobranca")
-                .call(data)
-                .addOnSuccessListener(this::onCobrancaCriada)
-                .addOnFailureListener(err -> {
-                    // ---- FALLBACK LOCAL ----
-                    fallbackLocal(total);
-                });
-    }
-
-    private void onCobrancaCriada(HttpsCallableResult res) {
-        @SuppressWarnings("unchecked")
-        Map<String, Object> r = (Map<String, Object>) res.getData();
-        if (r == null) {
-            Toast.makeText(this, "Erro ao criar cobrança", Toast.LENGTH_LONG).show();
+        // Exige usuário logado (token para Authorization: Bearer)
+        FirebaseUser u = FirebaseAuth.getInstance().getCurrentUser();
+        if (u == null) {
+            Toast.makeText(this, "Faça login novamente.", Toast.LENGTH_LONG).show();
             return;
         }
 
-        // pagamentoId para observar status no Firestore
-        pagamentoIdAtual = asString(r.get("pagamentoId"));
-        String payload = asString(r.get("qrCodePayload"));
+        u.getIdToken(true).addOnSuccessListener(tokenResult -> {
+            String idToken = tokenResult.getToken();
 
-        // Calcula expiração (preferindo millis numérico; senão, ISO 8601)
-        long expMillis = System.currentTimeMillis() + WINDOW_MS;
-
-        Object expNum = r.get("expiresAtMillis");
-        if (expNum instanceof Number) {
-            expMillis = ((Number) expNum).longValue();
-        } else {
-            String expiresAtIso = asString(r.get("expiresAt"));
-            if (expiresAtIso != null && !expiresAtIso.isEmpty()) {
+            new Thread(() -> {
                 try {
-                    if (android.os.Build.VERSION.SDK_INT >= 26) {
-                        expMillis = java.time.Instant.parse(expiresAtIso).toEpochMilli();
-                    } else {
-                        // Suporta "Z" e offsets com dois pontos no final
-                        String s = expiresAtIso;
-                        if (s.endsWith("Z")) s = s.substring(0, s.length() - 1) + "+0000";
-                        s = s.replaceFirst("([\\+\\-]\\d{2}):(\\d{2})$", "$1$2");
-                        java.text.SimpleDateFormat f =
-                                new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", java.util.Locale.US);
-                        expMillis = f.parse(s).getTime();
+                    OkHttpClient client = new OkHttpClient();
+
+                    JSONObject body = new JSONObject();
+                    body.put("valor", total);
+                    if (orderId != null) body.put("orderId", orderId);
+
+                    Request request = new Request.Builder()
+                            .url(VERCEL_BASE + "/api/criarCobranca")
+                            .addHeader("Authorization", "Bearer " + idToken)
+                            .post(RequestBody.create(
+                                    body.toString(),
+                                    MediaType.parse("application/json; charset=utf-8")
+                            ))
+                            .build();
+
+                    try (Response resp = client.newCall(request).execute()) {
+                        if (!resp.isSuccessful()) throw new RuntimeException("HTTP " + resp.code());
+                        String json = resp.body() != null ? resp.body().string() : "{}";
+                        JSONObject r = new JSONObject(json);
+
+                        final String pagamentoId = r.optString("pagamentoId", null);
+                        final String payload = r.optString("qrCodePayload", "");
+                        final long expMillis = r.optLong("expiresAtMillis",
+                                System.currentTimeMillis() + WINDOW_MS);
+
+                        runOnUiThread(() -> {
+                            pagamentoIdAtual = pagamentoId;
+                            if (etPixKey != null) etPixKey.setText(payload);
+                            gerarQr(payload, dp(220));
+
+                            getSharedPreferences(PREFS, MODE_PRIVATE)
+                                    .edit().putLong(KEY_PIX_EXPIRE_AT, expMillis).apply();
+
+                            if (btnGerarNovoPix != null) btnGerarNovoPix.setVisibility(View.GONE);
+                            startTimerLoop();
+
+                            if (pagamentoIdAtual != null && !pagamentoIdAtual.isEmpty()) {
+                                observarPagamento(pagamentoIdAtual);
+                            }
+                        });
                     }
-                } catch (Exception ignore) {
-                    // mantém expMillis como agora + 10min
+                } catch (Exception e) {
+                    // Fallback local se der erro no backend
+                    runOnUiThread(() -> fallbackLocal(total));
                 }
-            }
-        }
+            }).start();
 
-        getSharedPreferences(PREFS, MODE_PRIVATE)
-                .edit().putLong(KEY_PIX_EXPIRE_AT, expMillis).apply();
-
-        // Preenche UI
-        etPixKey.setText(payload);
-        gerarQr(payload, dp(220));
-        if (btnGerarNovoPix != null) btnGerarNovoPix.setVisibility(View.GONE);
-        startTimerLoop();
-
-        // Começa a observar o doc até virar PAGO / EXPIRADO
-        if (pagamentoIdAtual != null && !pagamentoIdAtual.isEmpty()) {
-            observarPagamento(pagamentoIdAtual);
-        }
+        }).addOnFailureListener(err ->
+                Toast.makeText(this, "Erro ao obter token de autenticação.", Toast.LENGTH_LONG).show()
+        );
     }
 
     private void observarPagamento(String pagamentoId) {
@@ -267,7 +281,6 @@ public class pagamento extends AppCompatActivity {
     }
 
     // ===================== FALLBACK LOCAL (sem backend) =====================
-
     private void fallbackLocal(double total) {
         String chave  = getString(R.string.pix_key);
         String nome   = normalizeNameOrCity(getString(R.string.pix_nome), 25);
@@ -284,7 +297,7 @@ public class pagamento extends AppCompatActivity {
                 .setValor(valorStr)
                 .build();
 
-        etPixKey.setText(payload);
+        if (etPixKey != null) etPixKey.setText(payload);
         gerarQr(payload, dp(220));
 
         long exp = System.currentTimeMillis() + WINDOW_MS;
@@ -295,14 +308,13 @@ public class pagamento extends AppCompatActivity {
         startTimerLoop();
 
         Toast.makeText(this,
-                "Aviso: QR local (sem webhook). Configure a Cloud Function para confirmação automática.",
+                "Aviso: QR local (sem webhook). Configure o backend para confirmação automática.",
                 Toast.LENGTH_LONG).show();
     }
 
     private static String asString(Object o) { return o == null ? null : String.valueOf(o); }
 
     // ===================== UTILIDADES EXISTENTES =====================
-
     private void startTimerLoop() {
         handler.removeCallbacks(tick);
         handler.post(tick);
@@ -348,6 +360,7 @@ public class pagamento extends AppCompatActivity {
     }
 
     private void gerarQr(String text, int sizePx) {
+        if (ivQrCode == null || text == null) return;
         QRCodeWriter writer = new QRCodeWriter();
         try {
             com.google.zxing.common.BitMatrix m =
