@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingTop="12dp"
+    android:paddingBottom="16dp"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp">
+
+    <!-- pegador -->
+    <View
+        android:layout_width="32dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:background="#E5DFBF"
+        android:layout_marginBottom="8dp"
+        android:alpha="0.9"/>
+
+    <TextView
+        android:id="@+id/bsTitulo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Confirmar adição de administrador"
+        android:textStyle="bold"
+        android:textSize="16sp"
+        android:textColor="#1A1A1A" />
+
+    <TextView
+        android:id="@+id/bsDescricao"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Tem certeza de que deseja adicionar esta pessoa como administradora? Ela terá permissões que impactam o aplicativo."
+        android:textSize="13sp"
+        android:textColor="#5F5F5F"
+        android:layout_marginTop="6dp"
+        android:lineSpacingExtra="2dp" />
+
+    <!-- Ações: Cancelar à ESQ (cinza), Adicionar à DIR (amarelo c/ texto azul) -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/bsActions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCancelar"
+            android:layout_width="wrap_content"
+            android:layout_height="44dp"
+            android:text="Cancelar"
+            android:textAllCaps="false"
+            android:textColor="#000000"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            app:cornerRadius="12dp"
+            app:backgroundTint="#E0E0E0"
+            app:rippleColor="#BDBDBD"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnAdicionar"
+            android:layout_width="wrap_content"
+            android:layout_height="44dp"
+            android:text="Adicionar"
+            android:textAllCaps="false"
+            android:textColor="#004E7C"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            app:cornerRadius="12dp"
+            app:backgroundTint="#F4B400"
+            app:rippleColor="#D6B537"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"/>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</LinearLayout>

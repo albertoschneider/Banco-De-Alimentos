@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- desabilitado -->
+    <item android:state_enabled="false" android:color="#E6E6E6"/>
+    <!-- focado: um tico mais escuro -->
+    <item android:state_focused="true" android:color="#EDEDED"/>
+    <!-- normal -->
+    <item android:color="#F0F0F0"/>
+</selector>
