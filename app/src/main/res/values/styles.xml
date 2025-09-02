@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Tema base do app (Material 3, sem ActionBar) -->
+    <style name="AppTheme" parent="Theme.Material3.Light.NoActionBar">
+        <!-- Cores principais do seu app -->
+        <item name="colorPrimary">#1F3A8A</item>          <!-- azul do botão -->
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorSecondary">#004E7C</item>
+        <item name="colorSurface">#FFFFFF</item>
+        <item name="colorOnSurface">#1A1D29</item>
+
+        <!-- Status/Navi bar -->
+        <item name="android:statusBarColor">#F4B400</item>   <!-- amarelo do header -->
+        <item name="android:navigationBarColor">#FFFFFF</item>
+
+        <!-- Deixa TextInputLayout como OUTLINED por padrão -->
+        <item name="textInputStyle">@style/AppTextInputOutlined</item>
+
+        <!-- Cantos arredondados padrão para componentes -->
+        <item name="shapeAppearanceSmallComponent">@style/AppShape.Small</item>
+        <item name="shapeAppearanceMediumComponent">@style/AppShape.Medium</item>
+        <item name="shapeAppearanceLargeComponent">@style/AppShape.Large</item>
+    </style>
+
+    <!-- TextInputLayout com borda e fundo branco -->
+    <style name="AppTextInputOutlined" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="boxBackgroundColor">#FFFFFF</item>
+        <item name="boxStrokeColor">#C9D2E0</item>
+        <item name="boxStrokeWidth">1dp</item>
+        <item name="boxCornerRadiusTopStart">12dp</item>
+        <item name="boxCornerRadiusTopEnd">12dp</item>
+        <item name="boxCornerRadiusBottomStart">12dp</item>
+        <item name="boxCornerRadiusBottomEnd">12dp</item>
+        <!-- Hint/placeholder mais discreto -->
+        <item name="hintTextColor">@android:color/darker_gray</item>
+    </style>
+
+    <!-- Formatos de canto padrão -->
+    <style name="AppShape.Small" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">12dp</item>
+    </style>
+    <style name="AppShape.Medium" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">16dp</item>
+    </style>
+    <style name="AppShape.Large" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">20dp</item>
+    </style>
+
+</resources>
