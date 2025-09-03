@@ -5,7 +5,6 @@ import android.content.DialogInterface;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.text.method.LinkMovementMethod;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -14,11 +13,18 @@ import android.widget.ImageButton;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+
+import android.location.Address;
+import android.location.Geocoder;
+
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -26,18 +32,10 @@ import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URLEncoder;
 import java.net.URL;
-import java.util.Locale;
-import android.location.Address;
-import android.location.Geocoder;
+import java.util.HashMap;
 import java.util.List;
-
-/*
- Fluxo:
- - Buscar coordenadas: tenta Geocoder nativo; se falhar, usa Nominatim (OSM).
- - Link manual: aceita "lat,lon" direto; se quiser Plus Code, adicione a dependência do Open Location Code (ver passos externos).
- - Botão Salvar habilita quando lat/long preenchidos.
- - Aqui deixei o "Salvar" com um Toast. Se quiser salvar no Firestore, indico abaixo o que ativar.
-*/
+import java.util.Locale;
+import java.util.Map;
 
 public class pontosdecoleta_admin extends AppCompatActivity {
 
@@ -45,6 +43,8 @@ public class pontosdecoleta_admin extends AppCompatActivity {
     private Button btnBuscar, btnCancelar, btnSalvar;
     private TextView tvErro, tvLinkManual;
     private Spinner spDisponibilidade;
+
+    private FirebaseFirestore db;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -61,7 +61,7 @@ public class pontosdecoleta_admin extends AppCompatActivity {
             ViewCompat.requestApplyInsets(header);
         }
 
-        ImageButton btnBack = findViewById(R.id.btn_voltar);
+        ImageButton btnVoltar = findViewById(R.id.btn_voltar);
         etNome = findViewById(R.id.etNome);
         etEndereco = findViewById(R.id.etEndereco);
         etLatitude = findViewById(R.id.etLatitude);
@@ -73,11 +73,16 @@ public class pontosdecoleta_admin extends AppCompatActivity {
         tvLinkManual = findViewById(R.id.tvLinkManual);
         spDisponibilidade = findViewById(R.id.spDisponibilidade);
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, new String[]{"Disponível", "Indisponível"});
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                this,
+                android.R.layout.simple_spinner_dropdown_item,
+                new String[]{"Disponível", "Indisponível"}
+        );
         spDisponibilidade.setAdapter(adapter);
 
-        btnBack.setOnClickListener(v -> finish());
+        btnVoltar.setOnClickListener(v -> finish());
         btnCancelar.setOnClickListener(v -> finish());
+        atualizarEstadoSalvar();
 
         btnBuscar.setOnClickListener(v -> {
             String endereco = etEndereco.getText().toString().trim();
@@ -91,40 +96,57 @@ public class pontosdecoleta_admin extends AppCompatActivity {
 
         tvLinkManual.setOnClickListener(v -> abrirDialogManual());
 
-        btnSalvar.setOnClickListener(v -> {
-            String nome = etNome.getText().toString().trim();
-            String endereco = etEndereco.getText().toString().trim();
-            String lat = etLatitude.getText().toString().trim();
-            String lng = etLongitude.getText().toString().trim();
-            String disp = spDisponibilidade.getSelectedItem().toString();
+        // ---- Firestore ----
+        FirebaseApp.initializeApp(this);
+        db = FirebaseFirestore.getInstance();
 
-            if (TextUtils.isEmpty(nome)) {
-                Toast.makeText(this, "Digite o nome do ponto.", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            if (TextUtils.isEmpty(endereco)) {
-                Toast.makeText(this, "Digite o endereço.", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            if (TextUtils.isEmpty(lat) || TextUtils.isEmpty(lng)) {
-                Toast.makeText(this, "Busque ou informe as coordenadas.", Toast.LENGTH_SHORT).show();
-                return;
-            }
+        btnSalvar.setOnClickListener(v -> salvarNoFirestore());
+    }
 
-            // TODO (opcional): salvar no Firestore conforme seu projeto:
-            // FirebaseFirestore db = FirebaseFirestore.getInstance();
-            // Map<String, Object> doc = new HashMap<>();
-            // doc.put("nome", nome);
-            // doc.put("endereco", endereco);
-            // Map<String, Object> location = new HashMap<>();
-            // location.put("lat", Double.parseDouble(lat));
-            // location.put("lng", Double.parseDouble(lng));
-            // doc.put("location", location);
-            // doc.put("disponibilidade", disp);
-            // db.collection("pontos").add(doc)...
-            Toast.makeText(this, "Ponto salvo (simulação).", Toast.LENGTH_SHORT).show();
-            finish();
-        });
+    private void salvarNoFirestore() {
+        String nome = etNome.getText().toString().trim();
+        String endereco = etEndereco.getText().toString().trim();
+        String lat = etLatitude.getText().toString().trim();
+        String lng = etLongitude.getText().toString().trim();
+        String disp = spDisponibilidade.getSelectedItem().toString();
+
+        if (TextUtils.isEmpty(nome)) {
+            Toast.makeText(this, "Digite o nome do ponto.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (TextUtils.isEmpty(endereco)) {
+            Toast.makeText(this, "Digite o endereço.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (TextUtils.isEmpty(lat) || TextUtils.isEmpty(lng)) {
+            Toast.makeText(this, "Busque ou informe as coordenadas.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Map<String, Object> doc = new HashMap<>();
+        doc.put("nome", nome);
+        doc.put("endereco", endereco);
+
+        Map<String, Object> location = new HashMap<>();
+        location.put("lat", Double.parseDouble(lat));
+        location.put("lng", Double.parseDouble(lng));
+        doc.put("location", location);
+
+        doc.put("disponibilidade", disp);
+        doc.put("ativo", true);
+
+        btnSalvar.setEnabled(false);
+
+        db.collection("pontos")  // ← nome da coleção (use o mesmo que seu app lê hoje)
+                .add(doc)
+                .addOnSuccessListener(ref -> {
+                    Toast.makeText(this, "Ponto salvo!", Toast.LENGTH_SHORT).show();
+                    finish();
+                })
+                .addOnFailureListener(e -> {
+                    btnSalvar.setEnabled(true);
+                    Toast.makeText(this, "Erro ao salvar: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                });
     }
 
     private void atualizarEstadoSalvar() {
@@ -161,14 +183,14 @@ public class pontosdecoleta_admin extends AppCompatActivity {
                             double lon = Double.parseDouble(parts[1].trim());
                             etLatitude.setText(String.format(Locale.US, "%.8f", lat));
                             etLongitude.setText(String.format(Locale.US, "%.8f", lon));
+                            tvErro.setVisibility(View.GONE);
                             atualizarEstadoSalvar();
                             dialog.dismiss();
                             return;
-                        } catch (Exception ignored) {
-                        }
+                        } catch (Exception ignored) { }
                     }
                 }
-                Toast.makeText(this, "Para Plus Code, ative a dependência indicada nos passos externos.", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "Formato inválido. Use lat,lng ou ative suporte a Plus Code.", Toast.LENGTH_LONG).show();
             });
         });
 
@@ -181,6 +203,7 @@ public class pontosdecoleta_admin extends AppCompatActivity {
             protected double[] doInBackground(String... strings) {
                 String query = strings[0];
 
+                // 1) Geocoder nativo (grátis)
                 try {
                     Geocoder geocoder = new Geocoder(pontosdecoleta_admin.this, Locale.getDefault());
                     List<Address> list = geocoder.getFromLocationName(query, 1);
@@ -190,6 +213,7 @@ public class pontosdecoleta_admin extends AppCompatActivity {
                     }
                 } catch (Exception ignored) { }
 
+                // 2) Fallback: Nominatim (OSM) via HTTPS (grátis)
                 try {
                     String encoded = URLEncoder.encode(query, "UTF-8");
                     String urlStr = "https://nominatim.openstreetmap.org/search?q=" + encoded + "&format=json&limit=1&addressdetails=0";
@@ -198,7 +222,7 @@ public class pontosdecoleta_admin extends AppCompatActivity {
                     conn.setRequestMethod("GET");
                     conn.setConnectTimeout(10000);
                     conn.setReadTimeout(10000);
-                    conn.setRequestProperty("User-Agent", "BancoDeAlimentos/1.0 (contato@example.com)");
+                    conn.setRequestProperty("User-Agent", "BancoDeAlimentos/1.0 (seuemail@dominio.com)");
                     conn.setRequestProperty("Accept", "application/json");
                     int code = conn.getResponseCode();
                     if (code == 200) {

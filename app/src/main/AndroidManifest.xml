@@ -26,6 +26,9 @@
         android:theme="@style/Theme.BancoDeAlimentos"
         tools:targetApi="31">
         <activity
+            android:name=".gerenciar_pontosdecoleta"
+            android:exported="false" />
+        <activity
             android:name=".pontosdecoleta_admin"
             android:exported="false" />
         <activity

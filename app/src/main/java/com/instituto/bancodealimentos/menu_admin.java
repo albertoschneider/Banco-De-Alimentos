@@ -68,7 +68,7 @@ public class menu_admin extends AppCompatActivity {
         if (cardPontos != null) {
             // Coloque aqui a Activity da sua gestão de pontos de coleta
             cardPontos.setOnClickListener(v ->
-                    Toast.makeText(this, "Pontos de coleta (em breve)", Toast.LENGTH_SHORT).show());
+                    startActivity(new Intent(menu_admin.this, gerenciar_pontosdecoleta.class)));
         }
         if (cardHistorico != null) {
             // Coloque aqui a Activity de histórico/admin
