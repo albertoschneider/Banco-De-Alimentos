@@ -44,7 +44,7 @@
                 android:layout_height="wrap_content"
                 android:layout_centerHorizontal="true"
                 android:text="Pontos de Coleta"
-                android:textColor="#153E75"
+                android:textColor="#004E7C"
                 android:textSize="20sp"
                 android:textStyle="bold" />
         </RelativeLayout>

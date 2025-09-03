@@ -2,6 +2,8 @@ package com.instituto.bancodealimentos;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -152,9 +154,20 @@ public class pontosdecoleta_admin extends AppCompatActivity {
     private void atualizarEstadoSalvar() {
         boolean ok = !TextUtils.isEmpty(etLatitude.getText().toString().trim())
                 && !TextUtils.isEmpty(etLongitude.getText().toString().trim());
+
         btnSalvar.setEnabled(ok);
-        btnSalvar.setBackgroundTintList(getColorStateList(ok ? android.R.color.holo_blue_dark : android.R.color.darker_gray));
+
+        if (ok) {
+            // botão ativo
+            btnSalvar.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#F4B400")));
+            btnSalvar.setTextColor(Color.parseColor("#004E7C"));
+        } else {
+            // botão desativado
+            btnSalvar.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#9CA3AF"))); // cinza
+            btnSalvar.setTextColor(Color.parseColor("#FFFFFF")); // texto branco mesmo desabilitado
+        }
     }
+
 
     private void abrirDialogManual() {
         EditText input = new EditText(this);

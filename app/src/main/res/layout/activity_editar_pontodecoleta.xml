@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F2F5F9">
+
+    <LinearLayout
+        android:id="@+id/header"
+        android:layout_width="0dp"
+        android:layout_height="70dp"
+        android:background="#F4B400"
+        android:orientation="vertical"
+        android:paddingStart="16dp"
+        android:paddingTop="12dp"
+        android:paddingEnd="16dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:paddingBottom="8dp">
+
+            <ImageButton
+                android:id="@+id/btn_voltar"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:adjustViewBounds="true"
+                android:background="@android:color/transparent"
+                android:contentDescription="@string/sem_descricao"
+                android:scaleType="fitCenter"
+                android:src="@drawable/arrow_back_png" />
+
+            <TextView
+                android:id="@+id/tvTitulo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerHorizontal="true"
+                android:text="Editar Ponto de Coleta"
+                android:textColor="#004E7C"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+        </RelativeLayout>
+    </LinearLayout>
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/card"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_margin="12dp"
+        app:cardBackgroundColor="#FFFFFF"
+        app:cardCornerRadius="16dp"
+        app:cardUseCompatPadding="true"
+        app:layout_constraintTop_toBottomOf="@id/header"
+        app:layout_constraintBottom_toTopOf="@+id/bottomBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <!-- Nome do ponto -->
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Nome do ponto"
+                    app:placeholderText="Ex: Sede da Associação"
+                    app:boxBackgroundMode="outline"
+                    app:boxBackgroundColor="#FFFFFF"
+                    app:boxStrokeColor="#C9D2E0"
+                    app:boxStrokeWidth="1dp"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusBottomEnd="12dp">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etNome"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:background="@drawable/bg_textfield_outline_12dp"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:textColor="#1A1D29"
+                        android:textSize="15sp" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <Space
+                    android:layout_width="match_parent"
+                    android:layout_height="12dp" />
+
+                <!-- Endereço -->
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Endereço"
+                    app:placeholderText="Rua, número, bairro, cidade..."
+                    app:boxBackgroundMode="outline"
+                    app:boxBackgroundColor="#FFFFFF"
+                    app:boxStrokeColor="#C9D2E0"
+                    app:boxStrokeWidth="1dp"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusBottomEnd="12dp">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etEndereco"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:background="@drawable/bg_textfield_outline_12dp"
+                        android:inputType="textPostalAddress"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:textColor="#1A1D29"
+                        android:textSize="15sp" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <Space
+                    android:layout_width="match_parent"
+                    android:layout_height="12dp" />
+
+                <!-- Latitude / Longitude -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:weightSum="2">
+
+                    <!-- Latitude -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:hint="Latitude"
+                        app:placeholderText="Auto"
+                        app:boxBackgroundMode="outline"
+                        app:boxBackgroundColor="#FFFFFF"
+                        app:boxStrokeColor="#C9D2E0"
+                        app:boxStrokeWidth="1dp"
+                        app:boxCornerRadiusTopStart="12dp"
+                        app:boxCornerRadiusTopEnd="12dp"
+                        app:boxCornerRadiusBottomStart="12dp"
+                        app:boxCornerRadiusBottomEnd="12dp">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etLatitude"
+                            android:layout_width="match_parent"
+                            android:layout_height="56dp"
+                            android:enabled="false"
+                            android:focusable="false"
+                            android:background="@drawable/bg_textfield_outline_12dp"
+                            android:paddingStart="12dp"
+                            android:paddingEnd="12dp"
+                            android:textColor="#1A1D29"
+                            android:textSize="15sp" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <Space
+                        android:layout_width="8dp"
+                        android:layout_height="match_parent" />
+
+                    <!-- Longitude -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:hint="Longitude"
+                        app:placeholderText="Auto"
+                        app:boxBackgroundMode="outline"
+                        app:boxBackgroundColor="#FFFFFF"
+                        app:boxStrokeColor="#C9D2E0"
+                        app:boxStrokeWidth="1dp"
+                        app:boxCornerRadiusTopStart="12dp"
+                        app:boxCornerRadiusTopEnd="12dp"
+                        app:boxCornerRadiusBottomStart="12dp"
+                        app:boxCornerRadiusBottomEnd="12dp">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etLongitude"
+                            android:layout_width="match_parent"
+                            android:layout_height="56dp"
+                            android:enabled="false"
+                            android:focusable="false"
+                            android:background="@drawable/bg_textfield_outline_12dp"
+                            android:paddingStart="12dp"
+                            android:paddingEnd="12dp"
+                            android:textColor="#1A1D29"
+                            android:textSize="15sp" />
+                    </com.google.android.material.textfield.TextInputLayout>
+                </LinearLayout>
+
+                <Space
+                    android:layout_width="match_parent"
+                    android:layout_height="14dp" />
+
+                <!-- Botão Buscar coordenadas -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnBuscar"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:text="Buscar coordenadas"
+                    android:textAllCaps="false"
+                    android:textSize="16sp"
+                    android:textColor="#FFFFFF"
+                    app:cornerRadius="12dp"
+                    app:backgroundTint="#1F3A8A" />
+
+                <!-- Erro -->
+                <TextView
+                    android:id="@+id/tvErro"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Não encontramos esse endereço. Tente ajustar o texto ou use a opção abaixo."
+                    android:textColor="#D92D20"
+                    android:textSize="13sp"
+                    android:visibility="gone" />
+
+                <!-- Link manual -->
+                <TextView
+                    android:id="@+id/tvLinkManual"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="Não encontrou? Colar coordenadas ou Plus Code"
+                    android:textColor="#1F3A8A"
+                    android:textSize="13sp"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <Space
+                    android:layout_width="match_parent"
+                    android:layout_height="16dp" />
+
+                <!-- Disponibilidade -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Disponibilidade"
+                    android:textColor="#3B4256"
+                    android:textSize="14sp"
+                    android:layout_marginBottom="6dp" />
+
+                <Spinner
+                    android:id="@+id/spDisponibilidade"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:background="@drawable/bg_spinner_outline_12dp" />
+            </LinearLayout>
+        </ScrollView>
+    </androidx.cardview.widget.CardView>
+
+    <LinearLayout
+        android:id="@+id/bottomBar"
+        android:layout_width="0dp"
+        android:layout_height="72dp"
+        android:padding="12dp"
+        android:background="#FFFFFF"
+        android:gravity="center"
+        android:weightSum="2"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <Button
+            android:id="@+id/btnCancelar"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:text="Cancelar"
+            android:textAllCaps="false"
+            android:backgroundTint="#E5E7EB"
+            android:textColor="#111827" />
+
+        <Space
+            android:layout_width="12dp"
+            android:layout_height="match_parent" />
+
+        <Button
+            android:id="@+id/btnSalvar"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:text="Salvar Alterações"
+            android:textAllCaps="false"
+            android:enabled="false"
+            android:backgroundTint="#9CA3AF"
+            android:textColor="#FFFFFF" />
+    </LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
