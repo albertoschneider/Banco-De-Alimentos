@@ -5,90 +5,69 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#004E7C"
+    android:background="#FFFFFF"
     tools:context=".voluntariar">
 
-    <LinearLayout
+    <RelativeLayout
         android:id="@+id/header"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="56dp"
         android:background="#FFF1B100"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:padding="20dp"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <!-- Ícone de voltar -->
         <ImageButton
             android:id="@+id/btn_voltar"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_centerVertical="true"
+            android:adjustViewBounds="true"
             android:background="@android:color/transparent"
-            android:contentDescription="Voltar"
-            android:src="@drawable/back_button" />
+            android:contentDescription="@string/sem_descricao"
+            android:scaleType="fitCenter"
+            android:src="@drawable/arrow_back_png" />
 
-        <!-- Imagem de voluntariar-se -->
-        <ImageView
-            android:id="@+id/img_voluntariar"
-            android:layout_width="56dp"
-            android:layout_height="56dp"
-            android:layout_marginStart="16dp"
-            android:contentDescription="Ícone Voluntariar"
-            android:src="@drawable/ic_voluntarios" />
-
-        <!-- Textos -->
-        <LinearLayout
-            android:layout_width="0dp"
+        <TextView
+            android:id="@+id/tvTitulo"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_weight="1"
-            android:orientation="vertical">
+            android:layout_centerInParent="true"
+            android:text="Venha ser um Volunário!"
+            android:textColor="#004E7C"
+            android:textSize="18sp"
+            android:textStyle="bold" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:ellipsize="end"
-                android:singleLine="true"
-                android:text="Se torne um Voluntário"
-                android:textColor="#000000"
-                android:textSize="20sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:ellipsize="end"
-                android:singleLine="true"
-                android:text="Seja um voluntário e ajude o BARC!"
-                android:textColor="#000000"
-                android:textSize="16sp" />
-        </LinearLayout>
-
-    </LinearLayout>
+    </RelativeLayout>
 
 
     <!-- Carrossel -->
+
+    <!-- Texto explicativo -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/carrossel_container"
         android:layout_width="411dp"
         android:layout_height="278dp"
         android:layout_marginTop="16dp"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/header">
 
+        <!-- Botão anterior -->
         <androidx.viewpager2.widget.ViewPager2
             android:id="@+id/viewPager"
             android:layout_width="322dp"
             android:layout_height="293dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.494"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.466" />
 
-        <!-- Botão anterior -->
         <ImageButton
             android:id="@+id/btn_prev"
             android:layout_width="40dp"
@@ -107,7 +86,8 @@
             android:id="@+id/btn_next"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:background="@android:color/transparent"
+            android:background="@color/material_dynamic_tertiary100"
+            android:backgroundTint="#FFFFFF"
             android:src="@drawable/right_arrow"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
@@ -115,7 +95,6 @@
             app:tint="#FFFFFF" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- Texto explicativo -->
     <TextView
         android:id="@+id/tv_como_funciona"
         android:layout_width="0dp"
@@ -123,7 +102,7 @@
         android:layout_marginTop="16dp"
         android:gravity="center"
         android:text="Como funciona?"
-        android:textColor="#FFFFFF"
+        android:textColor="#000000"
         android:textSize="18sp"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
@@ -132,40 +111,41 @@
 
     <TextView
         android:id="@+id/tv_explicacao"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="Ao entrar em contato conosco, iremos te manter informado dos próximos trabalhos voluntários disponíveis e como ajudar. Ser voluntário é doar muito mais do que o seu tempo, mas sim, o amor ao próximo."
-        android:textColor="#FFFFFF"
-        android:textSize="14sp"
+        android:layout_width="373dp"
+        android:layout_height="252dp"
         android:layout_marginHorizontal="24dp"
         android:layout_marginTop="8dp"
         android:gravity="center"
-        app:layout_constraintTop_toBottomOf="@id/tv_como_funciona"
+        android:text="Leve esperança, dignidade e um sorriso a quem precisa. Torne-se parte de uma rede de compaixão que combate a fome. Ao entrar em contato conosco, iremos te manter informado dos próximos trabalhos voluntários disponíveis e como ajudar. Ser voluntário é doar muito mais do que o seu tempo, mas sim, o amor ao próximo."
+        android:textAlignment="center"
+        android:textColor="#000000"
+        android:textSize="20sp"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/tv_como_funciona" />
 
     <!-- Botão WhatsApp -->
     <LinearLayout
         android:id="@+id/btn_whatsapp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:background="@drawable/bg_white_round_button"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingHorizontal="24dp"
         android:paddingVertical="12dp"
-        android:background="@drawable/bg_white_round_button"
-        android:layout_marginTop="24dp"
-        android:gravity="center_vertical"
-        android:clickable="true"
-        android:focusable="true"
-        app:layout_constraintTop_toBottomOf="@id/tv_explicacao"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintTop_toBottomOf="@id/tv_explicacao">
 
         <ImageView
             android:layout_width="24dp"
             android:layout_height="24dp"
-            android:src="@drawable/whatsapp"
-            android:contentDescription="WhatsApp" />
+            android:contentDescription="WhatsApp"
+            android:src="@drawable/whatsapp" />
 
         <TextView
             android:layout_width="wrap_content"
