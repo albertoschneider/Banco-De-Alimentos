@@ -8,7 +8,7 @@
     android:layout_height="match_parent"
     android:background="#EAF0F6">
 
-    <!-- HEADER corrigido -->
+    <!-- HEADER amarelo com título central -->
     <LinearLayout
         android:id="@+id/header"
         android:layout_width="match_parent"
@@ -66,58 +66,106 @@
             android:orientation="vertical"
             android:padding="16dp">
 
+            <!-- Nome (outlined + cantos arredondados) -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilNome"
-                style="@style/BDA_TextInputLayout"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="Nome"
-                android:layout_marginTop="12dp">
+                android:layout_marginTop="12dp"
+                app:boxCornerRadiusTopStart="12dp"
+                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusBottomStart="12dp"
+                app:boxCornerRadiusBottomEnd="12dp">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/edtNome"
-                    style="@style/BDA_EditText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="textPersonName"
                     tools:text="John Doe"/>
             </com.google.android.material.textfield.TextInputLayout>
 
+            <!-- E-mail (outlined) -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilEmail"
-                style="@style/BDA_TextInputLayout"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="E-mail"
-                android:layout_marginTop="12dp">
+                android:layout_marginTop="12dp"
+                app:boxCornerRadiusTopStart="12dp"
+                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusBottomStart="12dp"
+                app:boxCornerRadiusBottomEnd="12dp">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/edtEmail"
-                    style="@style/BDA_EditText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="textEmailAddress"
                     tools:text="johndoe@example.com"/>
             </com.google.android.material.textfield.TextInputLayout>
 
+            <!-- Botão Alterar E-mail (cores invertidas do header) -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAlterarEmail"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="12dp"
+                android:text="Alterar E-mail"
+                android:textAllCaps="false"
+                android:textStyle="bold"
+                app:cornerRadius="12dp"
+                app:backgroundTint="#F4B400"
+                android:textColor="#004E7C" />
+
+            <!-- Senha (outlined + password toggle) -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilSenha"
-                style="@style/BDA_TextInputLayout"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="Senha"
+                android:layout_marginTop="12dp"
                 app:endIconMode="password_toggle"
-                android:layout_marginTop="12dp">
+                app:boxCornerRadiusTopStart="12dp"
+                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusBottomStart="12dp"
+                app:boxCornerRadiusBottomEnd="12dp">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/edtSenha"
-                    style="@style/BDA_EditText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="textPassword"
                     tools:text="••••••••"/>
             </com.google.android.material.textfield.TextInputLayout>
 
+            <!-- Link Alterar Senha + contador -->
+            <TextView
+                android:id="@+id/tvAlterarSenha"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="Alterar Senha (enviar link)"
+                android:textColor="#004E7C"
+                android:textStyle="bold"
+                android:textSize="14sp"
+                android:padding="4dp" />
+
+            <TextView
+                android:id="@+id/tvSenhaMsg"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textColor="#6B7280"
+                android:textSize="12sp"
+                android:visibility="gone"
+                tools:text="Enviamos um link. Reenviar em 00:59"/>
+
+            <!-- Botões inferiores -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnSair"
                 android:layout_width="match_parent"

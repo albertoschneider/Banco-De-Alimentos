@@ -1,5 +1,7 @@
 {
   "projects": {
     "default": "barc-2025"
-  }
+  },
+  "targets": {},
+  "etags": {}
 }

@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Permissões -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
@@ -25,6 +26,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.BancoDeAlimentos"
         tools:targetApi="31">
+
         <activity
             android:name=".editar_pontodecoleta"
             android:exported="false" />
@@ -87,26 +89,52 @@
             android:exported="false" />
         <activity
             android:name=".telalogin"
-            android:exported="false" /> <!-- Não precisa ser exportada (sem intent-filter) -->
+            android:exported="false" />
         <activity
             android:name=".MainActivity"
-            android:exported="false" /> <!-- Launcher -->
+            android:exported="false" />
+
         <activity
             android:name=".SplashActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <activity
-            android:name=".menu"
-            android:exported="false" />
+            android:name=".EmailActionRouterActivity"
+            android:exported="true"
+            android:launchMode="singleTask">
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data
+                    android:scheme="https"
+                    android:host="barc-2025.web.app"
+                    android:pathPrefix="/__/auth/action"/>
+            </intent-filter>
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data
+                    android:scheme="https"
+                    android:host="barc-2025.firebaseapp.com"
+                    android:pathPrefix="/__/auth/action"/>
+            </intent-filter>
+        </activity>
+
+        <activity android:name=".menu" android:exported="false" />
+        <activity android:name=".ResetarSenhaActivity" />
+        <activity android:name=".EmailAtualizadoSucessoActivity" />
+        <activity android:name=".EsqueciSenhaActivity" />
 
         <meta-data
             android:name="preloaded_fonts"
             android:resource="@array/preloaded_fonts" />
-    </application>
 
+    </application>
 </manifest>

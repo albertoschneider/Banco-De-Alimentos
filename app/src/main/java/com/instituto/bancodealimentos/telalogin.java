@@ -84,11 +84,7 @@ public class telalogin extends AppCompatActivity {
         edtSenha.addTextChangedListener(clearErrorWatcher);
 
         tvForgot.setOnClickListener(v -> {
-            String email = edtEmail.getText().toString().trim();
-            if (email.isEmpty() || !Patterns.EMAIL_ADDRESS.matcher(email).matches()) { toast("Digite um e-mail válido."); return; }
-            mAuth.sendPasswordResetEmail(email)
-                    .addOnSuccessListener(aVoid -> toast("E-mail de redefinição enviado!"))
-                    .addOnFailureListener(e -> toast("Erro: " + e.getMessage()));
+            startActivity(new Intent(this, EsqueciSenhaActivity.class));
         });
 
         btnEntrar.setOnClickListener(v -> loginEmailSenha());

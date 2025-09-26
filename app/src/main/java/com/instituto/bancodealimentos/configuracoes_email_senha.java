@@ -2,6 +2,7 @@ package com.instituto.bancodealimentos;
 
 import android.app.Dialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
@@ -9,6 +10,7 @@ import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.text.InputType;
 import android.util.TypedValue;
 import android.view.View;
@@ -44,18 +46,29 @@ import com.google.firebase.firestore.FirebaseFirestore;
 public class configuracoes_email_senha extends AppCompatActivity {
 
     private TextInputEditText edtNome, edtEmail, edtSenha;
-    private MaterialButton btnSalvar, btnSair, btnExcluir;
+    private MaterialButton btnSalvar, btnSair, btnExcluir, btnAlterarEmail;
     private ImageButton btnVoltar;
+    private TextView tvAlterarSenha, tvSenhaMsg;
 
     private FirebaseAuth auth;
     private FirebaseUser user;
     private FirebaseFirestore db;
+
+    // Cooldown "Alterar Senha" (reset-link)
+    private SharedPreferences prefs;
+    private static final String PREFS = "pw_reset_prefs";
+    private static final String K_LEVEL = "pw_level";
+    private static final String K_LAST_CLICK = "pw_last_click";
+    private static final String K_CD_END_AT = "pw_cd_end_at";
+    private static final long TEN_MIN_MS = 10 * 60 * 1000L;
+    private CountDownTimer pwdTimer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_configuracoes_email_senha);
 
+        // Header com o MESMO tratamento de insets
         View header = findViewById(R.id.header);
         if (header != null) {
             ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
@@ -69,11 +82,9 @@ public class configuracoes_email_senha extends AppCompatActivity {
         auth = FirebaseAuth.getInstance();
         user = auth.getCurrentUser();
         db   = FirebaseFirestore.getInstance();
+        prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
 
-        if (user == null) {
-            goToLogin();
-            return;
-        }
+        if (user == null) { goToLogin(); return; }
 
         edtNome   = findViewById(R.id.edtNome);
         edtEmail  = findViewById(R.id.edtEmail);
@@ -83,12 +94,34 @@ public class configuracoes_email_senha extends AppCompatActivity {
         btnExcluir= findViewById(R.id.btnExcluir);
         btnVoltar = findViewById(R.id.btn_voltar);
 
+        btnAlterarEmail = findViewById(R.id.btnAlterarEmail);
+        tvAlterarSenha  = findViewById(R.id.tvAlterarSenha);
+        tvSenhaMsg      = findViewById(R.id.tvSenhaMsg);
+
         preencherDados();
 
         btnVoltar.setOnClickListener(v -> finish());
         btnSair.setOnClickListener(v -> mostrarDialogSair());
         btnSalvar.setOnClickListener(v -> salvarAlteracoes());
         btnExcluir.setOnClickListener(v -> mostrarDialogExclusao());
+
+        // Abrir tela "Novo e-mail"
+        if (btnAlterarEmail != null) {
+            btnAlterarEmail.setOnClickListener(v ->
+                    startActivity(new Intent(this, NovoEmailActivity.class)));
+        }
+
+        // Enviar reset-link + cooldown progressivo
+        if (tvAlterarSenha != null) {
+            tvAlterarSenha.setOnClickListener(v -> trySendResetLinkWithCooldown());
+            restoreCooldownIfRunning();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (pwdTimer != null) pwdTimer.cancel();
     }
 
     private void preencherDados() {
@@ -169,6 +202,85 @@ public class configuracoes_email_senha extends AppCompatActivity {
                         Toast.makeText(this, "Falha ao atualizar senha: " + e.getMessage(), Toast.LENGTH_LONG).show();
                     }
                 });
+    }
+
+    // ======== Reset-link + cooldown (sem Dynamic Links) ========
+    private void trySendResetLinkWithCooldown() {
+        if (user.getEmail() == null) {
+            Toast.makeText(this, "Conta sem e-mail. Refaça login.", Toast.LENGTH_LONG).show();
+            return;
+        }
+        long now = System.currentTimeMillis();
+        long last = prefs.getLong(K_LAST_CLICK, 0L);
+        int level = prefs.getInt(K_LEVEL, -1); // -1 primeira vez
+        if (now - last >= TEN_MIN_MS) level = -1; // reseta após 10min
+
+        int newLevel = Math.min(level + 1, 4);      // 0..4 -> até 5min
+        int cooldownSecs = (newLevel + 1) * 60;     // 60,120,180,240,300
+
+        FirebaseAuth.getInstance()
+                .sendPasswordResetEmail(user.getEmail())
+                .addOnSuccessListener(unused -> {
+                    Toast.makeText(this, "Enviamos um link para " + user.getEmail(), Toast.LENGTH_LONG).show();
+                    startPwdCooldown(cooldownSecs);
+                    prefs.edit()
+                            .putInt(K_LEVEL, newLevel)
+                            .putLong(K_LAST_CLICK, now)
+                            .putLong(K_CD_END_AT, now + cooldownSecs * 1000L)
+                            .apply();
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Não foi possível enviar o link: " + e.getMessage(), Toast.LENGTH_LONG).show()
+                );
+    }
+
+    private void startPwdCooldown(int secs) {
+        if (tvAlterarSenha == null) return;
+        setPwdLinkEnabled(false);
+        showPwdMsg("Enviamos um link. Reenviar em " + format(secs));
+
+        if (pwdTimer != null) pwdTimer.cancel();
+        pwdTimer = new CountDownTimer(secs * 1000L, 1000L) {
+            @Override public void onTick(long ms) {
+                int s = (int) Math.max(0, ms / 1000L);
+                showPwdMsg("Enviamos um link. Reenviar em " + format(s));
+            }
+            @Override public void onFinish() {
+                setPwdLinkEnabled(true);
+                tvSenhaMsg.setVisibility(View.GONE);
+            }
+        }.start();
+    }
+
+    private void restoreCooldownIfRunning() {
+        long endAt = prefs.getLong(K_CD_END_AT, 0L);
+        long now = System.currentTimeMillis();
+        if (endAt > now) {
+            int remaining = (int) ((endAt - now) / 1000L);
+            startPwdCooldown(remaining);
+        } else {
+            setPwdLinkEnabled(true);
+            if (tvSenhaMsg != null) tvSenhaMsg.setVisibility(View.GONE);
+        }
+    }
+
+    private void setPwdLinkEnabled(boolean enabled) {
+        tvAlterarSenha.setEnabled(enabled);
+        tvAlterarSenha.setTextColor(enabled ? Color.parseColor("#004E7C") : Color.parseColor("#9CA3AF"));
+        tvAlterarSenha.setAlpha(enabled ? 1f : 0.7f);
+        if (tvSenhaMsg != null && enabled) tvSenhaMsg.setVisibility(View.GONE);
+    }
+
+    private void showPwdMsg(String msg) {
+        if (tvSenhaMsg == null) return;
+        tvSenhaMsg.setText(msg);
+        tvSenhaMsg.setVisibility(View.VISIBLE);
+    }
+
+    private String format(int secs) {
+        int m = secs / 60;
+        int s = secs % 60;
+        return String.format("%02d:%02d", m, s);
     }
 
     // ======== REAUTENTICAÇÃO ========
@@ -373,7 +485,7 @@ public class configuracoes_email_senha extends AppCompatActivity {
                 });
     }
 
-    // ======== POP-UP "SAIR" (menor largura) ========
+    // ======== POP-UP "SAIR" ========
     private void mostrarDialogSair() {
         final Dialog dialog = new Dialog(this);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -388,13 +500,13 @@ public class configuracoes_email_senha extends AppCompatActivity {
         bg.setColor(0xFFFFFFFF);
         card.setBackground(bg);
 
-        android.widget.TextView titulo = new android.widget.TextView(this);
+        TextView titulo = new TextView(this);
         titulo.setText("Sair");
         titulo.setTextSize(18);
         titulo.setTypeface(Typeface.DEFAULT_BOLD);
         titulo.setTextColor(0xFF111827);
 
-        android.widget.TextView msg = new android.widget.TextView(this);
+        TextView msg = new TextView(this);
         msg.setText("Tem certeza de que deseja sair?\nSua conta não será excluída, mas você precisará fazer login novamente para acessá-la.");
         msg.setTextSize(14);
         msg.setTextColor(0xFF4B5563);
