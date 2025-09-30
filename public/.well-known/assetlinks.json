@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.instituto.bancodealimentos",
+      "sha256_cert_fingerprints": [
+        "A7:AE:9C:EA:44:EE:5D:A5:86:95:18:03:73:34:9E:99:B5:9E:9E:9C:2C:B0:D2:FB:83:B0:99:11:DA:CD:0B:8C"
+      ]
+    }
+  }
+]

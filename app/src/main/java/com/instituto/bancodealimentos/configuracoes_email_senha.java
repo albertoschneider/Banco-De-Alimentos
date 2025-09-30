@@ -13,8 +13,8 @@ import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.text.InputType;
 import android.util.TypedValue;
-import android.view.View;
 import android.view.Gravity;
+import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.CheckBox;
@@ -54,7 +54,7 @@ public class configuracoes_email_senha extends AppCompatActivity {
     private FirebaseUser user;
     private FirebaseFirestore db;
 
-    // Cooldown "Alterar Senha" (reset-link)
+    // Cooldown "Alterar Senha"
     private SharedPreferences prefs;
     private static final String PREFS = "pw_reset_prefs";
     private static final String K_LEVEL = "pw_level";
@@ -105,7 +105,7 @@ public class configuracoes_email_senha extends AppCompatActivity {
         btnSalvar.setOnClickListener(v -> salvarAlteracoes());
         btnExcluir.setOnClickListener(v -> mostrarDialogExclusao());
 
-        // Abrir tela "Novo e-mail"
+        // Abre a tela "Novo e-mail"
         if (btnAlterarEmail != null) {
             btnAlterarEmail.setOnClickListener(v ->
                     startActivity(new Intent(this, NovoEmailActivity.class)));
@@ -115,6 +115,15 @@ public class configuracoes_email_senha extends AppCompatActivity {
         if (tvAlterarSenha != null) {
             tvAlterarSenha.setOnClickListener(v -> trySendResetLinkWithCooldown());
             restoreCooldownIfRunning();
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        FirebaseUser u = FirebaseAuth.getInstance().getCurrentUser();
+        if (u != null) {
+            u.reload().addOnCompleteListener(t -> preencherDados());
         }
     }
 
@@ -204,7 +213,7 @@ public class configuracoes_email_senha extends AppCompatActivity {
                 });
     }
 
-    // ======== Reset-link + cooldown (sem Dynamic Links) ========
+    // ======== Reset-link + cooldown (Hosting/App Links) ========
     private void trySendResetLinkWithCooldown() {
         if (user.getEmail() == null) {
             Toast.makeText(this, "Conta sem e-mail. Refaça login.", Toast.LENGTH_LONG).show();
@@ -384,7 +393,6 @@ public class configuracoes_email_senha extends AppCompatActivity {
         msg.setTextColor(0xFF4B5563);
         msg.setGravity(Gravity.CENTER);
 
-        // Checkbox de confirmação
         CheckBox cb = new CheckBox(this);
         cb.setText("*Entendo que, uma vez excluída, a conta não poderá ser recuperada.");
         cb.setTextColor(0xFF6B7280);
@@ -395,7 +403,6 @@ public class configuracoes_email_senha extends AppCompatActivity {
         btnSim.setAllCaps(false);
         btnSim.setTypeface(Typeface.DEFAULT_BOLD);
         btnSim.setCornerRadius(dp(12));
-        // começa DESABILITADO
         btnSim.setEnabled(false);
         btnSim.setBackgroundTintList(ColorStateList.valueOf(0xFFD1D5DB));
         btnSim.setTextColor(0xFF9CA3AF);
@@ -454,7 +461,8 @@ public class configuracoes_email_senha extends AppCompatActivity {
     private void confirmarExclusaoConta() {
         Runnable continuar = () -> {
             final String uid = user.getUid();
-            db.collection("users").document(uid).delete()
+            // sua coleção oficial é "usuarios"
+            db.collection("usuarios").document(uid).delete()
                     .addOnCompleteListener(task -> {
                         user.delete()
                                 .addOnSuccessListener(unused -> {

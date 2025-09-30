@@ -27,7 +27,6 @@ public class ResetarSenhaActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_resetar_senha);
 
-        // Header com o MESMO tratamento de insets
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.header), (v, insets) -> {
             Insets sb = insets.getInsets(WindowInsetsCompat.Type.statusBars());
             v.setPadding(v.getPaddingLeft(), sb.top, v.getPaddingRight(), v.getPaddingBottom());
@@ -52,9 +51,14 @@ public class ResetarSenhaActivity extends AppCompatActivity {
             FirebaseAuth.getInstance().confirmPasswordReset(oobCode, s1)
                     .addOnSuccessListener(unused -> {
                         toast("Senha alterada com sucesso!");
-                        Intent i = new Intent(this, configuracoes_email_senha.class);
-                        i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                        startActivity(i);
+                        // Se não houver sessão, manda para o login
+                        if (FirebaseAuth.getInstance().getCurrentUser() == null) {
+                            startActivity(new Intent(this, telalogin.class)
+                                    .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
+                        } else {
+                            startActivity(new Intent(this, configuracoes_email_senha.class)
+                                    .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
+                        }
                         finish();
                     })
                     .addOnFailureListener(e -> toast("Erro ao definir senha: " + e.getMessage()));

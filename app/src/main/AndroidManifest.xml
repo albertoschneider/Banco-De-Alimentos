@@ -27,72 +27,28 @@
         android:theme="@style/Theme.BancoDeAlimentos"
         tools:targetApi="31">
 
-        <activity
-            android:name=".editar_pontodecoleta"
-            android:exported="false" />
-        <activity
-            android:name=".gerenciar_pontosdecoleta"
-            android:exported="false" />
-        <activity
-            android:name=".pontosdecoleta_admin"
-            android:exported="false" />
-        <activity
-            android:name=".add_admin"
-            android:exported="false" />
-        <activity
-            android:name=".pedido_pago"
-            android:exported="false" />
-        <activity
-            android:name=".historico"
-            android:exported="false" />
-        <activity
-            android:name=".configuracoes_google"
-            android:exported="false" />
-        <activity
-            android:name=".gerenciar_admins"
-            android:exported="false" />
-        <activity
-            android:name=".configuracoes_email_senha"
-            android:exported="false" />
-        <activity
-            android:name=".menu_admin"
-            android:exported="false" />
-        <activity
-            android:name=".criar_produto"
-            android:exported="false" />
-        <activity
-            android:name=".editar_produto"
-            android:exported="false" />
-        <activity
-            android:name=".admin_produtos"
-            android:exported="false" />
-        <activity
-            android:name=".pedidos"
-            android:exported="false" />
-        <activity
-            android:name=".pagamento"
-            android:exported="false" />
-        <activity
-            android:name=".carrinho"
-            android:exported="false" />
-        <activity
-            android:name=".doealimentos"
-            android:exported="false" />
-        <activity
-            android:name=".pontosdecoleta"
-            android:exported="false" />
-        <activity
-            android:name=".voluntariar"
-            android:exported="false" />
-        <activity
-            android:name=".telaregistro"
-            android:exported="false" />
-        <activity
-            android:name=".telalogin"
-            android:exported="false" />
-        <activity
-            android:name=".MainActivity"
-            android:exported="false" />
+        <activity android:name=".editar_pontodecoleta" android:exported="false" />
+        <activity android:name=".gerenciar_pontosdecoleta" android:exported="false" />
+        <activity android:name=".pontosdecoleta_admin" android:exported="false" />
+        <activity android:name=".add_admin" android:exported="false" />
+        <activity android:name=".pedido_pago" android:exported="false" />
+        <activity android:name=".historico" android:exported="false" />
+        <activity android:name=".configuracoes_google" android:exported="false" />
+        <activity android:name=".gerenciar_admins" android:exported="false" />
+        <activity android:name=".configuracoes_email_senha" android:exported="false" />
+        <activity android:name=".menu_admin" android:exported="false" />
+        <activity android:name=".criar_produto" android:exported="false" />
+        <activity android:name=".editar_produto" android:exported="false" />
+        <activity android:name=".admin_produtos" android:exported="false" />
+        <activity android:name=".pedidos" android:exported="false" />
+        <activity android:name=".pagamento" android:exported="false" />
+        <activity android:name=".carrinho" android:exported="false" />
+        <activity android:name=".doealimentos" android:exported="false" />
+        <activity android:name=".pontosdecoleta" android:exported="false" />
+        <activity android:name=".voluntariar" android:exported="false" />
+        <activity android:name=".telaregistro" android:exported="false" />
+        <activity android:name=".telalogin" android:exported="false" />
+        <activity android:name=".MainActivity" android:exported="false" />
 
         <activity
             android:name=".SplashActivity"
@@ -107,6 +63,7 @@
             android:name=".EmailActionRouterActivity"
             android:exported="true"
             android:launchMode="singleTask">
+            <!-- web.app -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
@@ -116,6 +73,7 @@
                     android:host="barc-2025.web.app"
                     android:pathPrefix="/__/auth/action"/>
             </intent-filter>
+            <!-- firebaseapp.com -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
@@ -131,6 +89,7 @@
         <activity android:name=".ResetarSenhaActivity" />
         <activity android:name=".EmailAtualizadoSucessoActivity" />
         <activity android:name=".EsqueciSenhaActivity" />
+        <activity android:name=".NovoEmailActivity" android:exported="false" />
 
         <meta-data
             android:name="preloaded_fonts"

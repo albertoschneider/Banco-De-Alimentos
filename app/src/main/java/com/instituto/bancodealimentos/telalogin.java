@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Patterns;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -72,7 +71,6 @@ public class telalogin extends AppCompatActivity {
         btnBack.setOnClickListener(v -> startActivity(new Intent(this, MainActivity.class)));
         tvRegister.setOnClickListener(v -> startActivity(new Intent(this, telaregistro.class)));
 
-        // limpa o erro ao digitar novamente
         TextWatcher clearErrorWatcher = new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
             @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
@@ -83,9 +81,9 @@ public class telalogin extends AppCompatActivity {
         edtEmail.addTextChangedListener(clearErrorWatcher);
         edtSenha.addTextChangedListener(clearErrorWatcher);
 
-        tvForgot.setOnClickListener(v -> {
-            startActivity(new Intent(this, EsqueciSenhaActivity.class));
-        });
+        // >>> Abre a tela EsqueciSenhaActivity <<<
+        tvForgot.setOnClickListener(v ->
+                startActivity(new Intent(this, EsqueciSenhaActivity.class)));
 
         btnEntrar.setOnClickListener(v -> loginEmailSenha());
 
@@ -109,7 +107,6 @@ public class telalogin extends AppCompatActivity {
 
         mAuth.signInWithEmailAndPassword(email, senha).addOnCompleteListener(task -> {
             if (!task.isSuccessful()) {
-                // erro inline em vermelho
                 showInlineError("*E-mail ou senha incorretos");
                 return;
             }
