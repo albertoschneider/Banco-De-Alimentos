@@ -47,9 +47,11 @@ public class voluntariar extends AppCompatActivity {
         ImageButton btnPrev = findViewById(R.id.btn_prev);
 
         imageList = Arrays.asList(
-                R.drawable.imagem1,
-                R.drawable.imagem2,
-                R.drawable.imagem3
+                R.drawable.voluntario_imagem1,
+                R.drawable.voluntario_imagem2,
+                R.drawable.voluntario_imagem3,
+                R.drawable.voluntario_imagem4,
+                R.drawable.voluntario_imagem5
         );
 
         LinearLayout btnWhatsapp = findViewById(R.id.btn_whatsapp);
