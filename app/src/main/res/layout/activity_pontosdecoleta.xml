@@ -9,7 +9,6 @@
     android:background="#EAF0F6"
     tools:context=".pontosdecoleta">
 
-    <!-- HEADER amarelo com título centralizado e busca -->
     <LinearLayout
         android:id="@+id/header"
         android:layout_width="match_parent"
@@ -23,25 +22,22 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- Barra do título -->
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
             android:paddingBottom="8dp">
 
-            <!-- voltar -->
             <ImageButton
                 android:id="@+id/btn_voltar"
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:adjustViewBounds="true"
-                android:background="@android:color/transparent"
-                android:contentDescription="@string/sem_descricao"
-                android:scaleType="fitCenter"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/voltar"
+                android:scaleType="centerInside"
+                android:padding="4dp"
                 android:src="@drawable/arrow_back_png" />
 
-            <!-- Título centralizado -->
             <TextView
                 android:id="@+id/tvTitulo"
                 android:layout_width="wrap_content"
@@ -50,10 +46,11 @@
                 android:text="Pontos de Coleta"
                 android:textColor="#153E75"
                 android:textSize="20sp"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:singleLine="true"
+                android:ellipsize="end"/>
         </RelativeLayout>
 
-        <!-- Busca -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="40dp"
@@ -87,7 +84,6 @@
         </LinearLayout>
     </LinearLayout>
 
-    <!-- LISTA -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvPontos"
         android:layout_width="0dp"

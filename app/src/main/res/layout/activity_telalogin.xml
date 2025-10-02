@@ -42,12 +42,11 @@
             android:layout_width="180dp"
             android:layout_height="180dp"
             android:adjustViewBounds="true"
-            android:contentDescription="Logo"
+            android:contentDescription="@string/sem_descricao"
             android:scaleType="fitCenter"
             android:src="@drawable/logoinicio"
             app:tint="#FFFFFF" />
 
-        <!-- E-mail -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/tilEmail"
             style="@style/BDA_TextInputLayout"
@@ -61,10 +60,10 @@
                 style="@style/BDA_EditText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="textEmailAddress"/>
+                android:inputType="textEmailAddress"
+                android:autofillHints="emailAddress"/>
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Senha -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/tilSenha"
             style="@style/BDA_TextInputLayout"
@@ -79,10 +78,10 @@
                 style="@style/BDA_EditText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="textPassword"/>
+                android:inputType="textPassword"
+                android:autofillHints="password"/>
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- ERRO INLINE (vermelho) -->
         <TextView
             android:id="@+id/tvLoginError"
             android:layout_width="match_parent"
@@ -93,7 +92,6 @@
             android:textColor="#DC2626"
             android:visibility="gone"/>
 
-        <!-- Entrar -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnEntrar"
             android:layout_width="match_parent"
@@ -106,7 +104,6 @@
             app:backgroundTint="#FFF1B100"
             app:cornerRadius="26dp" />
 
-        <!-- Entrar com Google -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnGoogle"
             android:layout_width="match_parent"
