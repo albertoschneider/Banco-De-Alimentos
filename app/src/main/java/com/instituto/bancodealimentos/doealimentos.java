@@ -16,19 +16,24 @@ import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
+import com.google.firebase.Timestamp;
 
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 public class doealimentos extends AppCompatActivity {
 
-    private RecyclerView recyclerView;
+    private androidx.recyclerview.widget.RecyclerView recyclerView;
     private ProdutoUsuarioAdapter adapter;
     private final List<Produto> lista = new ArrayList<>();
     private TextView tvValorTotal;
@@ -39,7 +44,6 @@ public class doealimentos extends AppCompatActivity {
     @Override protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // (opcional) manter a status bar amarela e ícones escuros
         WindowCompat.setDecorFitsSystemWindows(getWindow(), true);
         getWindow().setStatusBarColor(Color.parseColor("#FFF1B100"));
         WindowInsetsControllerCompat c = ViewCompat.getWindowInsetsController(getWindow().getDecorView());
@@ -47,7 +51,7 @@ public class doealimentos extends AppCompatActivity {
 
         setContentView(R.layout.activity_doealimentos);
 
-        // >>> EXATAMENTE como no Pontos de Coleta: aplica o paddingTop da status bar no header
+        // Header com insets (evita corte no título)
         View header = findViewById(R.id.header);
         if (header != null) {
             ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
@@ -57,10 +61,9 @@ public class doealimentos extends AppCompatActivity {
             });
             ViewCompat.requestApplyInsets(header);
         }
-        // <<<
 
         tvValorTotal = findViewById(R.id.tvValorTotal);
-        recyclerView = findViewById(R.id.recyclerView);
+        recyclerView  = findViewById(R.id.recyclerView);
 
         recyclerView.setLayoutManager(new GridLayoutManager(this, 2));
         adapter = new ProdutoUsuarioAdapter(lista, this::atualizarTotal);
@@ -72,16 +75,12 @@ public class doealimentos extends AppCompatActivity {
             finish();
         });
 
-        // Finalizar Doação -> salva carrinho e abre carrinho
-        findViewById(R.id.btnContinuar).setOnClickListener(v -> {
-            salvarCarrinhoLocal();
-            startActivity(new Intent(doealimentos.this, carrinho.class));
-        });
+        findViewById(R.id.btnContinuar).setOnClickListener(v -> finalizarDoacao());
 
-        escutar();
+        escutarProdutos();
     }
 
-    private void escutar() {
+    private void escutarProdutos() {
         listener = db.collection("produtos")
                 .orderBy("nome", Query.Direction.ASCENDING)
                 .addSnapshotListener((snap, e) -> {
@@ -89,7 +88,6 @@ public class doealimentos extends AppCompatActivity {
                     if (snap == null) return;
 
                     int[] quantidadesAntigas = adapter.dumpQuantidadesByOrder();
-
                     lista.clear();
                     for (DocumentSnapshot d : snap.getDocuments()) {
                         lista.add(new Produto(
@@ -110,23 +108,76 @@ public class doealimentos extends AppCompatActivity {
         for (int i = 0; i < lista.size(); i++) {
             Produto p = lista.get(i);
             int qtd = adapter.getQuantidadeByPosition(i);
-            total += (p.getPreco() == null ? 0.0 : p.getPreco()) * qtd;
+            total += (p.getPreco() == null ? 0.0 : p.getPreco()) * Math.max(0, qtd);
         }
         tvValorTotal.setText(Money.fmt(total));
     }
 
-    private void salvarCarrinhoLocal() {
+    private void finalizarDoacao() {
         ArrayList<Produto> selecionados = new ArrayList<>();
+        double total = 0.0;
+
         for (int i = 0; i < lista.size(); i++) {
             Produto p = lista.get(i);
-            int qtd = adapter.getQuantidadeByPosition(i);
+            int qtd = Math.max(0, adapter.getQuantidadeByPosition(i));
             if (qtd > 0) {
                 Produto copy = new Produto(p.getId(), p.getNome(), p.getPreco(), p.getImagemUrl());
                 try { copy.getClass().getMethod("setQuantidade", int.class).invoke(copy, qtd); } catch (Exception ignored) {}
                 selecionados.add(copy);
+                total += (p.getPreco() == null ? 0.0 : p.getPreco()) * qtd;
             }
         }
+
+        if (selecionados.isEmpty()) {
+            Toast.makeText(this, "Selecione ao menos 1 item para doar.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         CartStore.save(this, selecionados);
+
+        String uid = FirebaseAuth.getInstance().getCurrentUser() != null
+                ? FirebaseAuth.getInstance().getCurrentUser().getUid() : null;
+        if (uid == null) {
+            Toast.makeText(this, "Faça login para finalizar a doação.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        String orderId   = db.collection("tmp").document().getId();
+        String displayId = orderId.substring(0, Math.min(7, orderId.length())).toUpperCase(Locale.ROOT);
+
+        Timestamp createdAt = Timestamp.now();
+        Date expDate        = new Date(System.currentTimeMillis() + 10 * 60 * 1000L); // +10 min
+        Timestamp expiresAt = new Timestamp(expDate);
+
+        Map<String, Object> pedido = new HashMap<>();
+        pedido.put("displayId", displayId);
+        pedido.put("status", "PENDENTE");
+        pedido.put("total", total);
+        pedido.put("createdAt", createdAt);
+        pedido.put("expiresAt", expiresAt);
+
+        List<Map<String, Object>> items = new ArrayList<>();
+        for (Produto p : selecionados) {
+            Map<String, Object> it = new HashMap<>();
+            it.put("productId", p.getId());
+            it.put("name", p.getNome());
+            it.put("qty", safeQtd(p));
+            it.put("unitPrice", p.getPreco() == null ? 0.0 : p.getPreco());
+            it.put("imageUrl", p.getImagemUrl());
+            items.add(it);
+        }
+        pedido.put("items", items);
+
+        db.collection("users").document(uid)
+                .collection("orders").document(orderId)
+                .set(pedido)
+                .addOnSuccessListener(a -> startActivity(new Intent(doealimentos.this, carrinho.class)))
+                .addOnFailureListener(err -> Toast.makeText(this, "Não foi possível criar o pedido: " + err.getMessage(), Toast.LENGTH_LONG).show());
+    }
+
+    private int safeQtd(Produto p) {
+        try { return (int) p.getClass().getMethod("getQuantidade").invoke(p); }
+        catch (Exception ignored) { return 0; }
     }
 
     @Override protected void onDestroy() {
