@@ -29,7 +29,12 @@
                 android:id="@+id/btn_voltar"
                 android:layout_width="16dp"
                 android:layout_height="16dp"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:adjustViewBounds="true"
                 android:background="@android:color/transparent"
+                android:contentDescription="@string/sem_descricao"
+                android:scaleType="fitCenter"
                 android:src="@drawable/arrow_back_png" />
 
             <TextView
@@ -97,7 +102,7 @@
         android:textStyle="bold"
         android:textColor="@android:color/white"
         app:cornerRadius="16dp"
-        app:backgroundTint="#1E3A8A"
+        app:backgroundTint="#004E7C"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
