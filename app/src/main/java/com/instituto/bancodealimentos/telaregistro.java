@@ -23,7 +23,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.auth.ActionCodeSettings;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseAuthUserCollisionException;
@@ -45,6 +45,9 @@ public class telaregistro extends AppCompatActivity {
 
     private GoogleSignInClient mGoogleSignInClient;
     private static final int RC_SIGN_IN = 9001;
+
+    // URLs de sucesso (pode manter assim mesmo usando %LINK% padrão)
+    private static final String URL_SUCESSO_EMAIL_VERIFICADO = "https://albertoschneider.github.io/success/email-verificado/";
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -76,8 +79,7 @@ public class telaregistro extends AppCompatActivity {
         tvLoginHere.setOnClickListener(v -> startActivity(new Intent(this, telalogin.class)));
 
         btnRegistrar.setOnClickListener(v -> {
-            // Esconde o aviso antes de tentar
-            if (tvAuthErrorRegister != null) tvAuthErrorRegister.setVisibility(View.GONE);
+            hideError();
             registrarUsuarioEmailSenha();
         });
 
@@ -95,38 +97,38 @@ public class telaregistro extends AppCompatActivity {
         String senha = edtSenha.getText().toString().trim();
         String confirmar = edtConfirmarSenha.getText().toString().trim();
 
-        if (nome.isEmpty() || email.isEmpty() || senha.isEmpty() || confirmar.isEmpty()) { toast("Preencha todos os campos!"); return; }
-        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) { toast("E-mail inválido."); return; }
-        if (!senha.equals(confirmar)) { toast("As senhas não coincidem!"); return; }
+        if (nome.isEmpty() || email.isEmpty() || senha.isEmpty() || confirmar.isEmpty()) { showError("*Preencha todos os campos."); return; }
+        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) { showError("*E-mail inválido."); return; }
+        if (senha.length() < 6) { showError("*Senha muito curta (mínimo 6)."); return; }
+        if (!senha.equals(confirmar)) { showError("*As senhas não coincidem."); return; }
 
         mAuth.createUserWithEmailAndPassword(email, senha).addOnCompleteListener(task -> {
             if (!task.isSuccessful()) {
-                // E-mail já em uso? → mostra o aviso em vermelho abaixo do confirmar senha
                 Throwable ex = task.getException();
-                if (ex instanceof FirebaseAuthUserCollisionException) {
-                    showEmailEmUso();
-                    return;
-                }
+                // Mensagens amigáveis no TextView
+                if (ex instanceof FirebaseAuthUserCollisionException) { showError("*Este e-mail já está em uso. Tente fazer login."); return; }
                 if (ex instanceof FirebaseAuthException) {
                     String code = ((FirebaseAuthException) ex).getErrorCode();
-                    if ("ERROR_EMAIL_ALREADY_IN_USE".equalsIgnoreCase(code)) {
-                        showEmailEmUso();
-                        return;
+                    switch (code) {
+                        case "ERROR_EMAIL_ALREADY_IN_USE": showError("*Este e-mail já está em uso. Tente fazer login."); return;
+                        case "ERROR_INVALID_EMAIL": showError("*E-mail inválido."); return;
+                        case "ERROR_WEAK_PASSWORD": showError("*Senha muito curta (mínimo 6)."); return;
+                        default: showError("*Erro no cadastro. Tente novamente."); return;
                     }
                 }
-                // Outros erros → mantém via Toast
-                toast("Erro no cadastro: " + (ex != null ? ex.getMessage() : ""));
+                showError("*Erro no cadastro. Tente novamente.");
                 return;
             }
 
             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-            if (user == null) { toast("Erro inesperado: usuário nulo."); return; }
+            if (user == null) { showError("*Erro inesperado: usuário nulo."); return; }
 
+            // Atualiza nome exibido
             user.updateProfile(new UserProfileChangeRequest.Builder()
                     .setDisplayName(nome)
-                    .build()
-            );
+                    .build());
 
+            // Cria/atualiza doc no Firestore
             String uid = user.getUid();
             Map<String,Object> usuario = new HashMap<>();
             usuario.put("nome", nome);
@@ -134,15 +136,60 @@ public class telaregistro extends AppCompatActivity {
             usuario.put("createdAt", com.google.firebase.Timestamp.now());
 
             db.collection("usuarios").document(uid).set(usuario, com.google.firebase.firestore.SetOptions.merge())
-                    .addOnSuccessListener(a -> checarAdminENavegar(uid))
-                    .addOnFailureListener(e -> { toast("Erro ao salvar no banco: " + e.getMessage()); checarAdminENavegar(uid); });
+                    .addOnSuccessListener(a -> {
+                        // Envia e-mail de verificação com continueUrl próprio (abre o app depois do clique)
+                        ActionCodeSettings settings = ActionCodeSettings.newBuilder()
+                                .setUrl(URL_SUCESSO_EMAIL_VERIFICADO)
+                                .setHandleCodeInApp(true)
+                                .setAndroidPackageName("com.instituto.bancodealimentos", true, null)
+                                .build();
+
+                        user.sendEmailVerification(settings)
+                                .addOnSuccessListener(v -> {
+                                    // Mostra aviso bonitinho na própria tela de registro
+                                    showInfo("Enviamos um link de verificação para " + email + ". Verifique seu e-mail para concluir.");
+                                    // opcional: navegar para login para evitar uso sem verificação
+                                    startActivity(new Intent(this, telalogin.class)
+                                            .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
+                                    finish();
+                                })
+                                .addOnFailureListener(e -> {
+                                    showError("*Falha ao enviar verificação: " + e.getMessage());
+                                    // Mesmo assim segue o fluxo mínimo
+                                    startActivity(new Intent(this, telalogin.class)
+                                            .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
+                                    finish();
+                                });
+                    })
+                    .addOnFailureListener(e -> {
+                        showError("*Erro ao salvar no banco. Tente novamente.");
+                    });
         });
     }
 
-    private void showEmailEmUso() {
+    private void hideError() {
         if (tvAuthErrorRegister != null) {
-            tvAuthErrorRegister.setText("*Este E-mail ja está sendo usado. Tente Fazer Login");
+            tvAuthErrorRegister.setVisibility(View.GONE);
+        }
+    }
+
+    private void showError(String msg) {
+        if (tvAuthErrorRegister != null) {
+            tvAuthErrorRegister.setText(msg);
+            tvAuthErrorRegister.setTextColor(0xFFDC2626); // vermelho
             tvAuthErrorRegister.setVisibility(View.VISIBLE);
+        } else {
+            toast(msg);
+        }
+    }
+
+    private void showInfo(String msg) {
+        if (tvAuthErrorRegister != null) {
+            tvAuthErrorRegister.setText(msg);
+            tvAuthErrorRegister.setTextColor(0xFF065F46); // verde
+            tvAuthErrorRegister.setVisibility(View.VISIBLE);
+        } else {
+            toast(msg);
         }
     }
 
@@ -163,11 +210,11 @@ public class telaregistro extends AppCompatActivity {
         mAuth.signInWithCredential(GoogleAuthProvider.getCredential(idToken, null))
                 .addOnCompleteListener(this, task -> {
                     if (!task.isSuccessful()) {
-                        toast("Falha na autenticação Firebase: " + (task.getException()!=null?task.getException().getMessage():""));
+                        showError("*Falha na autenticação com Google.");
                         return;
                     }
                     FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-                    if (user == null) { toast("Erro inesperado: usuário nulo."); return; }
+                    if (user == null) { showError("*Erro inesperado: usuário nulo."); return; }
 
                     String uid = user.getUid();
                     String nome = user.getDisplayName() != null ? user.getDisplayName() : "";
