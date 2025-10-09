@@ -42,7 +42,6 @@ public class EsqueciSenhaActivity extends AppCompatActivity {
                 return;
             }
 
-            // ContinueUrl → volta pro app via DeepLinkSuccessActivity (/success/senha-redefinida/)
             ActionCodeSettings settings = ActionCodeSettings.newBuilder()
                     .setUrl("https://albertoschneider.github.io/success/senha-redefinida/")
                     .setHandleCodeInApp(true)

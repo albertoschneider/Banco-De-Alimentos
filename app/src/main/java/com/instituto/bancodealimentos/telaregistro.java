@@ -1,14 +1,13 @@
 package com.instituto.bancodealimentos;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.util.Patterns;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.content.Intent;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.Nullable;
@@ -23,6 +22,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
+import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.ActionCodeSettings;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
@@ -40,13 +40,15 @@ public class telaregistro extends AppCompatActivity {
 
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
-    private EditText edtNome, edtEmail, edtSenha, edtConfirmarSenha;
+    private TextInputEditText edtNome, edtEmail, edtSenha, edtConfirmarSenha;
     private TextView tvAuthErrorRegister;
 
     private GoogleSignInClient mGoogleSignInClient;
     private static final int RC_SIGN_IN = 9001;
 
-    // URLs de sucesso (pode manter assim mesmo usando %LINK% padrão)
+    private Button btnRegistrar, btnGoogle, btnBackToLogin;
+
+    // URL para deep link de sucesso (abre o app após verificar)
     private static final String URL_SUCESSO_EMAIL_VERIFICADO = "https://albertoschneider.github.io/success/email-verificado/";
 
     @Override
@@ -72,14 +74,14 @@ public class telaregistro extends AppCompatActivity {
 
         ImageButton btnBack = findViewById(R.id.btn_back);
         TextView tvLoginHere = findViewById(R.id.tv_login_here);
-        Button btnRegistrar = findViewById(R.id.btn_login);
-        Button btnGoogle = findViewById(R.id.btn_google);
+        btnRegistrar = findViewById(R.id.btn_login);
+        btnGoogle = findViewById(R.id.btn_google);
 
         btnBack.setOnClickListener(v -> startActivity(new Intent(this, MainActivity.class)));
         tvLoginHere.setOnClickListener(v -> startActivity(new Intent(this, telalogin.class)));
 
         btnRegistrar.setOnClickListener(v -> {
-            hideError();
+            hideMsg();
             registrarUsuarioEmailSenha();
         });
 
@@ -92,20 +94,22 @@ public class telaregistro extends AppCompatActivity {
     }
 
     private void registrarUsuarioEmailSenha() {
-        String nome = edtNome.getText().toString().trim();
-        String email = edtEmail.getText().toString().trim();
-        String senha = edtSenha.getText().toString().trim();
-        String confirmar = edtConfirmarSenha.getText().toString().trim();
+        String nome = val(edtNome);
+        String email = val(edtEmail);
+        String senha = val(edtSenha);
+        String confirmar = val(edtConfirmarSenha);
 
         if (nome.isEmpty() || email.isEmpty() || senha.isEmpty() || confirmar.isEmpty()) { showError("*Preencha todos os campos."); return; }
         if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) { showError("*E-mail inválido."); return; }
         if (senha.length() < 6) { showError("*Senha muito curta (mínimo 6)."); return; }
         if (!senha.equals(confirmar)) { showError("*As senhas não coincidem."); return; }
 
+        setButtonsEnabled(false);
+
         mAuth.createUserWithEmailAndPassword(email, senha).addOnCompleteListener(task -> {
             if (!task.isSuccessful()) {
+                setButtonsEnabled(true);
                 Throwable ex = task.getException();
-                // Mensagens amigáveis no TextView
                 if (ex instanceof FirebaseAuthUserCollisionException) { showError("*Este e-mail já está em uso. Tente fazer login."); return; }
                 if (ex instanceof FirebaseAuthException) {
                     String code = ((FirebaseAuthException) ex).getErrorCode();
@@ -121,14 +125,15 @@ public class telaregistro extends AppCompatActivity {
             }
 
             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-            if (user == null) { showError("*Erro inesperado: usuário nulo."); return; }
+            if (user == null) {
+                setButtonsEnabled(true);
+                showError("*Erro inesperado: usuário nulo.");
+                return;
+            }
 
-            // Atualiza nome exibido
             user.updateProfile(new UserProfileChangeRequest.Builder()
-                    .setDisplayName(nome)
-                    .build());
+                    .setDisplayName(nome).build());
 
-            // Cria/atualiza doc no Firestore
             String uid = user.getUid();
             Map<String,Object> usuario = new HashMap<>();
             usuario.put("nome", nome);
@@ -136,63 +141,37 @@ public class telaregistro extends AppCompatActivity {
             usuario.put("createdAt", com.google.firebase.Timestamp.now());
 
             db.collection("usuarios").document(uid).set(usuario, com.google.firebase.firestore.SetOptions.merge())
-                    .addOnSuccessListener(a -> {
-                        // Envia e-mail de verificação com continueUrl próprio (abre o app depois do clique)
-                        ActionCodeSettings settings = ActionCodeSettings.newBuilder()
-                                .setUrl(URL_SUCESSO_EMAIL_VERIFICADO)
-                                .setHandleCodeInApp(true)
-                                .setAndroidPackageName("com.instituto.bancodealimentos", true, null)
-                                .build();
-
-                        user.sendEmailVerification(settings)
-                                .addOnSuccessListener(v -> {
-                                    // Mostra aviso bonitinho na própria tela de registro
-                                    showInfo("Enviamos um link de verificação para " + email + ". Verifique seu e-mail para concluir.");
-                                    // opcional: navegar para login para evitar uso sem verificação
-                                    startActivity(new Intent(this, telalogin.class)
-                                            .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
-                                    finish();
-                                })
-                                .addOnFailureListener(e -> {
-                                    showError("*Falha ao enviar verificação: " + e.getMessage());
-                                    // Mesmo assim segue o fluxo mínimo
-                                    startActivity(new Intent(this, telalogin.class)
-                                            .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
-                                    finish();
-                                });
-                    })
+                    .addOnSuccessListener(a -> enviarVerificacao(user, email))
                     .addOnFailureListener(e -> {
-                        showError("*Erro ao salvar no banco. Tente novamente.");
+                        // Mesmo que o Firestore falhe, ainda enviamos verificação
+                        enviarVerificacao(user, email);
                     });
         });
     }
 
-    private void hideError() {
-        if (tvAuthErrorRegister != null) {
-            tvAuthErrorRegister.setVisibility(View.GONE);
-        }
+    private void enviarVerificacao(FirebaseUser user, String email) {
+        ActionCodeSettings settings = ActionCodeSettings.newBuilder()
+                .setUrl(URL_SUCESSO_EMAIL_VERIFICADO)
+                .setHandleCodeInApp(true)
+                .setAndroidPackageName("com.instituto.bancodealimentos", true, null)
+                .build();
+
+        user.sendEmailVerification(settings)
+                .addOnSuccessListener(v -> {
+                    // NÃO redireciona; mostra mensagem clara e mantém na tela
+                    showInfo("Enviamos um link de verificação para " + email + ". Verifique seu e-mail para concluir o cadastro.");
+                    setButtonsEnabled(true);
+                    // Desloga preventivamente pra evitar uso sem verificação
+                    FirebaseAuth.getInstance().signOut();
+                })
+                .addOnFailureListener(e -> {
+                    showError("*Falha ao enviar verificação: " + e.getMessage());
+                    setButtonsEnabled(true);
+                    FirebaseAuth.getInstance().signOut();
+                });
     }
 
-    private void showError(String msg) {
-        if (tvAuthErrorRegister != null) {
-            tvAuthErrorRegister.setText(msg);
-            tvAuthErrorRegister.setTextColor(0xFFDC2626); // vermelho
-            tvAuthErrorRegister.setVisibility(View.VISIBLE);
-        } else {
-            toast(msg);
-        }
-    }
-
-    private void showInfo(String msg) {
-        if (tvAuthErrorRegister != null) {
-            tvAuthErrorRegister.setText(msg);
-            tvAuthErrorRegister.setTextColor(0xFF065F46); // verde
-            tvAuthErrorRegister.setVisibility(View.VISIBLE);
-        } else {
-            toast(msg);
-        }
-    }
-
+    // ===== Google Sign-In =====
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -241,6 +220,40 @@ public class telaregistro extends AppCompatActivity {
         Intent it = new Intent(this, isAdmin ? menu_admin.class : menu.class);
         startActivity(it);
         finish();
+    }
+
+    // ===== helpers de UI =====
+    private void setButtonsEnabled(boolean enabled) {
+        if (btnRegistrar != null) { btnRegistrar.setEnabled(enabled); btnRegistrar.setAlpha(enabled ? 1f : 0.6f); }
+        if (btnGoogle != null)    { btnGoogle.setEnabled(enabled);   btnGoogle.setAlpha(enabled ? 1f : 0.6f); }
+    }
+
+    private void hideMsg() {
+        if (tvAuthErrorRegister != null) tvAuthErrorRegister.setVisibility(View.GONE);
+    }
+
+    private void showError(String msg) {
+        if (tvAuthErrorRegister != null) {
+            tvAuthErrorRegister.setText(msg);
+            tvAuthErrorRegister.setTextColor(0xFFDC2626); // vermelho
+            tvAuthErrorRegister.setVisibility(View.VISIBLE);
+        } else {
+            toast(msg);
+        }
+    }
+
+    private void showInfo(String msg) {
+        if (tvAuthErrorRegister != null) {
+            tvAuthErrorRegister.setText(msg);
+            tvAuthErrorRegister.setTextColor(0xFF10B981); // verde CLARO (mais legível)
+            tvAuthErrorRegister.setVisibility(View.VISIBLE);
+        } else {
+            toast(msg);
+        }
+    }
+
+    private String val(TextInputEditText e) {
+        return e.getText() == null ? "" : e.getText().toString().trim();
     }
 
     private void toast(String s) { Toast.makeText(this, s, Toast.LENGTH_SHORT).show(); }

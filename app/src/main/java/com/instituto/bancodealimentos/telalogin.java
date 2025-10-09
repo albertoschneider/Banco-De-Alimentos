@@ -2,10 +2,8 @@ package com.instituto.bancodealimentos;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.text.Editable;
-import android.text.TextWatcher;
-import android.widget.Button;
-import android.widget.EditText;
+import android.util.Patterns;
+import android.view.View;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -23,35 +21,36 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.Timestamp;
-import com.google.firebase.auth.AuthCredential;
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.firebase.auth.ActionCodeSettings;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.auth.GoogleAuthProvider;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.SetOptions;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class telalogin extends AppCompatActivity {
 
+    private TextInputEditText edtEmail, edtSenha;
+    private TextView tvLoginError, txtForgot, txtRegister;
+    private MaterialButton btnEntrar, btnGoogle;
+    private ImageButton btnBack;
+
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
-    private EditText edtEmail, edtSenha;
-    private TextView tvLoginError;
-
     private GoogleSignInClient mGoogleSignInClient;
-    private static final int RC_SIGN_IN = 9001;
+
+    private static final int RC_GOOGLE = 9101;
+    private static final String URL_SUCESSO_EMAIL_VERIFICADO =
+            "https://albertoschneider.github.io/success/email-verificado/";
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_telalogin);
 
-        // Ajusta padding para status/navigation bars (edge-to-edge)
+        // Insets bonitinhos
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets sb = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(sb.left, sb.top, sb.right, sb.bottom);
@@ -61,152 +60,158 @@ public class telalogin extends AppCompatActivity {
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
 
-        // Views
+        // IDs do seu XML
+        btnBack      = findViewById(R.id.btnBack);
         edtEmail     = findViewById(R.id.edtEmail);
         edtSenha     = findViewById(R.id.edtSenha);
         tvLoginError = findViewById(R.id.tvLoginError);
-
-        ImageButton btnBack = findViewById(R.id.btnBack);
-        Button btnEntrar    = findViewById(R.id.btnEntrar);
-        TextView tvForgot   = findViewById(R.id.txtForgot);
-        TextView tvRegister = findViewById(R.id.txtRegister);
-        Button btnGoogle    = findViewById(R.id.btnGoogle);
+        btnEntrar    = findViewById(R.id.btnEntrar);
+        btnGoogle    = findViewById(R.id.btnGoogle);
+        txtForgot    = findViewById(R.id.txtForgot);
+        txtRegister  = findViewById(R.id.txtRegister);
 
         // Navegação básica
-        btnBack.setOnClickListener(v -> startActivity(new Intent(this, MainActivity.class)));
-        tvRegister.setOnClickListener(v -> startActivity(new Intent(this, telaregistro.class)));
-        tvForgot.setOnClickListener(v -> startActivity(new Intent(this, EsqueciSenhaActivity.class)));
+        if (btnBack != null) btnBack.setOnClickListener(v ->
+                startActivity(new Intent(this, MainActivity.class)));
 
-        // Limpa erro inline ao digitar
-        TextWatcher clearErrorWatcher = new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
-            @Override public void onTextChanged(CharSequence s, int start, int before, int count) { hideInlineError(); }
-            @Override public void afterTextChanged(Editable s) { }
-        };
-        edtEmail.addTextChangedListener(clearErrorWatcher);
-        edtSenha.addTextChangedListener(clearErrorWatcher);
+        if (txtRegister != null) txtRegister.setOnClickListener(v ->
+                startActivity(new Intent(this, telaregistro.class)));
 
-        // Login email/senha
-        btnEntrar.setOnClickListener(v -> loginEmailSenha());
+        if (txtForgot != null) txtForgot.setOnClickListener(v ->
+                startActivity(new Intent(this, EsqueciSenhaActivity.class)));
 
-        // Google Sign-In (usa o Web Client ID em strings.xml -> default_web_client_id)
-        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken(getString(R.string.default_web_client_id))
-                .requestEmail()
-                .build();
-        mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
-        btnGoogle.setOnClickListener(v ->
-                startActivityForResult(mGoogleSignInClient.getSignInIntent(), RC_SIGN_IN)
-        );
-    }
+        // Entrar (e-mail/senha)
+        btnEntrar.setOnClickListener(v -> tentarLogin());
 
-    private void loginEmailSenha() {
-        hideInlineError();
-
-        String email = edtEmail.getText() == null ? "" : edtEmail.getText().toString().trim();
-        String senha = edtSenha.getText() == null ? "" : edtSenha.getText().toString().trim();
-
-        if (email.isEmpty() || senha.isEmpty()) {
-            toast("Preencha todos os campos!");
-            return;
+        // Google
+        if (btnGoogle != null) {
+            GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                    .requestIdToken(getString(R.string.default_web_client_id))
+                    .requestEmail()
+                    .build();
+            mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
+            btnGoogle.setOnClickListener(v ->
+                    startActivityForResult(mGoogleSignInClient.getSignInIntent(), RC_GOOGLE));
         }
-
-        mAuth.signInWithEmailAndPassword(email, senha).addOnCompleteListener(task -> {
-            if (!task.isSuccessful()) {
-                showInlineError("*E-mail ou senha incorretos");
-                return;
-            }
-            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-            if (user == null) {
-                toast("Erro inesperado: usuário nulo.");
-                return;
-            }
-            ensureUserDocExistsThenNavigate(user);
-        });
     }
 
+    private void tentarLogin() {
+        clearMsg();
+
+        String email = val(edtEmail);
+        String senha = val(edtSenha);
+
+        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) { showError("*E-mail inválido."); return; }
+        if (senha.length() < 6) { showError("*Senha muito curta (mínimo 6)."); return; }
+
+        setButtonsEnabled(false);
+
+        mAuth.signInWithEmailAndPassword(email, senha)
+                .addOnCompleteListener(task -> {
+                    if (!task.isSuccessful()) {
+                        setButtonsEnabled(true);
+                        showError("*E-mail ou senha incorretos.");
+                        return;
+                    }
+
+                    FirebaseUser u = FirebaseAuth.getInstance().getCurrentUser();
+                    if (u == null) {
+                        setButtonsEnabled(true);
+                        showError("*Erro inesperado: usuário nulo.");
+                        return;
+                    }
+
+                    if (!u.isEmailVerified()) {
+                        // BLOQUEIA login de não verificado → reenvia e sai
+                        ActionCodeSettings settings = ActionCodeSettings.newBuilder()
+                                .setUrl(URL_SUCESSO_EMAIL_VERIFICADO)
+                                .setHandleCodeInApp(true)
+                                .setAndroidPackageName("com.instituto.bancodealimentos", true, null)
+                                .build();
+
+                        u.sendEmailVerification(settings)
+                                .addOnSuccessListener(x -> showInfo("Reenviamos o link de verificação para " + email + "."))
+                                .addOnFailureListener(e -> showError("*Falha ao reenviar verificação: " + e.getMessage()));
+
+                        FirebaseAuth.getInstance().signOut();
+                        setButtonsEnabled(true);
+                        showError("*Você precisa verificar seu e-mail antes de entrar.");
+                        return;
+                    }
+
+                    // Verificado → navega
+                    checarAdminENavegar(u.getUid());
+                });
+    }
+
+    private void checarAdminENavegar(String uid) {
+        db.collection("admins").document(uid).get()
+                .addOnSuccessListener((DocumentSnapshot snap) -> {
+                    Intent it = new Intent(this, (snap != null && snap.exists()) ? menu_admin.class : menu.class);
+                    startActivity(it);
+                    finish();
+                })
+                .addOnFailureListener(e -> {
+                    Intent it = new Intent(this, menu.class);
+                    startActivity(it);
+                    finish();
+                });
+    }
+
+    // Google login
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == RC_SIGN_IN) {
-            if (data == null) { toast("Falha no login com Google."); return; }
+        if (requestCode == RC_GOOGLE) {
             Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
             try {
                 GoogleSignInAccount account = task.getResult(ApiException.class);
-                if (account != null) {
-                    String idToken = account.getIdToken();
-                    if (idToken == null || idToken.isEmpty()) {
-                        toast("Token do Google ausente.");
-                        return;
-                    }
-                    firebaseAuthWithGoogle(idToken);
-                } else {
-                    toast("Conta Google inválida.");
-                }
+                if (account == null) { showError("*Conta Google inválida."); return; }
+                mAuth.signInWithCredential(
+                        com.google.firebase.auth.GoogleAuthProvider.getCredential(account.getIdToken(), null)
+                ).addOnCompleteListener(this, t -> {
+                    if (!t.isSuccessful()) { showError("*Falha no login com Google."); return; }
+                    FirebaseUser u = FirebaseAuth.getInstance().getCurrentUser();
+                    if (u == null) { showError("*Erro inesperado: usuário nulo."); return; }
+                    checarAdminENavegar(u.getUid());
+                });
             } catch (ApiException e) {
-                // Mostra o status code (ex.: 10 = DEVELOPER_ERROR)
-                toast("Falha no login com Google: " + e.getStatusCode());
+                showError("*Falha no login com Google.");
             }
         }
     }
 
-    private void firebaseAuthWithGoogle(String idToken) {
-        hideInlineError();
-        AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
-        mAuth.signInWithCredential(credential).addOnCompleteListener(this, task -> {
-            if (!task.isSuccessful()) {
-                String msg = task.getException() != null ? task.getException().getMessage() : "";
-                toast("Falha na autenticação Firebase: " + msg);
-                return;
-            }
-            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-            if (user == null) { toast("Erro inesperado: usuário nulo."); return; }
-            ensureUserDocExistsThenNavigate(user);
-        });
+    // Helpers UI
+    private void setButtonsEnabled(boolean enabled) {
+        if (btnEntrar != null) { btnEntrar.setEnabled(enabled); btnEntrar.setAlpha(enabled ? 1f : 0.6f); }
+        if (btnGoogle != null) { btnGoogle.setEnabled(enabled); btnGoogle.setAlpha(enabled ? 1f : 0.6f); }
     }
 
-    private void ensureUserDocExistsThenNavigate(FirebaseUser user) {
-        String uid = user.getUid();
-
-        Map<String, Object> usuario = new HashMap<>();
-        usuario.put("nome",  user.getDisplayName() != null ? user.getDisplayName() : "");
-        usuario.put("email", user.getEmail() != null ? user.getEmail() : "");
-        usuario.put("lastLoginAt", Timestamp.now());
-
-        db.collection("usuarios")
-                .document(uid)
-                .set(usuario, SetOptions.merge())
-                .addOnSuccessListener(a -> checkAdminAndGo(uid))
-                .addOnFailureListener(e -> checkAdminAndGo(uid)); // mesmo com falha, segue
-    }
-
-    private void checkAdminAndGo(String uid) {
-        db.collection("admins").document(uid).get()
-                .addOnSuccessListener((DocumentSnapshot snap) -> goToNextScreen(snap != null && snap.exists()))
-                .addOnFailureListener(e -> goToNextScreen(false));
-    }
-
-    private void goToNextScreen(boolean isAdmin) {
-        Intent it = new Intent(this, isAdmin ? menu_admin.class : menu.class);
-        it.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-        startActivity(it);
-        finish();
-    }
-
-    private void showInlineError(String msg) {
+    private void showError(String msg) {
         if (tvLoginError != null) {
             tvLoginError.setText(msg);
-            tvLoginError.setVisibility(android.view.View.VISIBLE);
+            tvLoginError.setTextColor(0xFFDC2626); // vermelho
+            tvLoginError.setVisibility(View.VISIBLE);
+        } else {
+            Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
         }
     }
 
-    private void hideInlineError() {
-        if (tvLoginError != null && tvLoginError.getVisibility() == android.view.View.VISIBLE) {
-            tvLoginError.setVisibility(android.view.View.GONE);
+    private void showInfo(String msg) {
+        if (tvLoginError != null) {
+            tvLoginError.setText(msg);
+            tvLoginError.setTextColor(0xFF10B981); // verde claro
+            tvLoginError.setVisibility(View.VISIBLE);
+        } else {
+            Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
         }
     }
 
-    private void toast(String s) {
-        Toast.makeText(this, s, Toast.LENGTH_SHORT).show();
+    private void clearMsg() {
+        if (tvLoginError != null) tvLoginError.setVisibility(View.GONE);
+    }
+
+    private String val(TextInputEditText e) {
+        return e.getText() == null ? "" : e.getText().toString().trim();
     }
 }
