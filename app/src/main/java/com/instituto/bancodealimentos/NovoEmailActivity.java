@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.text.TextUtils;
 import android.util.Patterns;
-import android.view.View;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
@@ -17,9 +16,9 @@ import androidx.core.view.WindowInsetsCompat;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.ActionCodeSettings;
-import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.FirebaseAuth;
 
 public class NovoEmailActivity extends AppCompatActivity {
 
@@ -37,8 +36,8 @@ public class NovoEmailActivity extends AppCompatActivity {
     private static final long TEN_MIN_MS = 10 * 60 * 1000L;
     private CountDownTimer timer;
 
-    // Ajuste para o seu domínio (Dynamic Links ou Hosting)
-    private static final String CONTINUE_URL = "https://bancodealimentos.page.link/email-action-done";
+    // ContinueUrl → abre o app via DeepLinkSuccessActivity
+    private static final String CONTINUE_URL = "https://albertoschneider.github.io/success/email-alterado/";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,7 +55,6 @@ public class NovoEmailActivity extends AppCompatActivity {
 
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
 
-        // IDs EXATOS do seu XML
         edtNovoEmail  = findViewById(R.id.edtNovoEmail);
         btnEnviarLink = findViewById(R.id.btnEnviarLink);
         tvStatusEnvio = findViewById(R.id.tvStatusEnvio);
@@ -84,11 +82,10 @@ public class NovoEmailActivity extends AppCompatActivity {
         int newLevel = Math.min(level + 1, 4);
         int cooldown = (newLevel + 1) * 60;
 
-        // Faz o link abrir o app (deep link) e aplicar a ação no app
         ActionCodeSettings acs = ActionCodeSettings.newBuilder()
-                .setUrl(CONTINUE_URL)                                // autorizar essa URL no Firebase Auth
-                .setHandleCodeInApp(true)                            // processa no app
-                .setAndroidPackageName(getPackageName(), true, null) // true: abre Play Store se não tiver
+                .setUrl(CONTINUE_URL)
+                .setHandleCodeInApp(true)
+                .setAndroidPackageName(getPackageName(), true, null)
                 .build();
 
         user.verifyBeforeUpdateEmail(email, acs)
@@ -96,9 +93,9 @@ public class NovoEmailActivity extends AppCompatActivity {
                     showMsg(
                             "Enviamos um link para " + email + ".\n" +
                                     "Abra o e-mail e toque no link para confirmar a alteração.\n" +
-                                    "Se não encontrar, verifique também as abas Promoções/Atualizações e a pasta Spam e marque como \"Não é spam\"."
+                                    "Se não encontrar, verifique abas Promoções/Atualizações e a pasta Spam e marque como \"Não é spam\"."
                     );
-                    tvDicaSpam.setVisibility(View.VISIBLE);
+                    tvDicaSpam.setVisibility(TextView.VISIBLE);
                     startCooldown(cooldown);
                     prefs.edit()
                             .putInt(K_LEVEL, newLevel)
@@ -125,8 +122,8 @@ public class NovoEmailActivity extends AppCompatActivity {
             }
             @Override public void onFinish() {
                 setEnabled(true);
-                tvStatusEnvio.setVisibility(View.GONE);
-                tvDicaSpam.setVisibility(View.GONE);
+                tvStatusEnvio.setVisibility(TextView.GONE);
+                tvDicaSpam.setVisibility(TextView.GONE);
             }
         }.start();
     }
@@ -138,8 +135,8 @@ public class NovoEmailActivity extends AppCompatActivity {
             startCooldown((int)((end - now)/1000L));
         } else {
             setEnabled(true);
-            tvStatusEnvio.setVisibility(View.GONE);
-            tvDicaSpam.setVisibility(View.GONE);
+            tvStatusEnvio.setVisibility(TextView.GONE);
+            tvDicaSpam.setVisibility(TextView.GONE);
         }
     }
 
@@ -150,7 +147,7 @@ public class NovoEmailActivity extends AppCompatActivity {
 
     private void showMsg(String s) {
         tvStatusEnvio.setText(s);
-        tvStatusEnvio.setVisibility(View.VISIBLE);
+        tvStatusEnvio.setVisibility(TextView.VISIBLE);
     }
 
     private String format(int secs) {

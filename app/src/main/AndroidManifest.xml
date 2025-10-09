@@ -48,6 +48,21 @@
         <activity android:name=".telaregistro" android:exported="false" />
         <activity android:name=".telalogin" android:exported="false" />
         <activity android:name=".MainActivity" android:exported="false" />
+        <activity
+            android:name=".DeepLinkSuccessActivity"
+            android:exported="true"
+            android:launchMode="singleTask">
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data
+                    android:scheme="https"
+                    android:host="albertoschneider.github.io"
+                    android:pathPrefix="/success"/>
+            </intent-filter>
+        </activity>
+
 
         <activity
             android:name=".SplashActivity"

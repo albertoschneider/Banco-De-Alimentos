@@ -42,16 +42,16 @@ public class EsqueciSenhaActivity extends AppCompatActivity {
                 return;
             }
 
-            // IMPORTANTE: handleCodeInApp(true) + seu domínio do Hosting
+            // ContinueUrl → volta pro app via DeepLinkSuccessActivity (/success/senha-redefinida/)
             ActionCodeSettings settings = ActionCodeSettings.newBuilder()
-                    .setUrl("https://barc-2025.web.app/finish") // qualquer rota do seu Hosting
+                    .setUrl("https://albertoschneider.github.io/success/senha-redefinida/")
                     .setHandleCodeInApp(true)
                     .setAndroidPackageName(getPackageName(), true, null)
                     .build();
 
             FirebaseAuth.getInstance().sendPasswordResetEmail(email, settings)
                     .addOnSuccessListener(unused ->
-                            Toast.makeText(this, "Se o e-mail existir, enviaremos um link.", Toast.LENGTH_LONG).show())
+                            Toast.makeText(this, "Se o e-mail existir, enviaremos um link para redefinir a senha.", Toast.LENGTH_LONG).show())
                     .addOnFailureListener(e ->
                             Toast.makeText(this, "Erro: " + e.getMessage(), Toast.LENGTH_LONG).show());
         });

@@ -30,6 +30,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.firebase.auth.ActionCodeSettings;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.EmailAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
@@ -63,7 +64,7 @@ public class configuracoes_email_senha extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_configuracoes_email_senha);
 
-        // Header com insets (evita corte em notch)
+        // Header com insets
         View header = findViewById(R.id.header);
         if (header != null) {
             ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
@@ -124,7 +125,7 @@ public class configuracoes_email_senha extends AppCompatActivity {
     }
 
     private void preencherDados() {
-        // Nome: prioriza displayName do Auth, senão busca no Firestore (usuarios/{uid}.nome)
+        // Nome
         String nomeAuth = user.getDisplayName();
         if (nomeAuth != null && !nomeAuth.trim().isEmpty()) {
             edtNome.setText(nomeAuth);
@@ -218,8 +219,15 @@ public class configuracoes_email_senha extends AppCompatActivity {
         int newLevel = Math.min(level + 1, 4);      // 0..4
         int cooldownSecs = (newLevel + 1) * 60;     // 60..300
 
+        // ContinueUrl → volta pro app via DeepLinkSuccessActivity
+        ActionCodeSettings settings = ActionCodeSettings.newBuilder()
+                .setUrl("https://albertoschneider.github.io/success/senha-redefinida/")
+                .setHandleCodeInApp(true)
+                .setAndroidPackageName(getPackageName(), true, null)
+                .build();
+
         FirebaseAuth.getInstance()
-                .sendPasswordResetEmail(user.getEmail())
+                .sendPasswordResetEmail(user.getEmail(), settings)
                 .addOnSuccessListener(unused -> {
                     Toast.makeText(this, "Enviamos um link para " + user.getEmail(), Toast.LENGTH_LONG).show();
                     startPwdCooldown(cooldownSecs);
@@ -347,7 +355,7 @@ public class configuracoes_email_senha extends AppCompatActivity {
         });
     }
 
-    // ======== POPUP: EXCLUIR CONTA (com checkbox para habilitar botão vermelho) ========
+    // ======== POPUP: EXCLUIR CONTA ========
     private void mostrarDialogExclusao() {
         final Dialog dialog = new Dialog(this);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -471,7 +479,7 @@ public class configuracoes_email_senha extends AppCompatActivity {
                 });
     }
 
-    // ======== REAUTENTICAÇÃO (necessária p/ mudar email/senha ou excluir) ========
+    // ======== REAUTENTICAÇÃO ========
     private void pedirReautenticacao(final Runnable onSuccess) {
         final Dialog d = new Dialog(this);
         d.requestWindowFeature(Window.FEATURE_NO_TITLE);
