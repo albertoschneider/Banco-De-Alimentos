@@ -8,7 +8,6 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.firebase.auth.ActionCodeResult;
 import com.google.firebase.auth.FirebaseAuth;
 
 public class EmailActionRouterActivity extends AppCompatActivity {
@@ -30,17 +29,20 @@ public class EmailActionRouterActivity extends AppCompatActivity {
         Uri link = (intent != null) ? intent.getData() : null;
         if (link == null) { finishToHome(); return; }
 
-        final String mode = link.getQueryParameter("mode");   // resetPassword, verifyEmail, recoverEmail, verifyAndChangeEmail...
-        final String oob  = link.getQueryParameter("oobCode");
+        final String modeRaw = link.getQueryParameter("mode");   // resetPassword, verifyEmail, recoverEmail, verifyAndChangeEmail
+        final String oob     = link.getQueryParameter("oobCode");
 
-        if (oob == null || oob.isEmpty() || mode == null || mode.isEmpty()) {
+        if (oob == null || oob.isEmpty() || modeRaw == null || modeRaw.isEmpty()) {
             toast("Link inválido.");
             finishToHome();
             return;
         }
 
+        final String mode = modeRaw.toLowerCase();
+
         switch (mode) {
-            case "resetPassword":
+            case "resetpassword":
+                // Valida o código e envia para a tela de definir nova senha
                 FirebaseAuth.getInstance().verifyPasswordResetCode(oob)
                         .addOnSuccessListener(email -> {
                             Intent i = new Intent(this, ResetarSenhaActivity.class);
@@ -55,45 +57,60 @@ public class EmailActionRouterActivity extends AppCompatActivity {
                         });
                 break;
 
-            case "verifyEmail":
-            case "verifyAndChangeEmail":
-            case "recoverEmail":
-                FirebaseAuth.getInstance().checkActionCode(oob)
-                        .addOnSuccessListener(result -> {
-                            final int op = result.getOperation();
-                            FirebaseAuth.getInstance().applyActionCode(oob)
-                                    .addOnSuccessListener(unused -> {
-                                        // Se o modo da URL já for verifyAndChangeEmail, tratamos como "e-mail alterado"
-                                        if ("verifyAndChangeEmail".equals(mode)) {
-                                            startActivity(new Intent(this, EmailAtualizadoSucessoActivity.class)
-                                                    .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
-                                            finish();
-                                            return;
-                                        }
-
-                                        // Demais operações (compatível com versões antigas do SDK)
-                                        if (op == ActionCodeResult.VERIFY_EMAIL) {
-                                            toast("E-mail verificado com sucesso!");
-                                            goToSettingsOrLogin();
-                                        } else if (op == ActionCodeResult.RECOVER_EMAIL) {
-                                            toast("E-mail recuperado com sucesso.");
-                                            goToSettingsOrLogin();
-                                        } else {
-                                            goToSettingsOrLogin();
-                                        }
-                                    })
-                                    .addOnFailureListener(e -> {
-                                        toast("Não foi possível confirmar: " + e.getMessage());
-                                        finishToHome();
-                                    });
+            case "verifyemail":
+                // Verificação de e-mail (ex.: cadastro novo)
+                FirebaseAuth.getInstance().applyActionCode(oob)
+                        .addOnSuccessListener(unused -> {
+                            toast("E-mail verificado com sucesso!");
+                            goToSettingsOrLogin();
                         })
+                        .addOnFailureListener(e -> {
+                            toast("Falha ao verificar: " + e.getMessage());
+                            finishToHome();
+                        });
+                break;
+
+            case "verifyandchangeemail":
+                // Verificar e ALTERAR e-mail (fluxo verifyBeforeUpdateEmail)
+                // Primeiro checa se o código é válido (opcional, só pra mensagem mais clara)
+                FirebaseAuth.getInstance().checkActionCode(oob)
+                        .addOnSuccessListener(result -> FirebaseAuth.getInstance().applyActionCode(oob)
+                                .addOnSuccessListener(unused -> {
+                                    // E-mail já foi alterado ao aplicar o código
+                                    startActivity(new Intent(this, EmailAtualizadoSucessoActivity.class)
+                                            .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
+                                    finish();
+                                })
+                                .addOnFailureListener(err -> {
+                                    toast("Não foi possível confirmar: " + err.getMessage());
+                                    finishToHome();
+                                }))
                         .addOnFailureListener(e -> {
                             toast("Código inválido ou expirado.");
                             finishToHome();
                         });
                 break;
 
+            case "recoveremail":
+                // Recuperar e-mail (desfazer alteração)
+                FirebaseAuth.getInstance().checkActionCode(oob)
+                        .addOnSuccessListener(info -> FirebaseAuth.getInstance().applyActionCode(oob)
+                                .addOnSuccessListener(unused -> {
+                                    toast("E-mail recuperado com sucesso.");
+                                    goToSettingsOrLogin();
+                                })
+                                .addOnFailureListener(err -> {
+                                    toast("Falha ao recuperar e-mail.");
+                                    finishToHome();
+                                }))
+                        .addOnFailureListener(e -> {
+                            toast("Link inválido ou expirado.");
+                            finishToHome();
+                        });
+                break;
+
             default:
+                // Qualquer outro modo desconhecido
                 finishToHome();
         }
     }

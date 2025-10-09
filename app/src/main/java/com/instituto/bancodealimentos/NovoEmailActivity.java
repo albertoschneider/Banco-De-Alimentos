@@ -66,7 +66,7 @@ public class NovoEmailActivity extends AppCompatActivity {
         });
 
         auth = FirebaseAuth.getInstance();
-        auth.useAppLanguage(); // PT-BR no e-mail do Firebase
+        auth.useAppLanguage(); // PT-BR nos e-mails do Firebase
         user = auth.getCurrentUser();
         if (user == null) { finish(); return; }
 
@@ -80,14 +80,13 @@ public class NovoEmailActivity extends AppCompatActivity {
         ImageButton back = findViewById(R.id.btn_voltar);
         back.setOnClickListener(v -> finish());
 
-        btnEnviarLink.setOnClickListener(v -> trySend());
+        btnEnviarLink.setOnClickListener(v -> startFlow());
         restoreCooldownIfRunning();
     }
 
-    private void trySend() {
+    private void startFlow() {
         String email = edtNovoEmail.getText() == null ? "" : edtNovoEmail.getText().toString().trim();
 
-        // validações
         if (TextUtils.isEmpty(email) || !Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
             showMsg("*Digite um e-mail válido.", true);
             return;
@@ -97,6 +96,27 @@ public class NovoEmailActivity extends AppCompatActivity {
             return;
         }
 
+        setEnabled(false);
+
+        // 1) PRÉ-CHECA: se já existe conta com este e-mail → mostra erro e para.
+        FirebaseAuth.getInstance().fetchSignInMethodsForEmail(email)
+                .addOnSuccessListener(result -> {
+                    boolean jaExiste = result.getSignInMethods() != null && !result.getSignInMethods().isEmpty();
+                    if (jaExiste) {
+                        setEnabled(true);
+                        showMsg("*Este e-mail já está em uso. Use outro.", true);
+                    } else {
+                        // 2) Se não existe, segue para enviar verifyBeforeUpdateEmail
+                        sendVerifyBeforeUpdateEmail(email);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    setEnabled(true);
+                    showMsg("*Falha ao validar e-mail: " + e.getMessage(), true);
+                });
+    }
+
+    private void sendVerifyBeforeUpdateEmail(String novoEmail) {
         long now = System.currentTimeMillis();
         long last = prefs.getLong(K_LAST, 0L);
         int level = prefs.getInt(K_LEVEL, -1);
@@ -105,19 +125,20 @@ public class NovoEmailActivity extends AppCompatActivity {
         int newLevel = Math.min(level + 1, 4);
         int cooldown = (newLevel + 1) * 60;
 
-        setEnabled(false);
-
         ActionCodeSettings acs = ActionCodeSettings.newBuilder()
                 .setUrl(CONTINUE_URL)
                 .setHandleCodeInApp(true)
                 .setAndroidPackageName(getPackageName(), true, null)
                 .build();
 
-        user.verifyBeforeUpdateEmail(email, acs)
+        user.verifyBeforeUpdateEmail(novoEmail, acs)
                 .addOnSuccessListener(unused -> {
-                    showMsg("Enviamos um link para " + email + ".\n" +
-                            "Abra o e-mail e toque no link para confirmar a alteração.\n" +
-                            "Se não encontrar, verifique Promoções/Atualizações/Spam e marque como \"Não é spam\".", false);
+                    showMsg(
+                            "Enviamos um link para " + novoEmail + ".\n" +
+                                    "Abra o e-mail e toque no link para confirmar a alteração.\n" +
+                                    "Se não encontrar, verifique Promoções/Atualizações/Spam e marque como \"Não é spam\".",
+                            false
+                    );
                     tvDicaSpam.setVisibility(TextView.VISIBLE);
                     startCooldown(cooldown);
                     prefs.edit()
@@ -127,12 +148,11 @@ public class NovoEmailActivity extends AppCompatActivity {
                             .apply();
                 })
                 .addOnFailureListener(e -> {
-                    // trata erros comuns de forma amigável
                     if (e instanceof FirebaseAuthRecentLoginRequiredException) {
-                        // pede senha e reautentica, depois tenta de novo
-                        pedirReautenticacao(() -> trySend());
+                        // 3) Sessão ficou velha: reautentica e tenta de novo
+                        pedirReautenticacao(() -> sendVerifyBeforeUpdateEmail(novoEmail));
                     } else if (e instanceof FirebaseAuthException) {
-                        String code = ((FirebaseAuthException)e).getErrorCode();
+                        String code = ((FirebaseAuthException) e).getErrorCode();
                         switch (code) {
                             case "ERROR_EMAIL_ALREADY_IN_USE":
                                 showMsg("*Este e-mail já está em uso. Use outro.", true);
@@ -187,7 +207,7 @@ public class NovoEmailActivity extends AppCompatActivity {
 
     private void showMsg(String s, boolean isError) {
         tvStatusEnvio.setText(s);
-        tvStatusEnvio.setTextColor(isError ? 0xFFEF4444 : 0xFF10B981); // erro vermelho vivo / info verde claro
+        tvStatusEnvio.setTextColor(isError ? 0xFFEF4444 : 0xFF10B981); // vermelho vivo / verde claro
         tvStatusEnvio.setVisibility(TextView.VISIBLE);
     }
 
@@ -201,12 +221,10 @@ public class NovoEmailActivity extends AppCompatActivity {
         final Dialog d = new Dialog(this);
         d.requestWindowFeature(Window.FEATURE_NO_TITLE);
 
-        // card
         GradientDrawable bg = new GradientDrawable();
         bg.setCornerRadius(dp(16));
         bg.setColor(0xFFFFFFFF);
 
-        // container
         android.widget.LinearLayout root = new android.widget.LinearLayout(this);
         root.setOrientation(android.widget.LinearLayout.VERTICAL);
         root.setPadding(dp(20), dp(20), dp(20), dp(12));
@@ -263,7 +281,7 @@ public class NovoEmailActivity extends AppCompatActivity {
             user.reauthenticate(cred)
                     .addOnSuccessListener(unused -> {
                         d.dismiss();
-                        onSuccess.run(); // tenta novamente enviar o verifyBeforeUpdateEmail
+                        onSuccess.run();
                     })
                     .addOnFailureListener(err -> showMsg("*Senha incorreta: " + err.getMessage(), true));
         });
