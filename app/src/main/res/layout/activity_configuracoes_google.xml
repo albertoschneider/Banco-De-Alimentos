@@ -157,40 +157,43 @@
     </androidx.core.widget.NestedScrollView>
 
     <!-- Botão Sair (inferior) -->
+
+    <!-- Botão Desvincular (inferior) -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnSairGoogle"
         android:layout_width="0dp"
         android:layout_height="52dp"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
-        android:layout_marginBottom="8dp"
+        android:layout_marginBottom="24dp"
         android:text="Sair da Conta"
         android:textAllCaps="false"
-        android:textStyle="bold"
         android:textColor="#004E7C"
-        app:cornerRadius="12dp"
+        android:textStyle="bold"
         app:backgroundTint="#FFF1B100"
+        app:cornerRadius="12dp"
         app:layout_constraintBottom_toTopOf="@id/btnDesconectarGoogle"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent" />
 
-    <!-- Botão Desvincular (inferior) -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnDesconectarGoogle"
         android:layout_width="0dp"
         android:layout_height="52dp"
         android:layout_margin="16dp"
+        android:layout_marginBottom="64dp"
         android:text="Desvincular Conta do Google"
         android:textAllCaps="false"
-        android:textStyle="bold"
         android:textColor="@android:color/white"
-        app:cornerRadius="12dp"
+        android:textStyle="bold"
         app:backgroundTint="#EF4444"
+        app:cornerRadius="12dp"
         app:icon="@drawable/ic_link_off_24"
-        app:iconTint="@android:color/white"
-        app:iconPadding="10dp"
         app:iconGravity="textStart"
+        app:iconPadding="10dp"
+        app:iconTint="@android:color/white"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>
