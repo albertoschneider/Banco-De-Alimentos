@@ -48,6 +48,8 @@
         <activity android:name=".telaregistro" android:exported="false" />
         <activity android:name=".telalogin" android:exported="false" />
         <activity android:name=".MainActivity" android:exported="false" />
+        <activity android:name=".HistoricoDoacoesActivity" android:exported="false" />
+
         <activity
             android:name=".DeepLinkSuccessActivity"
             android:exported="true"
