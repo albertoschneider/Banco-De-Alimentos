@@ -11,4 +11,5 @@
     <color name="bda_icon_tint">#374151</color>
     <color name="bda_counter_text">#374151</color>
     <color name="bda_counter_overflow_text">#DC2626</color>
+    <color name="blue_header_text">#004E7C</color>
 </resources>

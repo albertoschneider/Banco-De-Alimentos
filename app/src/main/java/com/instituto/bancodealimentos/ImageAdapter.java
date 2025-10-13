@@ -1,5 +1,5 @@
 package com.instituto.bancodealimentos;
-import android.content.Context;
+
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -8,42 +8,54 @@ import android.widget.ImageView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.Collections;
 import java.util.List;
 
-public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHolder> {
+/**
+ * ImageAdapter com loop "infinito" para ViewPager2.
+ * Usa item_image_carousel.xml e uma lista de drawables (List<Integer>).
+ */
+public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.VH> {
 
-    private Context context;
-    private List<Integer> imageList;
+    private final List<Integer> images;
 
-    public ImageAdapter(Context context, List<Integer> imageList) {
-        this.context = context;
-        this.imageList = imageList;
+    public ImageAdapter(List<Integer> images) {
+        this.images = (images != null) ? images : Collections.emptyList();
+        setHasStableIds(true);
     }
 
     @NonNull
     @Override
-    public ImageViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(context).inflate(R.layout.item_image_carousel, parent, false);
-        return new ImageViewHolder(view);
+    public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View v = LayoutInflater.from(parent.getContext())
+                .inflate(R.layout.item_image_carousel, parent, false);
+        return new VH(v);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ImageViewHolder holder, int position) {
-        holder.imageView.setImageResource(imageList.get(position));
+    public void onBindViewHolder(@NonNull VH holder, int position) {
+        // Evita crash se a lista estiver vazia
+        if (images.isEmpty()) return;
+        int realPos = position % images.size();
+        holder.imageView.setImageResource(images.get(realPos));
     }
 
     @Override
     public int getItemCount() {
-        return imageList.size();
+        return images.isEmpty() ? 0 : Integer.MAX_VALUE;
     }
 
-    public static class ImageViewHolder extends RecyclerView.ViewHolder {
-        ImageView imageView;
+    @Override
+    public long getItemId(int position) {
+        // Estável o suficiente para o ViewPager2 com looping
+        return position;
+    }
 
-        public ImageViewHolder(View itemView) {
+    static class VH extends RecyclerView.ViewHolder {
+        final ImageView imageView;
+        VH(@NonNull View itemView) {
             super(itemView);
             imageView = itemView.findViewById(R.id.img_carousel);
         }
     }
 }
-

@@ -8,6 +8,7 @@
     android:background="#FFFFFF"
     tools:context=".voluntariar">
 
+    <!-- HEADER amarelo com título central (o MESMO do seu outro layout) -->
     <LinearLayout
         android:id="@+id/header"
         android:layout_width="match_parent"
@@ -49,121 +50,144 @@
         </RelativeLayout>
     </LinearLayout>
 
-
-    <!-- Carrossel -->
-
-    <!-- Texto explicativo -->
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/carrossel_container"
-        android:layout_width="411dp"
-        android:layout_height="278dp"
-        android:layout_marginTop="16dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/header">
-
-        <!-- Botão anterior -->
-
-        <androidx.viewpager2.widget.ViewPager2
-            android:id="@+id/viewPager"
-            android:layout_width="420dp"
-            android:layout_height="380dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.555"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.284" />
-
-        <ImageButton
-            android:id="@+id/btn_prev"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="@android:color/transparent"
-            android:backgroundTint="#C8C8C8"
-            android:foregroundTint="#FFFFFF"
-            android:src="@drawable/left_arrow"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:tint="#FFFFFF" />
-
-        <!-- Botão próximo -->
-        <ImageButton
-            android:id="@+id/btn_next"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="@color/black"
-            android:backgroundTint="#00C8C8C8"
-            android:src="@drawable/right_arrow"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:tint="#FFFFFF" />
-    </androidx.constraintlayout.widget.ConstraintLayout>
-
-    <TextView
-        android:id="@+id/tv_como_funciona"
+    <!-- CONTEÚDO ROLÁVEL -->
+    <ScrollView
+        android:id="@+id/scroll"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:gravity="center"
-        android:text="Venha ser Voluntário"
-        android:textColor="#000000"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        app:layout_constraintTop_toBottomOf="@id/header"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/carrossel_container" />
+        app:layout_constraintEnd_toEndOf="parent">
 
-    <!-- Botão WhatsApp -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
-    <TextView
-        android:id="@+id/tv_explicacao"
-        android:layout_width="373dp"
-        android:layout_height="228dp"
-        android:layout_marginHorizontal="24dp"
-        android:layout_marginTop="4dp"
-        android:text="Leve esperança, dignidade e um sorriso a quem precisa. Torne-se parte de uma rede de compaixão que combate a fome. Ao entrar em contato conosco, iremos te manter informado dos próximos trabalhos voluntários disponíveis e como ajudar. Ser voluntário é doar muito mais do que o seu tempo, mas sim, o amor ao próximo."
-        android:textAlignment="textStart"
-        android:textColor="#000000"
-        android:textSize="20sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.516"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_como_funciona" />
+            <!-- CARROSSEL: sem dp fixo, ratio 16:9 para não criar faixa -->
+            <FrameLayout
+                android:id="@+id/carrossel_container"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:background="#EEF3F8"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintDimensionRatio="16:9">
 
-    <LinearLayout
-        android:id="@+id/btn_whatsapp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
-        android:background="@drawable/bg_button_yellow"
-        android:backgroundTint="@color/yellow_600"
-        android:clickable="true"
-        android:focusable="true"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingHorizontal="24dp"
-        android:paddingVertical="12dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_explicacao">
+                <androidx.viewpager2.widget.ViewPager2
+                    android:id="@+id/viewPager"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@android:color/transparent" />
 
-        <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:contentDescription="WhatsApp"
-            android:src="@drawable/whatsapp" />
+                <!-- Setas sobrepostas (mesmo estilo das do carrossel) -->
+                <ImageButton
+                    android:id="@+id/btn_prev"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_gravity="center_vertical|start"
+                    android:layout_marginStart="12dp"
+                    android:background="@drawable/btn_carousel_circle"
+                    android:contentDescription="@string/sem_descricao"
+                    android:src="@drawable/left_arrow"
+                    app:tint="#FFFFFF" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="  Entrar em Contato"
-            android:textColor="#000000"
-            android:textSize="16sp"
-            android:textStyle="bold" />
-    </LinearLayout>
+                <ImageButton
+                    android:id="@+id/btn_next"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_gravity="center_vertical|end"
+                    android:layout_marginEnd="12dp"
+                    android:background="@drawable/btn_carousel_circle"
+                    android:contentDescription="@string/sem_descricao"
+                    android:src="@drawable/right_arrow"
+                    app:tint="#FFFFFF" />
+            </FrameLayout>
+
+            <!-- CARD branco encostando no carrossel -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_conteudo"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:translationY="-18dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="4dp"
+                app:layout_constraintTop_toBottomOf="@id/carrossel_container"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+
+                    <TextView
+                        android:id="@+id/tv_como_funciona"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:text="Venha ser Voluntário"
+                        android:textColor="#000000"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_explicacao"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:lineSpacingExtra="2dp"
+                        android:text="Leve esperança, dignidade e um sorriso a quem precisa. Torne-se parte de uma rede de compaixão que combate a fome. Ao entrar em contato conosco, iremos te manter informado dos próximos trabalhos voluntários disponíveis e como ajudar. Ser voluntário é doar muito mais do que o seu tempo, mas sim, o amor ao próximo."
+                        android:textColor="#000000"
+                        android:textSize="16sp" />
+
+                    <LinearLayout
+                        android:id="@+id/btn_whatsapp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_marginTop="14dp"
+                        android:background="@drawable/bg_button_yellow"
+                        android:backgroundTint="@color/yellow_600"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="18dp"
+                        android:paddingVertical="10dp">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:contentDescription="WhatsApp"
+                            android:src="@drawable/whatsapp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="  Fale Conosco"
+                            android:textColor="#000000"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- respiro p/ sombra -->
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="24dp"
+                app:layout_constraintTop_toBottomOf="@id/card_conteudo"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </ScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

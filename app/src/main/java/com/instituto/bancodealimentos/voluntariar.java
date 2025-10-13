@@ -1,25 +1,21 @@
 package com.instituto.bancodealimentos;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.ImageButton;
+import android.widget.LinearLayout;
 
-import androidx.activity.EdgeToEdge;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.viewpager2.widget.ViewPager2;
-import android.view.View;
-import android.widget.ImageButton;
-import android.net.Uri;
-import android.widget.LinearLayout;
 
 import java.util.Arrays;
 import java.util.List;
-
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
-import androidx.core.graphics.Insets;
 
 public class voluntariar extends AppCompatActivity {
 
@@ -28,10 +24,11 @@ public class voluntariar extends AppCompatActivity {
     private List<Integer> imageList;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_voluntariar); // substitua pelo nome do seu layout XML
+        setContentView(R.layout.activity_voluntariar); // seu layout
 
+        // Header com padding do status bar (edge-to-edge)
         View header = findViewById(R.id.header);
         if (header != null) {
             ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
@@ -45,7 +42,10 @@ public class voluntariar extends AppCompatActivity {
         viewPager = findViewById(R.id.viewPager);
         ImageButton btnNext = findViewById(R.id.btn_next);
         ImageButton btnPrev = findViewById(R.id.btn_prev);
+        ImageButton imgBtnBack = findViewById(R.id.btn_voltar);
+        LinearLayout btnWhatsapp = findViewById(R.id.btn_whatsapp);
 
+        // Imagens locais (troque pelos seus drawables)
         imageList = Arrays.asList(
                 R.drawable.voluntario_imagem1,
                 R.drawable.voluntario_imagem2,
@@ -54,45 +54,50 @@ public class voluntariar extends AppCompatActivity {
                 R.drawable.voluntario_imagem5
         );
 
-        LinearLayout btnWhatsapp = findViewById(R.id.btn_whatsapp);
+        // Adapter
+        // onde estava: new ImageAdapter(voluntariar.this, imageList);
+        adapter = new ImageAdapter(imageList);
+        viewPager.setAdapter(adapter);
+        viewPager.setOffscreenPageLimit(1);
 
+        // Remover qualquer margem/decoração/efeito que gere "faixa branca"
+        viewPager.setPadding(0, 0, 0, 0);
+        while (viewPager.getItemDecorationCount() > 0) {
+            viewPager.removeItemDecorationAt(0);
+        }
+        viewPager.setPageTransformer(null);
+        // Remove o glow de overscroll que pode dar impressão de borda
+        View vpChild = viewPager.getChildAt(0);
+        if (vpChild != null) vpChild.setOverScrollMode(View.OVER_SCROLL_NEVER);
+
+        // Setas: navegação simples
+        btnNext.setOnClickListener(v -> {
+            int next = viewPager.getCurrentItem() + 1;
+            if (next < imageList.size()) {
+                viewPager.setCurrentItem(next, true);
+            }
+        });
+
+        btnPrev.setOnClickListener(v -> {
+            int prev = viewPager.getCurrentItem() - 1;
+            if (prev >= 0) {
+                viewPager.setCurrentItem(prev, true);
+            }
+        });
+
+        // Botão WhatsApp
         btnWhatsapp.setOnClickListener(v -> {
-            // COLOQUE O SEU LINK COMPLETO AQUI
+            // COLOQUE O SEU LINK COMPLETO AQUI (já está pronto):
             String url = "https://wa.me/555192481830?text=Ol%C3%A1%21%20Tenho%20interesse%20em%20me%20tornar%20volunt%C3%A1rio%20no%20Banco%20de%20Alimentos%20e%20gostaria%20de%20saber%20como%20posso%20ajudar.\n";
             Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
             startActivity(intent);
         });
 
-
-        ImageButton imgBtnBack = findViewById(R.id.btn_voltar);
-
+        // Voltar (se quiser apenas fechar a tela, troque por finish(); )
         imgBtnBack.setOnClickListener(v -> {
             Intent intent = new Intent(voluntariar.this, menu.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             startActivity(intent);
-        });
-
-        adapter = new ImageAdapter(this, imageList);
-        viewPager.setAdapter(adapter);
-
-        btnNext.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                int next = viewPager.getCurrentItem() + 1;
-                if (next < imageList.size()) {
-                    viewPager.setCurrentItem(next);
-                }
-            }
-        });
-
-
-        btnPrev.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                int prev = viewPager.getCurrentItem() - 1;
-                if (prev >= 0) {
-                    viewPager.setCurrentItem(prev);
-                }
-            }
         });
     }
 }
