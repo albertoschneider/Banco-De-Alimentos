@@ -31,7 +31,6 @@
         <activity android:name=".pontosdecoleta_admin" android:exported="false" />
         <activity android:name=".add_admin" android:exported="false" />
         <activity android:name=".pedido_pago" android:exported="false" />
-        <activity android:name=".historico" android:exported="false" />
         <activity android:name=".configuracoes_google" android:exported="false" />
         <activity android:name=".gerenciar_admins" android:exported="false" />
         <activity android:name=".configuracoes_email_senha" android:exported="false" />

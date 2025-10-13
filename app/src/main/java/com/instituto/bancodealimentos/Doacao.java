@@ -11,11 +11,15 @@ public class Doacao {
     private String status;         // "pending" | "paid" | "expired"
     private Long amountCents;      // ex.: 2590 = R$ 25,90
     private Long orderNumber;      // 1, 2, 3, ...
-    private String method;         // sempre "pix"
+    private String method;         // "pix"
     private String description;    // opcional
-    private Timestamp createdAt;   // obrigatório na criação
-    private Timestamp expiresAt;   // opcional (tela calcula se faltar)
-    private String referenceId;    // opcional: id no gateway
+    private Timestamp createdAt;   // obrigatório
+    private Timestamp expiresAt;   // opcional
+    private String referenceId;    // opcional (id no gateway)
+
+    // NOVOS (para reabrir o mesmo pagamento)
+    private String pixCopiaCola;   // payload "copia e cola" original
+    private String pixQrImageUrl;  // URL da imagem do QR (ou salve base64 em outro campo)
 
     public Doacao() {}
 
@@ -29,4 +33,7 @@ public class Doacao {
     public Timestamp getCreatedAt() { return createdAt; }
     public Timestamp getExpiresAt() { return expiresAt; }
     public String getReferenceId() { return referenceId; }
+
+    public String getPixCopiaCola() { return pixCopiaCola == null ? "" : pixCopiaCola; }
+    public String getPixQrImageUrl() { return pixQrImageUrl == null ? "" : pixQrImageUrl; }
 }

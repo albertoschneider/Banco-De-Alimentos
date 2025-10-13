@@ -58,7 +58,7 @@ public class menu extends AppCompatActivity {
         cardPontos.setOnClickListener(v -> startActivity(new Intent(menu.this, pontosdecoleta.class)));
         cardDoe.setOnClickListener(v -> startActivity(new Intent(menu.this, doealimentos.class)));
         cardVoluntario.setOnClickListener(v -> startActivity(new Intent(menu.this, voluntariar.class)));
-        cardHistorico.setOnClickListener(v -> startActivity(new Intent(menu.this, pedidos.class)));
+        cardHistorico.setOnClickListener(v -> startActivity(new Intent(menu.this, HistoricoDoacoesActivity.class)));
         cardCarrinho.setOnClickListener(v -> startActivity(new Intent(menu.this, carrinho.class)));
     }
 

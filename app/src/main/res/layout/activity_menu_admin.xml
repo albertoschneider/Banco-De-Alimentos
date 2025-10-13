@@ -324,6 +324,65 @@
                                 android:textSize="15sp" />
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/cardChaves"
+                        android:layout_width="0dp"
+                        android:layout_height="220dp"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:stateListAnimator="@animator/card_raise"
+                        app:cardCornerRadius="18dp"
+                        app:cardUseCompatPadding="true"
+                        app:cardElevation="5dp"
+                        app:strokeWidth="0dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackground"
+                        android:backgroundTint="#FFFFFF">
+
+                        <!-- CENTRALIZADO -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:padding="22dp">
+
+                            <FrameLayout
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:background="@drawable/bg_circle_green_100">
+
+                                <ImageView
+                                    android:layout_width="24dp"
+                                    android:layout_height="24dp"
+                                    android:layout_gravity="center"
+                                    android:src="@drawable/ic_payment_24"
+                                    app:tint="#8bfa94" />
+                            </FrameLayout>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center"
+                                android:layout_marginTop="14dp"
+                                android:text="@string/chaves_titulo"
+                                android:textAlignment="center"
+                                android:textColor="#111827"
+                                android:textSize="18sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/chaves_subtitulo_admin"
+                                android:textAlignment="center"
+                                android:textColor="#6b806d"
+                                android:textSize="15sp" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
                 </LinearLayout>
             </LinearLayout>
 

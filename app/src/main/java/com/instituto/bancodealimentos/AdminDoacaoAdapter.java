@@ -15,42 +15,66 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
-public class DoacaoAdapter extends RecyclerView.Adapter<DoacaoAdapter.VH> {
+public class AdminDoacaoAdapter extends RecyclerView.Adapter<AdminDoacaoAdapter.VH> {
 
-    public interface OnItemClick {
-        void onClick(Doacao d);
-    }
+    private final List<Doacao> full = new ArrayList<>();
+    private final List<Doacao> filtered = new ArrayList<>();
+    private Map<String, String> uidNameMap;
 
-    private OnItemClick onItemClick;
-    public void setOnItemClick(OnItemClick l) { this.onItemClick = l; }
-
-    private final List<Doacao> items = new ArrayList<>();
     private final Locale ptBR = new Locale("pt", "BR");
     private final NumberFormat currency = NumberFormat.getCurrencyInstance(ptBR);
     private final SimpleDateFormat sdfDate = new SimpleDateFormat("dd 'de' MMMM, yyyy", ptBR);
     private final SimpleDateFormat sdfId = new SimpleDateFormat("ddHHmmss", ptBR);
 
-    public void setItems(List<Doacao> newItems) {
-        items.clear();
-        if (newItems != null) items.addAll(newItems);
+    public void setUidNameMap(Map<String, String> map) {
+        this.uidNameMap = map;
+        notifyDataSetChanged();
+    }
+
+    public void setItems(List<Doacao> items) {
+        full.clear();
+        if (items != null) full.addAll(items);
+        applyFilter(null);
+    }
+
+    public void applyFilter(String q) {
+        filtered.clear();
+        if (q == null || q.trim().isEmpty()) {
+            filtered.addAll(full);
+        } else {
+            String s = q.trim().toLowerCase(ptBR);
+            for (Doacao d : full) {
+                if (d == null) continue;
+
+                String name = nameOf(d.getUid()).toLowerCase(ptBR);
+                String desc = (d.getDescription() == null ? "" : d.getDescription()).toLowerCase(ptBR);
+                String orderStr = String.valueOf(d.getOrderNumber() == null ? "" : d.getOrderNumber());
+
+                // match: nome contém, ou nº do pedido contém, ou descrição contém
+                if (name.contains(s) || orderStr.contains(s) || desc.contains(s)) {
+                    filtered.add(d);
+                }
+            }
+        }
         notifyDataSetChanged();
     }
 
     @NonNull @Override
     public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_doacao, parent, false);
+        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_doacao_admin, parent, false);
         return new VH(v);
     }
 
     @Override
     public void onBindViewHolder(@NonNull VH h, int position) {
-        Doacao d = items.get(position);
+        Doacao d = filtered.get(position);
 
-        // Data
+        // data
         h.tvDate.setText(formatDate(d.getCreatedAt()));
 
-        // Status chip
+        // status
         String status = d.getStatus();
         h.tvStatusChip.setText(statusLabel(status));
         int bg = R.drawable.bg_chip_neutral;
@@ -63,15 +87,18 @@ public class DoacaoAdapter extends RecyclerView.Adapter<DoacaoAdapter.VH> {
         h.tvStatusChip.setBackgroundResource(bg);
         h.tvStatusChip.setTextColor(fg);
 
-        // Valor
+        // valor
         h.tvAmount.setText(currency.format(d.getAmountCents() / 100.0));
 
-        // Descrição
+        // descrição
         String desc = d.getDescription();
         if (desc == null || desc.trim().isEmpty()) desc = "Doação via PIX";
         h.tvDescription.setText(desc);
 
-        // ID (direita)
+        // nome
+        h.tvUserName.setText("por " + nameOf(d.getUid()));
+
+        // id à direita
         String id = d.getReferenceId();
         if (id == null || id.isEmpty()) {
             id = "PD" + (d.getOrderNumber() != null ? d.getOrderNumber() : 0) + "-" +
@@ -79,13 +106,18 @@ public class DoacaoAdapter extends RecyclerView.Adapter<DoacaoAdapter.VH> {
         }
         h.tvId.setText("ID: " + id);
 
-        // Clique no card
-        h.itemView.setOnClickListener(v -> {
-            if (onItemClick != null) onItemClick.onClick(d);
-        });
+        // ADMIN: itens NÃO são clicáveis (pendentes inclusive)
+        h.itemView.setOnClickListener(null);
+        h.itemView.setClickable(false);
     }
 
-    @Override public int getItemCount() { return items.size(); }
+    @Override public int getItemCount() { return filtered.size(); }
+
+    private String nameOf(String uid) {
+        if (uidNameMap == null || uid == null) return "—";
+        String n = uidNameMap.get(uid);
+        return n == null || n.trim().isEmpty() ? "—" : n;
+    }
 
     private String statusLabel(String s) {
         if ("paid".equals(s)) return "Pago";
@@ -100,13 +132,14 @@ public class DoacaoAdapter extends RecyclerView.Adapter<DoacaoAdapter.VH> {
     }
 
     static class VH extends RecyclerView.ViewHolder {
-        TextView tvDate, tvStatusChip, tvAmount, tvDescription, tvId;
+        TextView tvDate, tvStatusChip, tvAmount, tvDescription, tvUserName, tvId;
         VH(@NonNull View v) {
             super(v);
             tvDate = v.findViewById(R.id.tvDate);
             tvStatusChip = v.findViewById(R.id.tvStatusChip);
             tvAmount = v.findViewById(R.id.tvAmount);
             tvDescription = v.findViewById(R.id.tvDescription);
+            tvUserName = v.findViewById(R.id.tvUserName);
             tvId = v.findViewById(R.id.tvId);
         }
     }

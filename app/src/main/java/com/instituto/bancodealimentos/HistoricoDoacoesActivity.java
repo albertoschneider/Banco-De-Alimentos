@@ -1,5 +1,6 @@
 package com.instituto.bancodealimentos;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageButton;
@@ -22,7 +23,6 @@ import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -65,6 +65,20 @@ public class HistoricoDoacoesActivity extends AppCompatActivity {
         adapter = new DoacaoAdapter();
         rv.setLayoutManager(new LinearLayoutManager(this));
         rv.setAdapter(adapter);
+
+        // >>> Clique no item: se for "pending", reabre a MESMA cobrança
+        adapter.setOnItemClick(d -> {
+            if (d == null) return;
+            if ("pending".equals(d.getStatus())) {
+                Intent it = new Intent(this, pagamento.class);
+                it.putExtra(pagamento.EXTRA_DONATION_ID, d.getId()); // tela de pagamento vai puxar do Firestore
+                startActivity(it);
+            } else if ("paid".equals(d.getStatus())) {
+                Snackbar.make(rv, "Este pagamento já foi concluído.", Snackbar.LENGTH_SHORT).show();
+            } else {
+                Snackbar.make(rv, "Este pagamento foi cancelado/expirado.", Snackbar.LENGTH_SHORT).show();
+            }
+        });
 
         auth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();

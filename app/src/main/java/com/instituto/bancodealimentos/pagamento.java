@@ -25,6 +25,7 @@ import androidx.core.view.WindowInsetsCompat;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.gson.Gson;
@@ -49,6 +50,8 @@ import okhttp3.Response;
 public class pagamento extends AppCompatActivity {
 
     // ================== CONFIG ==================
+    public static final String EXTRA_DONATION_ID = "donationId";
+
     private static final String PREFS = "MeuApp";
     private static final String KEY_CART = "carrinho";
     private static final String KEY_PIX_EXPIRE_AT = "pix_expire_at"; // epoch millis
@@ -131,10 +134,6 @@ public class pagamento extends AppCompatActivity {
         timeProgress   = findViewById(R.id.timeProgress);
         btnGerarNovoPix= findViewById(R.id.btnGerarNovoPix);
 
-        double total = getTotal();
-        NumberFormat br = NumberFormat.getCurrencyInstance(new Locale("pt", "BR"));
-        if (tvTotalValue != null) tvTotalValue.setText(br.format(total));
-
         View back = findViewById(R.id.btn_voltar);
         if (back != null) back.setOnClickListener(v -> finish());
 
@@ -142,9 +141,6 @@ public class pagamento extends AppCompatActivity {
         if (btnVoltarMenu != null) btnVoltarMenu.setOnClickListener(v -> {
             startActivity(new Intent(pagamento.this, menu.class));
         });
-
-        // Cria (ou renova) a cobrança NO BACKEND (Vercel):
-        criarOuRenovarCobranca(total, /*orderId*/ null);
 
         if (btnCopyPix != null) {
             btnCopyPix.setOnClickListener(v -> {
@@ -156,11 +152,24 @@ public class pagamento extends AppCompatActivity {
             });
         }
 
-        if (btnGerarNovoPix != null) {
-            btnGerarNovoPix.setOnClickListener(v -> {
-                double totalAtual = getTotal();
-                criarOuRenovarCobranca(totalAtual, /*orderId*/ null);
-            });
+        // Se vier donationId, reabrimos a MESMA cobrança; se não, criamos nova
+        String donationId = getIntent().getStringExtra(EXTRA_DONATION_ID);
+        if (donationId != null && !donationId.isEmpty()) {
+            carregarCobrancaExistente(donationId);
+            // botão "gerar novo" só aparece quando expirar
+            if (btnGerarNovoPix != null) btnGerarNovoPix.setVisibility(View.GONE);
+        } else {
+            double total = getTotal();
+            NumberFormat br = NumberFormat.getCurrencyInstance(new Locale("pt", "BR"));
+            if (tvTotalValue != null) tvTotalValue.setText(br.format(total));
+
+            if (btnGerarNovoPix != null) {
+                btnGerarNovoPix.setOnClickListener(v -> {
+                    double totalAtual = getTotal();
+                    criarOuRenovarCobranca(totalAtual, /*orderId*/ null);
+                });
+            }
+            criarOuRenovarCobranca(total, /*orderId*/ null);
         }
     }
 
@@ -180,7 +189,72 @@ public class pagamento extends AppCompatActivity {
         super.onDestroy();
     }
 
-    // ===================== COBRANÇA | VERCEL + LISTENER =====================
+    // ===================== REABRIR COBRANÇA EXISTENTE =====================
+    private void carregarCobrancaExistente(String donationId) {
+        db.collection("doacoes").document(donationId)
+                .get()
+                .addOnSuccessListener(this::bindDoacao)
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Falha ao carregar pagamento: " + e.getMessage(), Toast.LENGTH_LONG).show()
+                );
+    }
+
+    private void bindDoacao(DocumentSnapshot doc) {
+        if (doc == null || !doc.exists()) {
+            Toast.makeText(this, "Pedido não encontrado.", Toast.LENGTH_LONG).show();
+            return;
+        }
+        Doacao d = doc.toObject(Doacao.class);
+        if (d == null) {
+            Toast.makeText(this, "Erro ao ler dados do pedido.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        if (!"pending".equals(d.getStatus())) {
+            Toast.makeText(this, "Este pedido não está mais pendente.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        // Valor
+        double total = d.getAmountCents() / 100.0;
+        NumberFormat br = NumberFormat.getCurrencyInstance(new Locale("pt", "BR"));
+        if (tvTotalValue != null) tvTotalValue.setText(br.format(total));
+
+        // Payload PIX (copia e cola) e QR
+        String payload = d.getPixCopiaCola();
+        if (etPixKey != null) etPixKey.setText(payload);
+        gerarQr(payload, dp(220));
+
+        // Timer baseado no expiresAt (ou createdAt + 10min)
+        long expAt = 0L;
+        if (d.getExpiresAt() != null) {
+            expAt = d.getExpiresAt().toDate().getTime();
+        } else if (d.getCreatedAt() != null) {
+            expAt = d.getCreatedAt().toDate().getTime() + WINDOW_MS;
+        }
+        if (expAt <= 0L) expAt = System.currentTimeMillis() + WINDOW_MS;
+
+        getSharedPreferences(PREFS, MODE_PRIVATE)
+                .edit().putLong(KEY_PIX_EXPIRE_AT, expAt).apply();
+
+        startTimerLoop();
+
+        // (Opcional) ouvir confirmação automática se você gravou um ID de pagamento
+        // Tente "pagamentoId" ou "referenceId" no doc de doacoes:
+        String payId = doc.getString("pagamentoId");
+        if (payId == null || payId.isEmpty()) {
+            payId = doc.getString("referenceId");
+        }
+        if (payId != null && !payId.isEmpty()) {
+            observarPagamento(payId);
+            pagamentoIdAtual = payId;
+        } else {
+            // Se não houver ID do doc em /pagamentos, tudo bem; sem listener aqui.
+            pagamentoIdAtual = null;
+        }
+    }
+
+    // ===================== COBRANÇA NOVA | VERCEL + LISTENER =====================
     private void criarOuRenovarCobranca(double total, String orderId) {
         // Limpa listener antigo (se existir)
         if (pagamentoListener != null) {
@@ -228,6 +302,10 @@ public class pagamento extends AppCompatActivity {
 
                         runOnUiThread(() -> {
                             pagamentoIdAtual = pagamentoId;
+                            if (tvTotalValue != null) {
+                                NumberFormat br = NumberFormat.getCurrencyInstance(new Locale("pt", "BR"));
+                                tvTotalValue.setText(br.format(total));
+                            }
                             if (etPixKey != null) etPixKey.setText(payload);
                             gerarQr(payload, dp(220));
 
@@ -297,6 +375,10 @@ public class pagamento extends AppCompatActivity {
                 .setValor(valorStr)
                 .build();
 
+        if (tvTotalValue != null) {
+            NumberFormat br = NumberFormat.getCurrencyInstance(new Locale("pt", "BR"));
+            tvTotalValue.setText(br.format(total));
+        }
         if (etPixKey != null) etPixKey.setText(payload);
         gerarQr(payload, dp(220));
 
@@ -311,8 +393,6 @@ public class pagamento extends AppCompatActivity {
                 "Aviso: QR local (sem webhook). Configure o backend para confirmação automática.",
                 Toast.LENGTH_LONG).show();
     }
-
-    private static String asString(Object o) { return o == null ? null : String.valueOf(o); }
 
     // ===================== UTILIDADES EXISTENTES =====================
     private void startTimerLoop() {
