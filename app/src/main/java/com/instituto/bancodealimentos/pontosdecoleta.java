@@ -16,22 +16,23 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.snackbar.Snackbar;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
-import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.GeoPoint;
-import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
@@ -39,36 +40,33 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
-import androidx.core.graphics.Insets;
-
 public class pontosdecoleta extends AppCompatActivity {
 
+    // Firestore
     private static final String COLECAO = "pontos";
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
-    private ListenerRegistration pontosListener;
 
-    private boolean alive = false;
-    private boolean listenerAttached = false;
-
+    // UI
     private View rootView;
     private RecyclerView rv;
     private EditText etBusca;
     private ImageButton btnVoltar;
     private PontoColetaAdapter adapter;
 
-    private final List<PontoColeta> allData = new ArrayList<>();
-    private final List<PontoColeta> visibleData = new ArrayList<>();
+    // Dados
+    private final List<PontoColeta> allData = new ArrayList<PontoColeta>();
+    private final List<PontoColeta> visibleData = new ArrayList<PontoColeta>();
     private String currentQuery = "";
 
+    // Localização
     private FusedLocationProviderClient fused;
     private LocationRequest locRequest;
     private LocationCallback locCallback;
     private Location lastLocation;
 
-    private final Retry.Backoff retry = new Retry.Backoff(5, 300);
+    private boolean alive = false;
 
+    // Permissões
     private final ActivityResultLauncher<String[]> locationPermsLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
                 boolean fine = Boolean.TRUE.equals(result.get(Manifest.permission.ACCESS_FINE_LOCATION));
@@ -91,6 +89,7 @@ public class pontosdecoleta extends AppCompatActivity {
         setContentView(R.layout.activity_pontosdecoleta);
         rootView = findViewById(android.R.id.content);
 
+        // Header insets
         View header = findViewById(R.id.header);
         if (header != null) {
             ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
@@ -101,10 +100,13 @@ public class pontosdecoleta extends AppCompatActivity {
             ViewCompat.requestApplyInsets(header);
         }
 
+        // UI
         btnVoltar = findViewById(R.id.btn_voltar);
         etBusca   = findViewById(R.id.etBusca);
         rv        = findViewById(R.id.rvPontos);
-        if (btnVoltar != null) btnVoltar.setOnClickListener(v -> onBackPressed());
+        if (btnVoltar != null) btnVoltar.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { onBackPressed(); }
+        });
 
         rv.setLayoutManager(new LinearLayoutManager(this));
         adapter = new PontoColetaAdapter(visibleData);
@@ -121,11 +123,13 @@ public class pontosdecoleta extends AppCompatActivity {
             });
         }
 
+        // Localização
         fused = LocationServices.getFusedLocationProviderClient(this);
         locRequest = LocationRequest.create()
                 .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
                 .setInterval(5000)
                 .setFastestInterval(2000);
+
         locCallback = new LocationCallback() {
             @Override public void onLocationResult(@NonNull LocationResult result) {
                 Location loc = result.getLastLocation();
@@ -138,101 +142,45 @@ public class pontosdecoleta extends AppCompatActivity {
         };
     }
 
-    @Override protected void onStart() {
+    @Override
+    protected void onStart() {
         super.onStart();
         alive = true;
-        listenerAttached = false;
         ensureLocationFlow();
-        startOrReload();
+        carregarUmaVez();
     }
 
-    @Override protected void onStop() {
+    @Override
+    protected void onStop() {
         super.onStop();
         alive = false;
-        detachListener();
         stopLocationUpdatesSafe();
     }
 
-    private void startOrReload() {
+    private void carregarUmaVez() {
         if (!alive) return;
 
+        // Leitura exige login pelas suas regras -> não navega, só informa
         if (FirebaseAuth.getInstance().getCurrentUser() == null) {
-            // não navega pro login; só informa e permite tentar de novo
-            Snackbar.make(rootView, "Sessão não disponível. Tente novamente.", Snackbar.LENGTH_LONG)
-                    .setAction("Tentar de novo", v -> startOrReload())
-                    .show();
+            mostrarListaVazia();
+            Snackbar.make(rootView, "Sessão indisponível. Abra novamente ou tente mais tarde.", Snackbar.LENGTH_LONG).show();
             return;
         }
 
-        // Primer — sem listener
-        db.collection(COLECAO).get()
+        db.collection(COLECAO)
+                .get()
                 .addOnSuccessListener(snap -> {
                     if (!alive) return;
                     atualizarListaComSnapshot(snap);
-                    if (!listenerAttached) attachListener();
                 })
-                .addOnFailureListener(e -> handlePrimerError(e, this::startOrReload));
-    }
-
-    private void attachListener() {
-        detachListener();
-        listenerAttached = true;
-
-        pontosListener = db.collection(COLECAO)
-                .addSnapshotListener((snap, err) -> {
+                .addOnFailureListener(e -> {
                     if (!alive) return;
-
-                    if (err != null) {
-                        handleLiveError(err);
-                        return;
-                    }
-                    if (snap == null) { showEmptyList(); return; }
-                    atualizarListaComSnapshot(snap);
+                    mostrarListaVazia();
+                    Snackbar.make(rootView, "Erro ao carregar pontos: " + e.getMessage(), Snackbar.LENGTH_LONG).show();
                 });
     }
 
-    private void detachListener() {
-        listenerAttached = false;
-        if (pontosListener != null) {
-            try { pontosListener.remove(); } catch (Exception ignored) {}
-            pontosListener = null;
-        }
-    }
-
-    private void handlePrimerError(Exception e, Runnable retryJob) {
-        showEmptyList();
-
-        if (e instanceof FirebaseFirestoreException) {
-            FirebaseFirestoreException fe = (FirebaseFirestoreException) e;
-            switch (fe.getCode()) {
-                case UNAUTHENTICATED:
-                case PERMISSION_DENIED:
-                case UNAVAILABLE:
-                case DEADLINE_EXCEEDED:
-                    if (retry.canRetry()) {
-                        Snackbar.make(rootView, "Reconectando…", Snackbar.LENGTH_SHORT).show();
-                        retry.schedule(retryJob::run);
-                        return;
-                    }
-            }
-        }
-        Snackbar.make(rootView, "Erro ao carregar pontos: " + e.getMessage(), Snackbar.LENGTH_LONG)
-                .setAction("Tentar de novo", v -> retryJob.run())
-                .show();
-    }
-
-    private void handleLiveError(Exception e) {
-        if (e instanceof FirebaseFirestoreException) {
-            FirebaseFirestoreException.Code c = ((FirebaseFirestoreException) e).getCode();
-            if (c == FirebaseFirestoreException.Code.UNAUTHENTICATED ||
-                    c == FirebaseFirestoreException.Code.PERMISSION_DENIED ||
-                    c == FirebaseFirestoreException.Code.UNAVAILABLE) {
-                if (retry.canRetry()) retry.schedule(this::attachListener);
-            }
-        }
-        Snackbar.make(rootView, "Conexão instável. Mantendo lista atual.", Snackbar.LENGTH_SHORT).show();
-    }
-
+    // ===================== Firestore helpers =====================
     private void atualizarListaComSnapshot(@NonNull QuerySnapshot snap) {
         allData.clear();
 
@@ -257,12 +205,12 @@ public class pontosdecoleta extends AppCompatActivity {
         aplicarFiltroEOrdenacao();
     }
 
-    private void showEmptyList() {
+    private void mostrarListaVazia() {
         visibleData.clear();
         adapter.notifyDataSetChanged();
     }
 
-    // ------- localização -------
+    // ===================== Localização =====================
     private void ensureLocationFlow() {
         if (hasLocationPermission()) {
             fetchLastLocationSafe();
@@ -305,7 +253,7 @@ public class pontosdecoleta extends AppCompatActivity {
         }
     }
 
-    // ------- filtro/ordenacao -------
+    // ===================== Filtro & Ordenação =====================
     private void aplicarFiltroEOrdenacao() {
         String q = currentQuery.trim().toLowerCase(Locale.ROOT);
 

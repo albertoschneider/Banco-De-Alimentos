@@ -20,8 +20,6 @@ import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.FirebaseFirestoreException;
-import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
 
@@ -39,15 +37,10 @@ public class AdminDoacoesActivity extends AppCompatActivity {
     private EditText etBusca;
 
     private AdminDoacaoAdapter adapter;
-
     private FirebaseFirestore db;
-    private ListenerRegistration sub;
 
     private final Map<String, String> uidNameCache = new HashMap<>();
     private boolean alive = false;
-    private boolean listenerAttached = false;
-
-    private final Retry.Backoff retry = new Retry.Backoff(5, 300);
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -55,6 +48,7 @@ public class AdminDoacoesActivity extends AppCompatActivity {
         setContentView(R.layout.activity_admin_doacoes);
         root = findViewById(android.R.id.content);
 
+        // insets
         View header = findViewById(R.id.header);
         if (header != null) {
             ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
@@ -66,7 +60,9 @@ public class AdminDoacoesActivity extends AppCompatActivity {
         }
 
         ImageButton back = findViewById(R.id.btn_voltar);
-        if (back != null) back.setOnClickListener(v -> finish());
+        if (back != null) back.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { finish(); }
+        });
 
         etBusca = findViewById(R.id.etBusca);
         rv = findViewById(R.id.rvDoacoesAdmin);
@@ -80,7 +76,9 @@ public class AdminDoacoesActivity extends AppCompatActivity {
 
         db = FirebaseFirestore.getInstance();
 
-        swipe.setOnRefreshListener(this::startOrReload);
+        swipe.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override public void onRefresh() { carregarUmaVez(); }
+        });
 
         etBusca.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -95,96 +93,74 @@ public class AdminDoacoesActivity extends AppCompatActivity {
         super.onStart();
         alive = true;
         swipe.setRefreshing(true);
-        listenerAttached = false;
-        startOrReload();
+        carregarUmaVez();
     }
 
     @Override protected void onStop() {
         super.onStop();
         alive = false;
-        detachListener();
     }
 
-    private void startOrReload() {
-        if (!alive) return;
+    private void carregarUmaVez() {
+        if (!alive) { swipe.setRefreshing(false); return; }
+
+        // 1) exige sessão (mas não navega)
         if (FirebaseAuth.getInstance().getCurrentUser() == null) {
-            // NÃO navega pro login. Espera estabilizar (o Splash já cuidou de roteamento)
             swipe.setRefreshing(false);
-            showEmpty(true);
-            Snackbar.make(root, "Sessão não disponível. Tente novamente.", Snackbar.LENGTH_LONG)
-                    .setAction("Tentar de novo", v -> startOrReload())
-                    .show();
+            mostrarVazio(true);
+            Snackbar.make(root, "Sessão indisponível. Puxe para atualizar.", Snackbar.LENGTH_LONG).show();
             return;
         }
 
-        // Primer: get() do servidor — sem listener, evita corridas de auth no 1º toque
-        db.collection("admins").document(FirebaseAuth.getInstance().getCurrentUser().getUid())
-                .get()
-                .addOnSuccessListener(doc -> {
+        // 2) checa admin UMA vez
+        String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        db.collection("admins").document(uid).get()
+                .addOnSuccessListener(adminDoc -> {
                     if (!alive) return;
-                    if (doc != null && doc.exists()) {
-                        fetchOnceThenAttach();
-                    } else {
+                    if (adminDoc == null || !adminDoc.exists()) {
                         swipe.setRefreshing(false);
-                        showEmpty(true);
+                        mostrarVazio(true);
                         Snackbar.make(root, "Sem permissão de administrador.", Snackbar.LENGTH_LONG).show();
-                    }
-                })
-                .addOnFailureListener(e -> handlePrimerError(e, this::startOrReload));
-    }
-
-    private void fetchOnceThenAttach() {
-        db.collection("doacoes")
-                .orderBy("createdAt", Query.Direction.DESCENDING)
-                .limit(500)
-                .get()
-                .addOnSuccessListener(snap -> {
-                    if (!alive) return;
-                    applySnapshot(snap);
-                    swipe.setRefreshing(false);
-                    if (!listenerAttached) attachListener(); // só agora liga o tempo real
-                })
-                .addOnFailureListener(e -> handlePrimerError(e, this::fetchOnceThenAttach));
-    }
-
-    private void attachListener() {
-        detachListener();
-        listenerAttached = true;
-
-        sub = db.collection("doacoes")
-                .orderBy("createdAt", Query.Direction.DESCENDING)
-                .limit(500)
-                .addSnapshotListener((snap, err) -> {
-                    if (!alive) return;
-
-                    if (err != null) {
-                        // Listener falhou; mostra e tenta reconectar depois
-                        handleLiveError(err);
                         return;
                     }
-                    applySnapshot(snap);
+                    // 3) carrega pedidos
+                    db.collection("doacoes")
+                            .orderBy("createdAt", Query.Direction.DESCENDING)
+                            .limit(500)
+                            .get()
+                            .addOnSuccessListener(new com.google.android.gms.tasks.OnSuccessListener<QuerySnapshot>() {
+                                @Override public void onSuccess(QuerySnapshot snap) {
+                                    if (!alive) return;
+                                    aplicarSnapshot(snap);
+                                    swipe.setRefreshing(false);
+                                }
+                            })
+                            .addOnFailureListener(e -> {
+                                if (!alive) return;
+                                swipe.setRefreshing(false);
+                                mostrarVazio(true);
+                                Snackbar.make(root, "Erro ao carregar: " + e.getMessage(), Snackbar.LENGTH_LONG).show();
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    if (!alive) return;
+                    swipe.setRefreshing(false);
+                    mostrarVazio(true);
+                    Snackbar.make(root, "Erro ao verificar admin: " + e.getMessage(), Snackbar.LENGTH_LONG).show();
                 });
     }
 
-    private void detachListener() {
-        listenerAttached = false;
-        if (sub != null) {
-            try { sub.remove(); } catch (Exception ignored) {}
-            sub = null;
-        }
-    }
-
-    private void applySnapshot(QuerySnapshot snap) {
+    private void aplicarSnapshot(QuerySnapshot snap) {
         if (snap == null || snap.isEmpty()) {
-            adapter.setItems(new ArrayList<>());
-            showEmpty(true);
+            adapter.setItems(new ArrayList<Doacao>());
+            mostrarVazio(true);
             return;
         }
         List<Doacao> list = snap.toObjects(Doacao.class);
         adapter.setItems(list);
-        showEmpty(list.isEmpty());
+        mostrarVazio(list.isEmpty());
 
-        // cache nomes
+        // cache nomes (lookup leve)
         for (DocumentSnapshot d : snap.getDocuments()) {
             String uid = d.getString("uid");
             if (uid == null || uidNameCache.containsKey(uid)) continue;
@@ -199,44 +175,7 @@ public class AdminDoacoesActivity extends AppCompatActivity {
         }
     }
 
-    private void showEmpty(boolean show) {
+    private void mostrarVazio(boolean show) {
         if (emptyState != null) emptyState.setVisibility(show ? View.VISIBLE : View.GONE);
-    }
-
-    private void handlePrimerError(Exception e, Runnable retryJob) {
-        swipe.setRefreshing(false);
-        showEmpty(true);
-
-        if (e instanceof FirebaseFirestoreException) {
-            FirebaseFirestoreException fe = (FirebaseFirestoreException) e;
-            switch (fe.getCode()) {
-                case UNAUTHENTICATED:
-                case PERMISSION_DENIED:
-                case UNAVAILABLE:
-                case DEADLINE_EXCEEDED:
-                    if (retry.canRetry()) {
-                        Snackbar.make(root, "Reconectando…", Snackbar.LENGTH_SHORT).show();
-                        retry.schedule(retryJob::run);
-                        return;
-                    }
-            }
-        }
-        Snackbar.make(root, "Erro ao carregar: " + e.getMessage(), Snackbar.LENGTH_LONG)
-                .setAction("Tentar de novo", v -> retryJob.run())
-                .show();
-    }
-
-    private void handleLiveError(Exception e) {
-        // Não derruba a tela nem remove o adapter.
-        if (e instanceof FirebaseFirestoreException) {
-            FirebaseFirestoreException.Code c = ((FirebaseFirestoreException) e).getCode();
-            if (c == FirebaseFirestoreException.Code.UNAUTHENTICATED ||
-                    c == FirebaseFirestoreException.Code.PERMISSION_DENIED ||
-                    c == FirebaseFirestoreException.Code.UNAVAILABLE) {
-                // solta um retry discreto
-                if (retry.canRetry()) retry.schedule(this::attachListener);
-            }
-        }
-        Snackbar.make(root, "Conexão instável. Mantendo dados em tela.", Snackbar.LENGTH_SHORT).show();
     }
 }
