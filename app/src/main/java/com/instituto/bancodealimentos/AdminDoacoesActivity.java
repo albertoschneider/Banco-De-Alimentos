@@ -20,6 +20,7 @@ import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
 
@@ -28,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@SuppressWarnings("FieldCanBeLocal")
 public class AdminDoacoesActivity extends AppCompatActivity {
 
     private RecyclerView rv;
@@ -43,6 +45,7 @@ public class AdminDoacoesActivity extends AppCompatActivity {
     private FirebaseAuth.AuthStateListener authListener;
 
     private final Map<String, String> uidNameCache = new HashMap<>();
+    private boolean isStarted = false; // evita operar UI/listener após onStop
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -50,7 +53,7 @@ public class AdminDoacoesActivity extends AppCompatActivity {
         setContentView(R.layout.activity_admin_doacoes);
         root = findViewById(android.R.id.content);
 
-        // Insets no header
+        // Header insets
         View header = findViewById(R.id.header);
         if (header != null) {
             ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
@@ -87,78 +90,116 @@ public class AdminDoacoesActivity extends AppCompatActivity {
             @Override public void afterTextChanged(Editable s) {}
         });
 
-        // Listener de auth: não finaliza a tela; apenas reage quando loga
+        // Gate de auth robusto (não finaliza a tela; espera estabilizar)
         authListener = firebaseAuth -> {
+            if (!isStarted) return;
             if (firebaseAuth.getCurrentUser() != null) {
                 ensureAndReload();
             } else {
-                Snackbar.make(root, "Reconectando...", Snackbar.LENGTH_SHORT).show();
+                // Sem sessão ainda (latência): mostra aviso e mantém a tela
+                Snackbar.make(root, "Reconectando…", Snackbar.LENGTH_SHORT).show();
+                stopQueryIfAny();
+                swipe.setRefreshing(false);
+                showEmpty(true);
             }
         };
     }
 
     @Override protected void onStart() {
         super.onStart();
+        isStarted = true;
         if (authListener != null) auth.addAuthStateListener(authListener);
         if (auth.getCurrentUser() != null) ensureAndReload();
+        else {
+            swipe.setRefreshing(true); // mostra loading enquanto auth estabiliza
+        }
     }
 
     @Override protected void onStop() {
         super.onStop();
+        isStarted = false;
         if (authListener != null) auth.removeAuthStateListener(authListener);
-        if (sub != null) { sub.remove(); sub = null; }
+        stopQueryIfAny();
+    }
+
+    private void stopQueryIfAny() {
+        if (sub != null) {
+            try { sub.remove(); } catch (Exception ignored) {}
+            sub = null;
+        }
+    }
+
+    private void showEmpty(boolean show) {
+        if (emptyState != null) emptyState.setVisibility(show ? View.VISIBLE : View.GONE);
     }
 
     private void ensureAndReload() {
+        if (!isStarted) return;
         if (auth.getCurrentUser() == null) return;
 
-        // Checa se é admin (regras já protegem, mas isso evita PERMISSION_DENIED ficar “misterioso”)
+        // Confirma admin explicitamente (além das rules)
         db.collection("admins").document(auth.getCurrentUser().getUid())
                 .get()
                 .addOnSuccessListener(doc -> {
+                    if (!isStarted) return;
                     if (doc != null && doc.exists()) {
                         reload();
                     } else {
-                        Snackbar.make(root, "Sem permissão de administrador.", Snackbar.LENGTH_LONG).show();
-                        // não finaliza; deixa o usuário voltar manualmente
+                        stopQueryIfAny();
+                        swipe.setRefreshing(false);
+                        showEmpty(true);
+                        Snackbar.make(root, "Sem permissão de administrador.", Snackbar.LENGTH_LONG)
+                                .setAction("Tentar de novo", v -> ensureAndReload())
+                                .show();
                     }
                 })
-                .addOnFailureListener(e ->
-                        Snackbar.make(root, "Erro ao verificar permissão: " + e.getMessage(), Snackbar.LENGTH_LONG).show()
-                );
+                .addOnFailureListener(e -> {
+                    if (!isStarted) return;
+                    stopQueryIfAny();
+                    swipe.setRefreshing(false);
+                    showEmpty(true);
+                    Snackbar.make(root, "Erro ao verificar permissão: " + e.getMessage(), Snackbar.LENGTH_LONG)
+                            .setAction("Tentar de novo", v -> ensureAndReload())
+                            .show();
+                });
     }
 
     private void reload() {
+        if (!isStarted) return;
         if (auth.getCurrentUser() == null) return;
 
-        if (sub != null) sub.remove();
+        stopQueryIfAny();
         swipe.setRefreshing(true);
 
         sub = db.collection("doacoes")
                 .orderBy("createdAt", Query.Direction.DESCENDING)
                 .limit(500)
                 .addSnapshotListener((snap, err) -> {
+                    if (!isStarted) return;
+
                     swipe.setRefreshing(false);
+
                     if (err != null) {
-                        Snackbar.make(rv, "Erro ao carregar: " + err.getMessage(), Snackbar.LENGTH_LONG).show();
+                        handleFirestoreError(err);
                         return;
                     }
                     if (snap == null || snap.isEmpty()) {
                         adapter.setItems(new ArrayList<>());
-                        emptyState.setVisibility(View.VISIBLE);
+                        showEmpty(true);
                         return;
                     }
 
                     List<Doacao> list = snap.toObjects(Doacao.class);
                     adapter.setItems(list);
-                    emptyState.setVisibility(list.isEmpty() ? View.VISIBLE : View.GONE);
+                    showEmpty(list.isEmpty());
 
-                    // Cache de nomes por uid
+                    // Cache dos nomes
                     for (DocumentSnapshot d : snap.getDocuments()) {
                         String uid = d.getString("uid");
                         if (uid == null || uidNameCache.containsKey(uid)) continue;
                         db.collection("usuarios").document(uid).get()
                                 .addOnSuccessListener(doc -> {
+                                    if (!isStarted) return;
                                     String nome = doc != null ? doc.getString("nome") : null;
                                     if (nome == null || nome.trim().isEmpty()) nome = "(sem nome)";
                                     uidNameCache.put(uid, nome);
@@ -166,5 +207,32 @@ public class AdminDoacoesActivity extends AppCompatActivity {
                                 });
                     }
                 });
+    }
+
+    private void handleFirestoreError(Exception e) {
+        stopQueryIfAny();
+        showEmpty(true);
+
+        if (e instanceof FirebaseFirestoreException) {
+            FirebaseFirestoreException fe = (FirebaseFirestoreException) e;
+            switch (fe.getCode()) {
+                case UNAUTHENTICATED:
+                    Snackbar.make(root, "Sessão expirada. Tente novamente.", Snackbar.LENGTH_LONG)
+                            .setAction("Tentar de novo", v -> ensureAndReload())
+                            .show();
+                    return;
+                case PERMISSION_DENIED:
+                    Snackbar.make(root, "Sem permissão de administrador.", Snackbar.LENGTH_LONG)
+                            .setAction("Tentar de novo", v -> ensureAndReload())
+                            .show();
+                    return;
+                default:
+                    // Continua para o genérico
+            }
+        }
+
+        Snackbar.make(root, "Erro ao carregar: " + e.getMessage(), Snackbar.LENGTH_LONG)
+                .setAction("Tentar de novo", v -> ensureAndReload())
+                .show();
     }
 }

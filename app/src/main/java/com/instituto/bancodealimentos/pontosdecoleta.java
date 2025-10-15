@@ -29,6 +29,7 @@ import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QuerySnapshot;
@@ -71,6 +72,8 @@ public class pontosdecoleta extends AppCompatActivity {
     private LocationCallback locCallback;
     private Location lastLocation;
 
+    private boolean isStarted = false;
+
     // Permissões
     private final ActivityResultLauncher<String[]> locationPermsLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
@@ -94,7 +97,7 @@ public class pontosdecoleta extends AppCompatActivity {
         setContentView(R.layout.activity_pontosdecoleta);
         rootView = findViewById(android.R.id.content);
 
-        // Header insets
+        // Header: insets
         View header = findViewById(R.id.header);
         if (header != null) {
             ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
@@ -105,7 +108,7 @@ public class pontosdecoleta extends AppCompatActivity {
             ViewCompat.requestApplyInsets(header);
         }
 
-        // Bind UI
+        // UI
         btnVoltar = findViewById(R.id.btn_voltar);
         etBusca   = findViewById(R.id.etBusca);
         rv        = findViewById(R.id.rvPontos);
@@ -148,16 +151,20 @@ public class pontosdecoleta extends AppCompatActivity {
         // Auth
         auth = FirebaseAuth.getInstance();
         authListener = firebaseAuth -> {
+            if (!isStarted) return;
             if (firebaseAuth.getCurrentUser() != null) {
                 iniciarListenerFirestore();
             } else {
-                Snackbar.make(rootView, "Reconectando...", Snackbar.LENGTH_SHORT).show();
+                Snackbar.make(rootView, "Reconectando…", Snackbar.LENGTH_SHORT).show();
+                stopQueryIfAny();
+                showEmptyList();
             }
         };
     }
 
     @Override protected void onStart() {
         super.onStart();
+        isStarted = true;
         if (authListener != null) auth.addAuthStateListener(authListener);
         if (auth.getCurrentUser() != null) iniciarListenerFirestore();
         ensureLocationFlow();
@@ -165,12 +172,25 @@ public class pontosdecoleta extends AppCompatActivity {
 
     @Override protected void onStop() {
         super.onStop();
+        isStarted = false;
         if (authListener != null) auth.removeAuthStateListener(authListener);
-        if (pontosListener != null) { pontosListener.remove(); pontosListener = null; }
+        stopQueryIfAny();
         stopLocationUpdatesSafe();
     }
 
-    // Permissões & Localização
+    private void stopQueryIfAny() {
+        if (pontosListener != null) {
+            try { pontosListener.remove(); } catch (Exception ignored) {}
+            pontosListener = null;
+        }
+    }
+
+    private void showEmptyList() {
+        visibleData.clear();
+        adapter.notifyDataSetChanged();
+    }
+
+    // ====== Permissões & Localização ======
     private void ensureLocationFlow() {
         if (hasLocationPermission()) {
             fetchLastLocationSafe();
@@ -213,19 +233,55 @@ public class pontosdecoleta extends AppCompatActivity {
         }
     }
 
-    // Firestore
+    // ====== Firestore ======
     private void iniciarListenerFirestore() {
-        if (pontosListener != null) { pontosListener.remove(); pontosListener = null; }
-        if (auth.getCurrentUser() == null) return; // regras exigem login
+        if (!isStarted) return;
+
+        // Regras exigem login; se não tiver user ainda, apenas aguarde o authListener
+        if (auth.getCurrentUser() == null) return;
+
+        stopQueryIfAny();
 
         pontosListener = db.collection(COLECAO).addSnapshotListener((snap, err) -> {
+            if (!isStarted) return;
+
             if (err != null) {
-                Snackbar.make(rootView, "Erro Firestore: " + err.getMessage(), Snackbar.LENGTH_SHORT).show();
-                return; // não fecha, não volta para login
+                handleFirestoreError(err);
+                return;
             }
-            if (snap == null) return;
+            if (snap == null) {
+                showEmptyList();
+                return;
+            }
             atualizarListaComSnapshot(snap);
         });
+    }
+
+    private void handleFirestoreError(Exception e) {
+        stopQueryIfAny();
+        showEmptyList();
+
+        if (e instanceof FirebaseFirestoreException) {
+            FirebaseFirestoreException fe = (FirebaseFirestoreException) e;
+            switch (fe.getCode()) {
+                case UNAUTHENTICATED:
+                    Snackbar.make(rootView, "Sessão expirada. Toque para tentar novamente.", Snackbar.LENGTH_LONG)
+                            .setAction("Tentar de novo", v -> iniciarListenerFirestore())
+                            .show();
+                    return;
+                case PERMISSION_DENIED:
+                    Snackbar.make(rootView, "Sem permissão para ler os pontos de coleta.", Snackbar.LENGTH_LONG)
+                            .setAction("Tentar de novo", v -> iniciarListenerFirestore())
+                            .show();
+                    return;
+                default:
+                    // Continua para o genérico
+            }
+        }
+
+        Snackbar.make(rootView, "Erro Firestore: " + e.getMessage(), Snackbar.LENGTH_LONG)
+                .setAction("Tentar de novo", v -> iniciarListenerFirestore())
+                .show();
     }
 
     private void atualizarListaComSnapshot(@NonNull QuerySnapshot snap) {
@@ -252,7 +308,7 @@ public class pontosdecoleta extends AppCompatActivity {
         aplicarFiltroEOrdenacao();
     }
 
-    // Filtro & Ordenação
+    // ====== Filtro & Ordenação ======
     private void aplicarFiltroEOrdenacao() {
         String q = currentQuery.trim().toLowerCase(Locale.ROOT);
 
