@@ -40,6 +40,7 @@ public class AdminDoacoesActivity extends AppCompatActivity {
     private FirebaseAuth auth;
     private FirebaseFirestore db;
     private ListenerRegistration sub;
+    private FirebaseAuth.AuthStateListener authListener;
 
     private final Map<String, String> uidNameCache = new HashMap<>();
 
@@ -77,7 +78,6 @@ public class AdminDoacoesActivity extends AppCompatActivity {
 
         swipe.setOnRefreshListener(this::reload);
 
-        // Filtro em memória por nome / nº do pedido / descrição
         etBusca.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
             @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
@@ -86,16 +86,38 @@ public class AdminDoacoesActivity extends AppCompatActivity {
             @Override public void afterTextChanged(Editable s) {}
         });
 
-        reload();
+        // Listener de auth para evitar "kick" por latência
+        authListener = firebaseAuth -> {
+            if (firebaseAuth.getCurrentUser() != null) {
+                // Confirmar que o usuário é admin (regras já conferem no server, mas evitamos query inútil)
+                reload();
+            } else {
+                // Mostra um aviso ao invés de dar finish() (que te joga no login)
+                Snackbar.make(rv, "Reconectando...", Snackbar.LENGTH_SHORT).show();
+            }
+        };
+    }
+
+    @Override protected void onStart() {
+        super.onStart();
+        if (authListener != null) auth.addAuthStateListener(authListener);
+        // Se já está logado, carrega
+        if (auth.getCurrentUser() != null) reload();
+    }
+
+    @Override protected void onStop() {
+        super.onStop();
+        if (authListener != null) auth.removeAuthStateListener(authListener);
+        if (sub != null) { sub.remove(); sub = null; }
     }
 
     private void reload() {
-        if (auth.getCurrentUser() == null) { finish(); return; }
+        if (auth.getCurrentUser() == null) return; // aguarda authListener
 
         if (sub != null) sub.remove();
         swipe.setRefreshing(true);
 
-        db.collection("doacoes")
+        sub = db.collection("doacoes")
                 .orderBy("createdAt", Query.Direction.DESCENDING)
                 .limit(500)
                 .addSnapshotListener((snap, err) -> {

@@ -25,6 +25,8 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
+import com.google.android.material.snackbar.Snackbar;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.GeoPoint;
@@ -47,11 +49,16 @@ public class pontosdecoleta extends AppCompatActivity {
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
     private ListenerRegistration pontosListener;
 
+    // ===== Auth =====
+    private FirebaseAuth auth;
+    private FirebaseAuth.AuthStateListener authListener;
+
     // ===== UI =====
     private RecyclerView rv;
     private EditText etBusca;
     private ImageButton btnVoltar;
     private PontoColetaAdapter adapter;
+    private View rootView;
 
     // ===== Dados em memória =====
     private final List<PontoColeta> allData = new ArrayList<>();
@@ -64,7 +71,7 @@ public class pontosdecoleta extends AppCompatActivity {
     private LocationCallback locCallback;
     private Location lastLocation;
 
-    // ===== Permissões (Activity Result API) =====
+    // ===== Permissões =====
     private final ActivityResultLauncher<String[]> locationPermsLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
                 boolean fine = Boolean.TRUE.equals(result.get(Manifest.permission.ACCESS_FINE_LOCATION));
@@ -76,7 +83,6 @@ public class pontosdecoleta extends AppCompatActivity {
                     startLocationUpdatesSafe();
                 } else {
                     Toast.makeText(this, "Permissão de localização negada.", Toast.LENGTH_SHORT).show();
-                    // Sem localização: lista funciona, só ordena por nome
                     lastLocation = null;
                     aplicarFiltroEOrdenacao();
                 }
@@ -87,7 +93,9 @@ public class pontosdecoleta extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pontosdecoleta);
 
-        // Cabeçalho: aplica inset sem somar repetidamente (evita “encolher”/“cortar”)
+        rootView = findViewById(android.R.id.content);
+
+        // Cabeçalho: insets
         View header = findViewById(R.id.header);
         if (header != null) {
             ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
@@ -98,19 +106,17 @@ public class pontosdecoleta extends AppCompatActivity {
             ViewCompat.requestApplyInsets(header);
         }
 
-        // ---- Bind UI
+        // UI
         btnVoltar = findViewById(R.id.btn_voltar);
         etBusca   = findViewById(R.id.etBusca);
         rv        = findViewById(R.id.rvPontos);
 
         if (btnVoltar != null) btnVoltar.setOnClickListener(v -> onBackPressed());
 
-        // ---- Recycler
         rv.setLayoutManager(new LinearLayoutManager(this));
         adapter = new PontoColetaAdapter(visibleData);
         rv.setAdapter(adapter);
 
-        // ---- Filtro
         if (etBusca != null) {
             etBusca.addTextChangedListener(new TextWatcher() {
                 @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -122,7 +128,7 @@ public class pontosdecoleta extends AppCompatActivity {
             });
         }
 
-        // ---- Localização (configura; não inicia ainda)
+        // Localização
         fused = LocationServices.getFusedLocationProviderClient(this);
         locRequest = LocationRequest.create()
                 .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
@@ -140,14 +146,35 @@ public class pontosdecoleta extends AppCompatActivity {
             }
         };
 
-        // ---- Firestore em tempo real
-        iniciarListenerFirestore();
+        // Auth
+        auth = FirebaseAuth.getInstance();
+        authListener = firebaseAuth -> {
+            if (firebaseAuth.getCurrentUser() != null) {
+                iniciarListenerFirestore();
+            } else {
+                // Não fecha a tela; apenas informa
+                Snackbar.make(rootView, "Reconectando...", Snackbar.LENGTH_SHORT).show();
+            }
+        };
+    }
 
-        // ---- Primeiro fluxo de permissão/loc
+    @Override protected void onStart() {
+        super.onStart();
+        if (authListener != null) auth.addAuthStateListener(authListener);
+        // Se já está logado, inicia direto
+        if (auth.getCurrentUser() != null) iniciarListenerFirestore();
+
         ensureLocationFlow();
     }
 
-    // ===================== Permissões & Localização (seguros) =====================
+    @Override protected void onStop() {
+        super.onStop();
+        if (authListener != null) auth.removeAuthStateListener(authListener);
+        if (pontosListener != null) { pontosListener.remove(); pontosListener = null; }
+        stopLocationUpdatesSafe();
+    }
+
+    // ===================== Permissões & Localização =====================
     private void ensureLocationFlow() {
         if (hasLocationPermission()) {
             fetchLastLocationSafe();
@@ -175,37 +202,33 @@ public class pontosdecoleta extends AppCompatActivity {
                             recalcDistances(allData);
                             aplicarFiltroEOrdenacao();
                         }
-                    })
-                    .addOnFailureListener(e -> {
-                        // Sem stress; segue sem localização
                     });
-        } catch (SecurityException ignored) {
-            // Caso extremo: permissão foi revogada entre a checagem e a chamada
-        }
+        } catch (SecurityException ignored) {}
     }
 
     private void startLocationUpdatesSafe() {
         if (!hasLocationPermission() || fused == null || locCallback == null || locRequest == null) return;
         try {
             fused.requestLocationUpdates(locRequest, locCallback, getMainLooper());
-        } catch (SecurityException ignored) {
-            // Protege contra race condition após o diálogo de permissão
-        }
+        } catch (SecurityException ignored) {}
     }
 
     private void stopLocationUpdatesSafe() {
         if (fused != null && locCallback != null) {
-            try {
-                fused.removeLocationUpdates(locCallback);
-            } catch (Exception ignored) {}
+            try { fused.removeLocationUpdates(locCallback); } catch (Exception ignored) {}
         }
     }
 
     // ===================== Firestore =====================
     private void iniciarListenerFirestore() {
+        if (pontosListener != null) { pontosListener.remove(); pontosListener = null; }
+
+        // Regras exigem usuário logado; se não, a leitura falha
+        if (auth.getCurrentUser() == null) return;
+
         pontosListener = db.collection(COLECAO).addSnapshotListener((snap, err) -> {
             if (err != null) {
-                Toast.makeText(this, "Erro Firestore: " + err.getMessage(), Toast.LENGTH_SHORT).show();
+                Snackbar.make(rootView, "Erro Firestore: " + err.getMessage(), Snackbar.LENGTH_SHORT).show();
                 return;
             }
             if (snap == null) return;
@@ -219,7 +242,7 @@ public class pontosdecoleta extends AppCompatActivity {
         for (DocumentSnapshot d : snap.getDocuments()) {
             String nome = d.getString("nome");
             String endereco = d.getString("endereco");
-            String disp = d.getString("disponibilidade"); // "Disponível" / "Indisponível"
+            String disp = d.getString("disponibilidade");
             GeoPoint gp = d.getGeoPoint("location");
             Double lat = gp != null ? gp.getLatitude() : null;
             Double lng = gp != null ? gp.getLongitude() : null;
@@ -285,29 +308,5 @@ public class pontosdecoleta extends AppCompatActivity {
                 p.setDistanciaKm(0.0);
             }
         }
-    }
-
-    // ===================== Ciclo de Vida =====================
-    @Override
-    protected void onResume() {
-        super.onResume();
-        // Se já tem permissão, retomamos updates; senão, deixamos o usuário acionar o fluxo natural
-        if (hasLocationPermission()) startLocationUpdatesSafe();
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        stopLocationUpdatesSafe();
-    }
-
-    @Override
-    protected void onDestroy() {
-        if (pontosListener != null) {
-            pontosListener.remove();
-            pontosListener = null;
-        }
-        stopLocationUpdatesSafe();
-        super.onDestroy();
     }
 }
