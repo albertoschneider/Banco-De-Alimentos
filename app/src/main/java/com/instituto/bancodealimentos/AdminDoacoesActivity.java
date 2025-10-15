@@ -32,7 +32,7 @@ public class AdminDoacoesActivity extends AppCompatActivity {
 
     private RecyclerView rv;
     private SwipeRefreshLayout swipe;
-    private View emptyState;
+    private View emptyState, root;
     private EditText etBusca;
 
     private AdminDoacaoAdapter adapter;
@@ -48,6 +48,7 @@ public class AdminDoacoesActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_admin_doacoes);
+        root = findViewById(android.R.id.content);
 
         // Insets no header
         View header = findViewById(R.id.header);
@@ -76,7 +77,7 @@ public class AdminDoacoesActivity extends AppCompatActivity {
         auth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
 
-        swipe.setOnRefreshListener(this::reload);
+        swipe.setOnRefreshListener(this::ensureAndReload);
 
         etBusca.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -86,14 +87,12 @@ public class AdminDoacoesActivity extends AppCompatActivity {
             @Override public void afterTextChanged(Editable s) {}
         });
 
-        // Listener de auth para evitar "kick" por latência
+        // Listener de auth: não finaliza a tela; apenas reage quando loga
         authListener = firebaseAuth -> {
             if (firebaseAuth.getCurrentUser() != null) {
-                // Confirmar que o usuário é admin (regras já conferem no server, mas evitamos query inútil)
-                reload();
+                ensureAndReload();
             } else {
-                // Mostra um aviso ao invés de dar finish() (que te joga no login)
-                Snackbar.make(rv, "Reconectando...", Snackbar.LENGTH_SHORT).show();
+                Snackbar.make(root, "Reconectando...", Snackbar.LENGTH_SHORT).show();
             }
         };
     }
@@ -101,8 +100,7 @@ public class AdminDoacoesActivity extends AppCompatActivity {
     @Override protected void onStart() {
         super.onStart();
         if (authListener != null) auth.addAuthStateListener(authListener);
-        // Se já está logado, carrega
-        if (auth.getCurrentUser() != null) reload();
+        if (auth.getCurrentUser() != null) ensureAndReload();
     }
 
     @Override protected void onStop() {
@@ -111,8 +109,27 @@ public class AdminDoacoesActivity extends AppCompatActivity {
         if (sub != null) { sub.remove(); sub = null; }
     }
 
+    private void ensureAndReload() {
+        if (auth.getCurrentUser() == null) return;
+
+        // Checa se é admin (regras já protegem, mas isso evita PERMISSION_DENIED ficar “misterioso”)
+        db.collection("admins").document(auth.getCurrentUser().getUid())
+                .get()
+                .addOnSuccessListener(doc -> {
+                    if (doc != null && doc.exists()) {
+                        reload();
+                    } else {
+                        Snackbar.make(root, "Sem permissão de administrador.", Snackbar.LENGTH_LONG).show();
+                        // não finaliza; deixa o usuário voltar manualmente
+                    }
+                })
+                .addOnFailureListener(e ->
+                        Snackbar.make(root, "Erro ao verificar permissão: " + e.getMessage(), Snackbar.LENGTH_LONG).show()
+                );
+    }
+
     private void reload() {
-        if (auth.getCurrentUser() == null) return; // aguarda authListener
+        if (auth.getCurrentUser() == null) return;
 
         if (sub != null) sub.remove();
         swipe.setRefreshing(true);
@@ -136,7 +153,7 @@ public class AdminDoacoesActivity extends AppCompatActivity {
                     adapter.setItems(list);
                     emptyState.setVisibility(list.isEmpty() ? View.VISIBLE : View.GONE);
 
-                    // Cache de nomes por uid (faz lookup só do que faltar)
+                    // Cache de nomes por uid
                     for (DocumentSnapshot d : snap.getDocuments()) {
                         String uid = d.getString("uid");
                         if (uid == null || uidNameCache.containsKey(uid)) continue;
@@ -149,11 +166,5 @@ public class AdminDoacoesActivity extends AppCompatActivity {
                                 });
                     }
                 });
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (sub != null) sub.remove();
     }
 }

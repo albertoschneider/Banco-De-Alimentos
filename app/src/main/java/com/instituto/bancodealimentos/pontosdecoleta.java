@@ -44,34 +44,34 @@ import androidx.core.graphics.Insets;
 
 public class pontosdecoleta extends AppCompatActivity {
 
-    // ===== Firestore =====
+    // Firestore
     private static final String COLECAO = "pontos";
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
     private ListenerRegistration pontosListener;
 
-    // ===== Auth =====
+    // Auth
     private FirebaseAuth auth;
     private FirebaseAuth.AuthStateListener authListener;
 
-    // ===== UI =====
+    // UI
     private RecyclerView rv;
     private EditText etBusca;
     private ImageButton btnVoltar;
     private PontoColetaAdapter adapter;
     private View rootView;
 
-    // ===== Dados em memória =====
+    // Dados
     private final List<PontoColeta> allData = new ArrayList<>();
     private final List<PontoColeta> visibleData = new ArrayList<>();
     private String currentQuery = "";
 
-    // ===== Localização =====
+    // Localização
     private FusedLocationProviderClient fused;
     private LocationRequest locRequest;
     private LocationCallback locCallback;
     private Location lastLocation;
 
-    // ===== Permissões =====
+    // Permissões
     private final ActivityResultLauncher<String[]> locationPermsLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
                 boolean fine = Boolean.TRUE.equals(result.get(Manifest.permission.ACCESS_FINE_LOCATION));
@@ -92,10 +92,9 @@ public class pontosdecoleta extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pontosdecoleta);
-
         rootView = findViewById(android.R.id.content);
 
-        // Cabeçalho: insets
+        // Header insets
         View header = findViewById(R.id.header);
         if (header != null) {
             ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
@@ -106,7 +105,7 @@ public class pontosdecoleta extends AppCompatActivity {
             ViewCompat.requestApplyInsets(header);
         }
 
-        // UI
+        // Bind UI
         btnVoltar = findViewById(R.id.btn_voltar);
         etBusca   = findViewById(R.id.etBusca);
         rv        = findViewById(R.id.rvPontos);
@@ -152,7 +151,6 @@ public class pontosdecoleta extends AppCompatActivity {
             if (firebaseAuth.getCurrentUser() != null) {
                 iniciarListenerFirestore();
             } else {
-                // Não fecha a tela; apenas informa
                 Snackbar.make(rootView, "Reconectando...", Snackbar.LENGTH_SHORT).show();
             }
         };
@@ -161,9 +159,7 @@ public class pontosdecoleta extends AppCompatActivity {
     @Override protected void onStart() {
         super.onStart();
         if (authListener != null) auth.addAuthStateListener(authListener);
-        // Se já está logado, inicia direto
         if (auth.getCurrentUser() != null) iniciarListenerFirestore();
-
         ensureLocationFlow();
     }
 
@@ -174,7 +170,7 @@ public class pontosdecoleta extends AppCompatActivity {
         stopLocationUpdatesSafe();
     }
 
-    // ===================== Permissões & Localização =====================
+    // Permissões & Localização
     private void ensureLocationFlow() {
         if (hasLocationPermission()) {
             fetchLastLocationSafe();
@@ -208,9 +204,7 @@ public class pontosdecoleta extends AppCompatActivity {
 
     private void startLocationUpdatesSafe() {
         if (!hasLocationPermission() || fused == null || locCallback == null || locRequest == null) return;
-        try {
-            fused.requestLocationUpdates(locRequest, locCallback, getMainLooper());
-        } catch (SecurityException ignored) {}
+        try { fused.requestLocationUpdates(locRequest, locCallback, getMainLooper()); } catch (SecurityException ignored) {}
     }
 
     private void stopLocationUpdatesSafe() {
@@ -219,17 +213,15 @@ public class pontosdecoleta extends AppCompatActivity {
         }
     }
 
-    // ===================== Firestore =====================
+    // Firestore
     private void iniciarListenerFirestore() {
         if (pontosListener != null) { pontosListener.remove(); pontosListener = null; }
-
-        // Regras exigem usuário logado; se não, a leitura falha
-        if (auth.getCurrentUser() == null) return;
+        if (auth.getCurrentUser() == null) return; // regras exigem login
 
         pontosListener = db.collection(COLECAO).addSnapshotListener((snap, err) -> {
             if (err != null) {
                 Snackbar.make(rootView, "Erro Firestore: " + err.getMessage(), Snackbar.LENGTH_SHORT).show();
-                return;
+                return; // não fecha, não volta para login
             }
             if (snap == null) return;
             atualizarListaComSnapshot(snap);
@@ -260,7 +252,7 @@ public class pontosdecoleta extends AppCompatActivity {
         aplicarFiltroEOrdenacao();
     }
 
-    // ===================== Filtro & Ordenação =====================
+    // Filtro & Ordenação
     private void aplicarFiltroEOrdenacao() {
         String q = currentQuery.trim().toLowerCase(Locale.ROOT);
 

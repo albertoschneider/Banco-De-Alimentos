@@ -37,13 +37,26 @@ public final class SettingsRepository {
     public static String getPixChave(Context c)  { return prefs(c).getString(K_PIX_CHAVE,  ""); }
     public static String getWhats(Context c)     { return prefs(c).getString(K_WHATS,      ""); }
 
-    /** Monta o link do WhatsApp com mensagem opcional */
+    /**
+     * Monta o link do WhatsApp com mensagem opcional abrindo diretamente no número salvo.
+     * Usa endpoint api.whatsapp.com/send (mais compatível).
+     */
     public static Uri buildWhatsUrl(Context c, String msgPtBr) {
         String phone = getWhats(c); // só dígitos
         String encoded = Uri.encode(msgPtBr == null ? "" : msgPtBr);
-        if (TextUtils.isEmpty(phone)) return Uri.parse("https://wa.me/?text=" + encoded);
-        if (!phone.startsWith("55")) phone = "55" + phone; // assume BR se faltar DDI
-        return Uri.parse("https://wa.me/" + phone + "?text=" + encoded);
+
+        // Sem número salvo: abre o Whats e deixa a mensagem pronta para escolher o contato
+        if (TextUtils.isEmpty(phone)) {
+            return Uri.parse("https://api.whatsapp.com/send?text=" + encoded);
+        }
+
+        // Se for BR e vier só DDD+numero (11 dígitos) sem DDI, prefixa 55
+        if (phone.length() == 11 && !phone.startsWith("55")) {
+            phone = "55" + phone;
+        }
+
+        // Para outros comprimentos, envia como está (já que pode ser DDI de outro país)
+        return Uri.parse("https://api.whatsapp.com/send?phone=" + phone + "&text=" + encoded);
     }
 
     /** mantém apenas dígitos */
