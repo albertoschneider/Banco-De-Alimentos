@@ -156,7 +156,6 @@ public class pagamento extends AppCompatActivity {
         String donationId = getIntent().getStringExtra(EXTRA_DONATION_ID);
         if (donationId != null && !donationId.isEmpty()) {
             carregarCobrancaExistente(donationId);
-            // botão "gerar novo" só aparece quando expirar
             if (btnGerarNovoPix != null) btnGerarNovoPix.setVisibility(View.GONE);
         } else {
             double total = getTotal();
@@ -239,8 +238,7 @@ public class pagamento extends AppCompatActivity {
 
         startTimerLoop();
 
-        // (Opcional) ouvir confirmação automática se você gravou um ID de pagamento
-        // Tente "pagamentoId" ou "referenceId" no doc de doacoes:
+        // Listener de pagamento (se existir id)
         String payId = doc.getString("pagamentoId");
         if (payId == null || payId.isEmpty()) {
             payId = doc.getString("referenceId");
@@ -249,21 +247,18 @@ public class pagamento extends AppCompatActivity {
             observarPagamento(payId);
             pagamentoIdAtual = payId;
         } else {
-            // Se não houver ID do doc em /pagamentos, tudo bem; sem listener aqui.
             pagamentoIdAtual = null;
         }
     }
 
     // ===================== COBRANÇA NOVA | VERCEL + LISTENER =====================
     private void criarOuRenovarCobranca(double total, String orderId) {
-        // Limpa listener antigo (se existir)
         if (pagamentoListener != null) {
             pagamentoListener.remove();
             pagamentoListener = null;
         }
         pagamentoIdAtual = null;
 
-        // Exige usuário logado (token para Authorization: Bearer)
         FirebaseUser u = FirebaseAuth.getInstance().getCurrentUser();
         if (u == null) {
             Toast.makeText(this, "Faça login novamente.", Toast.LENGTH_LONG).show();
@@ -321,7 +316,6 @@ public class pagamento extends AppCompatActivity {
                         });
                     }
                 } catch (Exception e) {
-                    // Fallback local se der erro no backend
                     runOnUiThread(() -> fallbackLocal(total));
                 }
             }).start();
@@ -360,9 +354,11 @@ public class pagamento extends AppCompatActivity {
 
     // ===================== FALLBACK LOCAL (sem backend) =====================
     private void fallbackLocal(double total) {
-        String chave  = getString(R.string.pix_key);
-        String nome   = normalizeNameOrCity(getString(R.string.pix_nome), 25);
-        String cidade = normalizeNameOrCity(getString(R.string.pix_cidade), 15);
+        // >>>>>>> ALTERAÇÃO: agora lê dos SettingsRepository, não de strings.xml <<<<<<<
+        String chave  = SettingsRepository.getPixChave(this);
+        String nome   = normalizeNameOrCity(SettingsRepository.getPixNome(this),   25);
+        String cidade = normalizeNameOrCity(SettingsRepository.getPixCidade(this), 15);
+        // --------------------------------------------------------------------
 
         String valorStr = String.format(Locale.US, "%.2f", total);
         String txid = makeTxid();

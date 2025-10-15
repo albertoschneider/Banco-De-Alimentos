@@ -48,6 +48,9 @@
         <activity android:name=".telalogin" android:exported="false" />
         <activity android:name=".MainActivity" android:exported="false" />
         <activity android:name=".HistoricoDoacoesActivity" android:exported="false" />
+        <activity
+            android:name=".AlterarPixWhatsappActivity"
+            android:exported="false" />
 
         <activity
             android:name=".DeepLinkSuccessActivity"
