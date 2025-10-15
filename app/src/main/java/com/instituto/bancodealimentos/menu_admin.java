@@ -25,7 +25,7 @@ import com.google.firebase.auth.UserInfo;
 public class menu_admin extends AppCompatActivity {
 
     private TextView tvWelcome, tvName;
-    private MaterialCardView cardAdmins, cardDoe, cardPontos, cardHistorico;
+    private MaterialCardView cardAdmins, cardDoe, cardPontos, cardHistorico, cardChaves;
     private ImageButton btnSettings;
 
     private FirebaseAuth auth;
@@ -49,6 +49,7 @@ public class menu_admin extends AppCompatActivity {
         cardDoe = findViewById(R.id.cardDoe);
         cardPontos = findViewById(R.id.cardPontos);
         cardHistorico = findViewById(R.id.cardHistorico);
+        cardChaves = findViewById(R.id.cardChaves);
 
         // Ações dos cards (ajuste as Activities conforme seu app)
         if (cardAdmins != null) {
@@ -73,7 +74,12 @@ public class menu_admin extends AppCompatActivity {
         if (cardHistorico != null) {
             // Coloque aqui a Activity de histórico/admin
             cardHistorico.setOnClickListener(v ->
-                    Toast.makeText(this, "Histórico (em breve)", Toast.LENGTH_SHORT).show());
+                    startActivity(new Intent(menu_admin.this, AdminDoacoesActivity.class)));
+        }
+        if (cardChaves != null) {
+
+            cardChaves.setOnClickListener(v ->
+                    startActivity(new Intent(menu_admin.this, AlterarPixWhatsappActivity.class)));
         }
 
         // Preencher nome no header
