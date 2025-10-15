@@ -26,7 +26,6 @@ import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
 import com.google.android.material.snackbar.Snackbar;
-import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
@@ -50,16 +49,16 @@ public class pontosdecoleta extends AppCompatActivity {
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
     private ListenerRegistration pontosListener;
 
-    // Auth
-    private FirebaseAuth auth;
-    private FirebaseAuth.AuthStateListener authListener;
+    // AuthGate (usuário precisa estar logado; não precisa ser admin)
+    private AuthGate gate;
+    private boolean alive = false;
 
     // UI
+    private View rootView;
     private RecyclerView rv;
     private EditText etBusca;
     private ImageButton btnVoltar;
     private PontoColetaAdapter adapter;
-    private View rootView;
 
     // Dados
     private final List<PontoColeta> allData = new ArrayList<>();
@@ -71,8 +70,6 @@ public class pontosdecoleta extends AppCompatActivity {
     private LocationRequest locRequest;
     private LocationCallback locCallback;
     private Location lastLocation;
-
-    private boolean isStarted = false;
 
     // Permissões
     private final ActivityResultLauncher<String[]> locationPermsLauncher =
@@ -97,7 +94,7 @@ public class pontosdecoleta extends AppCompatActivity {
         setContentView(R.layout.activity_pontosdecoleta);
         rootView = findViewById(android.R.id.content);
 
-        // Header: insets
+        // Header insets
         View header = findViewById(R.id.header);
         if (header != null) {
             ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
@@ -112,7 +109,6 @@ public class pontosdecoleta extends AppCompatActivity {
         btnVoltar = findViewById(R.id.btn_voltar);
         etBusca   = findViewById(R.id.etBusca);
         rv        = findViewById(R.id.rvPontos);
-
         if (btnVoltar != null) btnVoltar.setOnClickListener(v -> onBackPressed());
 
         rv.setLayoutManager(new LinearLayoutManager(this));
@@ -148,37 +144,32 @@ public class pontosdecoleta extends AppCompatActivity {
             }
         };
 
-        // Auth
-        auth = FirebaseAuth.getInstance();
-        authListener = firebaseAuth -> {
-            if (!isStarted) return;
-            if (firebaseAuth.getCurrentUser() != null) {
-                iniciarListenerFirestore();
-            } else {
-                Snackbar.make(rootView, "Reconectando…", Snackbar.LENGTH_SHORT).show();
-                stopQueryIfAny();
+        // AuthGate: só exige login (não admin)
+        gate = new AuthGate(this, rootView, /*requireAdmin=*/false, new AuthGate.Callback() {
+            @Override public void onReady() { startQuery(); }
+            @Override public void onNotReady(String msg) {
+                stopQuery();
                 showEmptyList();
             }
-        };
+        });
     }
 
     @Override protected void onStart() {
         super.onStart();
-        isStarted = true;
-        if (authListener != null) auth.addAuthStateListener(authListener);
-        if (auth.getCurrentUser() != null) iniciarListenerFirestore();
-        ensureLocationFlow();
+        alive = true;
+        gate.start();                 // libera consulta quando sessão está pronta
+        ensureLocationFlow();         // permissões de localização independem da sessão
     }
 
     @Override protected void onStop() {
         super.onStop();
-        isStarted = false;
-        if (authListener != null) auth.removeAuthStateListener(authListener);
-        stopQueryIfAny();
+        alive = false;
+        gate.stop();
+        stopQuery();
         stopLocationUpdatesSafe();
     }
 
-    private void stopQueryIfAny() {
+    private void stopQuery() {
         if (pontosListener != null) {
             try { pontosListener.remove(); } catch (Exception ignored) {}
             pontosListener = null;
@@ -233,17 +224,13 @@ public class pontosdecoleta extends AppCompatActivity {
         }
     }
 
-    // ====== Firestore ======
-    private void iniciarListenerFirestore() {
-        if (!isStarted) return;
-
-        // Regras exigem login; se não tiver user ainda, apenas aguarde o authListener
-        if (auth.getCurrentUser() == null) return;
-
-        stopQueryIfAny();
+    // ====== Firestore (abre só quando AuthGate liberar) ======
+    private void startQuery() {
+        if (!alive) return;
+        stopQuery();
 
         pontosListener = db.collection(COLECAO).addSnapshotListener((snap, err) -> {
-            if (!isStarted) return;
+            if (!alive) return;
 
             if (err != null) {
                 handleFirestoreError(err);
@@ -258,29 +245,28 @@ public class pontosdecoleta extends AppCompatActivity {
     }
 
     private void handleFirestoreError(Exception e) {
-        stopQueryIfAny();
+        stopQuery();
         showEmptyList();
 
         if (e instanceof FirebaseFirestoreException) {
             FirebaseFirestoreException fe = (FirebaseFirestoreException) e;
             switch (fe.getCode()) {
                 case UNAUTHENTICATED:
-                    Snackbar.make(rootView, "Sessão expirada. Toque para tentar novamente.", Snackbar.LENGTH_LONG)
-                            .setAction("Tentar de novo", v -> iniciarListenerFirestore())
+                    Snackbar.make(rootView, "Sessão expirada. Tocar para tentar novamente.", Snackbar.LENGTH_LONG)
+                            .setAction("Tentar de novo", v -> startQuery())
                             .show();
                     return;
                 case PERMISSION_DENIED:
-                    Snackbar.make(rootView, "Sem permissão para ler os pontos de coleta.", Snackbar.LENGTH_LONG)
-                            .setAction("Tentar de novo", v -> iniciarListenerFirestore())
+                    Snackbar.make(rootView, "Sem permissão para ler os pontos.", Snackbar.LENGTH_LONG)
+                            .setAction("Tentar de novo", v -> startQuery())
                             .show();
                     return;
                 default:
-                    // Continua para o genérico
             }
         }
 
         Snackbar.make(rootView, "Erro Firestore: " + e.getMessage(), Snackbar.LENGTH_LONG)
-                .setAction("Tentar de novo", v -> iniciarListenerFirestore())
+                .setAction("Tentar de novo", v -> startQuery())
                 .show();
     }
 
