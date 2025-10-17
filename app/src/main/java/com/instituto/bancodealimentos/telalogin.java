@@ -45,28 +45,7 @@ public class telalogin extends AppCompatActivity {
     private static final String URL_SUCESSO_EMAIL_VERIFICADO =
             "https://albertoschneider.github.io/success/email-verificado/";
 
-    private boolean isLaunchingGoogle = false;
-
-    private final ActivityResultLauncher<Intent> googleLauncher =
-            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
-                isLaunchingGoogle = false;
-                Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(result.getData());
-                try {
-                    GoogleSignInAccount account = task.getResult(ApiException.class);
-                    if (account == null) { showError("*Conta Google inválida."); return; }
-                    mAuth.signInWithCredential(
-                            com.google.firebase.auth.GoogleAuthProvider.getCredential(account.getIdToken(), null)
-                    ).addOnCompleteListener(this, t -> {
-                        if (!t.isSuccessful()) { showError("*Falha no login com Google."); return; }
-                        FirebaseUser u = FirebaseAuth.getInstance().getCurrentUser();
-                        if (u == null) { showError("*Erro inesperado: usuário nulo."); return; }
-                        checarAdminENavegar(u.getUid());
-                    });
-                } catch (ApiException e) {
-                    // Usuário cancelou ou erro do Google
-                    showError("*Falha no login com Google.");
-                }
-            });
+    private ActivityResultLauncher<Intent> googleLauncher;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -83,7 +62,6 @@ public class telalogin extends AppCompatActivity {
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
 
-        // IDs do seu XML
         btnBack      = findViewById(R.id.btnBack);
         edtEmail     = findViewById(R.id.edtEmail);
         edtSenha     = findViewById(R.id.edtSenha);
@@ -93,51 +71,76 @@ public class telalogin extends AppCompatActivity {
         txtForgot    = findViewById(R.id.txtForgot);
         txtRegister  = findViewById(R.id.txtRegister);
 
-        // Voltar: só fecha esta tela
         if (btnBack != null) btnBack.setOnClickListener(v -> finish());
-
         if (txtRegister != null) txtRegister.setOnClickListener(v ->
                 startActivity(new Intent(this, telaregistro.class)));
-
         if (txtForgot != null) txtForgot.setOnClickListener(v ->
                 startActivity(new Intent(this, EsqueciSenhaActivity.class)));
 
-        // Entrar (e-mail/senha)
         btnEntrar.setOnClickListener(v -> tentarLogin());
 
-        // Google
-        if (btnGoogle != null) {
-            GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                    .requestIdToken(getString(R.string.default_web_client_id))
-                    .requestEmail()
-                    .build();
-            mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
+        // Google Sign-In
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken(getString(R.string.default_web_client_id))
+                .requestEmail()
+                .build();
+        mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
 
+        // Activity Result API
+        googleLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getData() == null) {
+                        showError("*Ação cancelada.");
+                        return;
+                    }
+                    Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(result.getData());
+                    try {
+                        GoogleSignInAccount account = task.getResult(ApiException.class);
+                        if (account == null || account.getIdToken() == null) {
+                            showError("*Falha ao obter idToken. Verifique o default_web_client_id / google-services.json.");
+                            return;
+                        }
+                        mAuth.signInWithCredential(
+                                com.google.firebase.auth.GoogleAuthProvider.getCredential(account.getIdToken(), null)
+                        ).addOnCompleteListener(this, t -> {
+                            if (!t.isSuccessful()) {
+                                showError("*Falha no login com Google.");
+                                return;
+                            }
+                            FirebaseUser u = FirebaseAuth.getInstance().getCurrentUser();
+                            if (u == null) { showError("*Erro inesperado: usuário nulo."); return; }
+                            checarAdminENavegar(u.getUid());
+                        });
+                    } catch (ApiException e) {
+                        showError("*Falha no login com Google.");
+                    }
+                }
+        );
+
+        if (btnGoogle != null) {
             btnGoogle.setOnClickListener(v -> {
-                // (opcional) força mostrar seletor de conta sempre:
-                isLaunchingGoogle = true;
-                mGoogleSignInClient.signOut().addOnCompleteListener(x -> {
+                setButtonsEnabled(false);
+                // Força escolher conta (evita reuso silencioso e telas “fantasmas”)
+                mGoogleSignInClient.signOut().addOnCompleteListener(xx -> {
+                    setButtonsEnabled(true);
                     googleLauncher.launch(mGoogleSignInClient.getSignInIntent());
                 });
             });
         }
     }
 
-    // IMPORTANTE: não redirecionar no onStart; deixe a Splash decidir,
-    // e aqui só navegue após sucesso de login.
-    // Se quiser mesmo redirecionar quando já logado, faça com um guard:
-    // @Override
-    // protected void onStart() {
-    //     super.onStart();
-    //     if (!isLaunchingGoogle) {
-    //         FirebaseUser current = FirebaseAuth.getInstance().getCurrentUser();
-    //         if (current != null) checarAdminENavegar(current.getUid());
-    //     }
-    // }
+    @Override
+    protected void onStart() {
+        super.onStart();
+        FirebaseUser current = FirebaseAuth.getInstance().getCurrentUser();
+        if (current != null) {
+            checarAdminENavegar(current.getUid());
+        }
+    }
 
     private void tentarLogin() {
         clearMsg();
-
         String email = val(edtEmail);
         String senha = val(edtSenha);
 
@@ -162,7 +165,6 @@ public class telalogin extends AppCompatActivity {
                     }
 
                     if (!u.isEmailVerified()) {
-                        // BLOQUEIA login de não verificado → reenvia e sai
                         ActionCodeSettings settings = ActionCodeSettings.newBuilder()
                                 .setUrl(URL_SUCESSO_EMAIL_VERIFICADO)
                                 .setHandleCodeInApp(true)
@@ -179,7 +181,6 @@ public class telalogin extends AppCompatActivity {
                         return;
                     }
 
-                    // Verificado → navega
                     checarAdminENavegar(u.getUid());
                 });
     }
@@ -200,7 +201,6 @@ public class telalogin extends AppCompatActivity {
                 });
     }
 
-    // Helpers UI
     private void setButtonsEnabled(boolean enabled) {
         if (btnEntrar != null) { btnEntrar.setEnabled(enabled); btnEntrar.setAlpha(enabled ? 1f : 0.6f); }
         if (btnGoogle != null) { btnGoogle.setEnabled(enabled); btnGoogle.setAlpha(enabled ? 1f : 0.6f); }
@@ -209,7 +209,7 @@ public class telalogin extends AppCompatActivity {
     private void showError(String msg) {
         if (tvLoginError != null) {
             tvLoginError.setText(msg);
-            tvLoginError.setTextColor(0xFFDC2626); // vermelho
+            tvLoginError.setTextColor(0xFFDC2626);
             tvLoginError.setVisibility(View.VISIBLE);
         } else {
             Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
@@ -219,7 +219,7 @@ public class telalogin extends AppCompatActivity {
     private void showInfo(String msg) {
         if (tvLoginError != null) {
             tvLoginError.setText(msg);
-            tvLoginError.setTextColor(0xFF10B981); // verde
+            tvLoginError.setTextColor(0xFF10B981);
             tvLoginError.setVisibility(View.VISIBLE);
         } else {
             Toast.makeText(this, msg, Toast.LENGTH_LONG).show();

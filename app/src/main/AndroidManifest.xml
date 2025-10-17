@@ -45,19 +45,14 @@
         <activity android:name=".pontosdecoleta" android:exported="false" />
         <activity android:name=".voluntariar" android:exported="false" />
         <activity android:name=".telaregistro" android:exported="false" />
-        <activity
-            android:name=".telalogin"
-            android:exported="false"
-            android:noHistory="true"
-            android:launchMode="singleTask" />
+        <activity android:name=".telalogin" android:exported="false" />
         <activity
             android:name=".AdminDoacoesActivity"
             android:exported="false" />
         <activity
             android:name=".MainActivity"
-            android:exported="false"
-            android:noHistory="true"
-            android:launchMode="singleTask" />
+            android:exported="false" />
+
         <activity android:name=".HistoricoDoacoesActivity" android:exported="false" />
         <activity
             android:name=".AlterarPixWhatsappActivity"
