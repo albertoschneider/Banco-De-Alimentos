@@ -9,6 +9,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
@@ -40,9 +42,31 @@ public class telalogin extends AppCompatActivity {
     private FirebaseFirestore db;
     private GoogleSignInClient mGoogleSignInClient;
 
-    private static final int RC_GOOGLE = 9101;
     private static final String URL_SUCESSO_EMAIL_VERIFICADO =
             "https://albertoschneider.github.io/success/email-verificado/";
+
+    private boolean isLaunchingGoogle = false;
+
+    private final ActivityResultLauncher<Intent> googleLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+                isLaunchingGoogle = false;
+                Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(result.getData());
+                try {
+                    GoogleSignInAccount account = task.getResult(ApiException.class);
+                    if (account == null) { showError("*Conta Google inválida."); return; }
+                    mAuth.signInWithCredential(
+                            com.google.firebase.auth.GoogleAuthProvider.getCredential(account.getIdToken(), null)
+                    ).addOnCompleteListener(this, t -> {
+                        if (!t.isSuccessful()) { showError("*Falha no login com Google."); return; }
+                        FirebaseUser u = FirebaseAuth.getInstance().getCurrentUser();
+                        if (u == null) { showError("*Erro inesperado: usuário nulo."); return; }
+                        checarAdminENavegar(u.getUid());
+                    });
+                } catch (ApiException e) {
+                    // Usuário cancelou ou erro do Google
+                    showError("*Falha no login com Google.");
+                }
+            });
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -69,7 +93,7 @@ public class telalogin extends AppCompatActivity {
         txtForgot    = findViewById(R.id.txtForgot);
         txtRegister  = findViewById(R.id.txtRegister);
 
-        // Voltar: apenas fecha (não recria MainActivity à toa)
+        // Voltar: só fecha esta tela
         if (btnBack != null) btnBack.setOnClickListener(v -> finish());
 
         if (txtRegister != null) txtRegister.setOnClickListener(v ->
@@ -88,20 +112,28 @@ public class telalogin extends AppCompatActivity {
                     .requestEmail()
                     .build();
             mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
-            btnGoogle.setOnClickListener(v ->
-                    startActivityForResult(mGoogleSignInClient.getSignInIntent(), RC_GOOGLE));
+
+            btnGoogle.setOnClickListener(v -> {
+                // (opcional) força mostrar seletor de conta sempre:
+                isLaunchingGoogle = true;
+                mGoogleSignInClient.signOut().addOnCompleteListener(x -> {
+                    googleLauncher.launch(mGoogleSignInClient.getSignInIntent());
+                });
+            });
         }
     }
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-        // Se já está logado, sair imediatamente do login e ir ao menu correto.
-        FirebaseUser current = FirebaseAuth.getInstance().getCurrentUser();
-        if (current != null) {
-            checarAdminENavegar(current.getUid());
-        }
-    }
+    // IMPORTANTE: não redirecionar no onStart; deixe a Splash decidir,
+    // e aqui só navegue após sucesso de login.
+    // Se quiser mesmo redirecionar quando já logado, faça com um guard:
+    // @Override
+    // protected void onStart() {
+    //     super.onStart();
+    //     if (!isLaunchingGoogle) {
+    //         FirebaseUser current = FirebaseAuth.getInstance().getCurrentUser();
+    //         if (current != null) checarAdminENavegar(current.getUid());
+    //     }
+    // }
 
     private void tentarLogin() {
         clearMsg();
@@ -168,29 +200,6 @@ public class telalogin extends AppCompatActivity {
                 });
     }
 
-    // Google login
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == RC_GOOGLE) {
-            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
-            try {
-                GoogleSignInAccount account = task.getResult(ApiException.class);
-                if (account == null) { showError("*Conta Google inválida."); return; }
-                mAuth.signInWithCredential(
-                        com.google.firebase.auth.GoogleAuthProvider.getCredential(account.getIdToken(), null)
-                ).addOnCompleteListener(this, t -> {
-                    if (!t.isSuccessful()) { showError("*Falha no login com Google."); return; }
-                    FirebaseUser u = FirebaseAuth.getInstance().getCurrentUser();
-                    if (u == null) { showError("*Erro inesperado: usuário nulo."); return; }
-                    checarAdminENavegar(u.getUid());
-                });
-            } catch (ApiException e) {
-                showError("*Falha no login com Google.");
-            }
-        }
-    }
-
     // Helpers UI
     private void setButtonsEnabled(boolean enabled) {
         if (btnEntrar != null) { btnEntrar.setEnabled(enabled); btnEntrar.setAlpha(enabled ? 1f : 0.6f); }
@@ -210,7 +219,7 @@ public class telalogin extends AppCompatActivity {
     private void showInfo(String msg) {
         if (tvLoginError != null) {
             tvLoginError.setText(msg);
-            tvLoginError.setTextColor(0xFF10B981); // verde claro
+            tvLoginError.setTextColor(0xFF10B981); // verde
             tvLoginError.setVisibility(View.VISIBLE);
         } else {
             Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
