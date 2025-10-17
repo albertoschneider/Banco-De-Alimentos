@@ -92,7 +92,9 @@ public class menu extends AppCompatActivity {
     private void openSettings(boolean fromAdmin) {
         FirebaseUser fu = mAuth.getCurrentUser();
         if (fu == null) {
-            startActivity(new Intent(this, MainActivity.class));
+            // Deixa o Splash decidir a rota correta (login x menu)
+            startActivity(new Intent(this, SplashActivity.class));
+            finish();
             return;
         }
 
@@ -108,4 +110,5 @@ public class menu extends AppCompatActivity {
         i.putExtra("from_admin", fromAdmin);
         startActivity(i);
     }
+
 }

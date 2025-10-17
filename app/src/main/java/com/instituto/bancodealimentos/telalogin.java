@@ -50,7 +50,6 @@ public class telalogin extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_telalogin);
 
-        // Insets bonitinhos
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets sb = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(sb.left, sb.top, sb.right, sb.bottom);
@@ -70,9 +69,8 @@ public class telalogin extends AppCompatActivity {
         txtForgot    = findViewById(R.id.txtForgot);
         txtRegister  = findViewById(R.id.txtRegister);
 
-        // Navegação básica
-        if (btnBack != null) btnBack.setOnClickListener(v ->
-                startActivity(new Intent(this, MainActivity.class)));
+        // Voltar: apenas fecha (não recria MainActivity à toa)
+        if (btnBack != null) btnBack.setOnClickListener(v -> finish());
 
         if (txtRegister != null) txtRegister.setOnClickListener(v ->
                 startActivity(new Intent(this, telaregistro.class)));
@@ -92,6 +90,16 @@ public class telalogin extends AppCompatActivity {
             mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
             btnGoogle.setOnClickListener(v ->
                     startActivityForResult(mGoogleSignInClient.getSignInIntent(), RC_GOOGLE));
+        }
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        // Se já está logado, sair imediatamente do login e ir ao menu correto.
+        FirebaseUser current = FirebaseAuth.getInstance().getCurrentUser();
+        if (current != null) {
+            checarAdminENavegar(current.getUid());
         }
     }
 
@@ -148,11 +156,13 @@ public class telalogin extends AppCompatActivity {
         db.collection("admins").document(uid).get()
                 .addOnSuccessListener((DocumentSnapshot snap) -> {
                     Intent it = new Intent(this, (snap != null && snap.exists()) ? menu_admin.class : menu.class);
+                    it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                     startActivity(it);
                     finish();
                 })
                 .addOnFailureListener(e -> {
                     Intent it = new Intent(this, menu.class);
+                    it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                     startActivity(it);
                     finish();
                 });

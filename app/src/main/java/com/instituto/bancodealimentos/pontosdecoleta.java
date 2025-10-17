@@ -1,6 +1,7 @@
 package com.instituto.bancodealimentos;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
@@ -9,7 +10,6 @@ import android.text.TextWatcher;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -22,13 +22,13 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.material.snackbar.Snackbar;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -39,34 +39,29 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public class pontosdecoleta extends AppCompatActivity {
 
-    // Firestore
     private static final String COLECAO = "pontos";
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-    // UI
-    private View rootView;
     private RecyclerView rv;
     private EditText etBusca;
     private ImageButton btnVoltar;
+    private View root;
+
     private PontoColetaAdapter adapter;
 
-    // Dados
-    private final List<PontoColeta> allData = new ArrayList<PontoColeta>();
-    private final List<PontoColeta> visibleData = new ArrayList<PontoColeta>();
+    private final List<PontoColeta> allData = new ArrayList<>();
+    private final List<PontoColeta> visibleData = new ArrayList<>();
     private String currentQuery = "";
 
-    // Localização
     private FusedLocationProviderClient fused;
     private LocationRequest locRequest;
     private LocationCallback locCallback;
     private Location lastLocation;
 
-    private boolean alive = false;
-
-    // Permissões
     private final ActivityResultLauncher<String[]> locationPermsLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
                 boolean fine = Boolean.TRUE.equals(result.get(Manifest.permission.ACCESS_FINE_LOCATION));
@@ -77,19 +72,21 @@ public class pontosdecoleta extends AppCompatActivity {
                     fetchLastLocationSafe();
                     startLocationUpdatesSafe();
                 } else {
-                    Toast.makeText(this, "Permissão de localização negada.", Toast.LENGTH_SHORT).show();
+                    Snackbar.make(root, "Permissão de localização negada. A lista funcionará sem ordenar por distância.", Snackbar.LENGTH_LONG).show();
                     lastLocation = null;
                     aplicarFiltroEOrdenacao();
                 }
             });
 
+    private boolean alive = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pontosdecoleta);
-        rootView = findViewById(android.R.id.content);
 
-        // Header insets
+        root = findViewById(android.R.id.content);
+
         View header = findViewById(R.id.header);
         if (header != null) {
             ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
@@ -100,13 +97,11 @@ public class pontosdecoleta extends AppCompatActivity {
             ViewCompat.requestApplyInsets(header);
         }
 
-        // UI
         btnVoltar = findViewById(R.id.btn_voltar);
         etBusca   = findViewById(R.id.etBusca);
         rv        = findViewById(R.id.rvPontos);
-        if (btnVoltar != null) btnVoltar.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { onBackPressed(); }
-        });
+
+        if (btnVoltar != null) btnVoltar.setOnClickListener(v -> finish());
 
         rv.setLayoutManager(new LinearLayoutManager(this));
         adapter = new PontoColetaAdapter(visibleData);
@@ -142,75 +137,29 @@ public class pontosdecoleta extends AppCompatActivity {
         };
     }
 
-    @Override
-    protected void onStart() {
+    @Override protected void onStart() {
         super.onStart();
         alive = true;
-        ensureLocationFlow();
-        carregarUmaVez();
-    }
 
-    @Override
-    protected void onStop() {
-        super.onStop();
-        alive = false;
-        stopLocationUpdatesSafe();
-    }
-
-    private void carregarUmaVez() {
-        if (!alive) return;
-
-        // Leitura exige login pelas suas regras -> não navega, só informa
+        // Gate: se sessão caiu, Splash decide rota
         if (FirebaseAuth.getInstance().getCurrentUser() == null) {
-            mostrarListaVazia();
-            Snackbar.make(rootView, "Sessão indisponível. Abra novamente ou tente mais tarde.", Snackbar.LENGTH_LONG).show();
+            startActivity(new Intent(this, SplashActivity.class));
+            finish();
             return;
         }
 
-        db.collection(COLECAO)
-                .get()
-                .addOnSuccessListener(snap -> {
-                    if (!alive) return;
-                    atualizarListaComSnapshot(snap);
-                })
-                .addOnFailureListener(e -> {
-                    if (!alive) return;
-                    mostrarListaVazia();
-                    Snackbar.make(rootView, "Erro ao carregar pontos: " + e.getMessage(), Snackbar.LENGTH_LONG).show();
-                });
+        ensureLocationFlow();
+        carregarPontosUmaVez();
     }
 
-    // ===================== Firestore helpers =====================
-    private void atualizarListaComSnapshot(@NonNull QuerySnapshot snap) {
-        allData.clear();
-
-        for (DocumentSnapshot d : snap.getDocuments()) {
-            String nome = d.getString("nome");
-            String endereco = d.getString("endereco");
-            String disp = d.getString("disponibilidade");
-            GeoPoint gp = d.getGeoPoint("location");
-            Double lat = gp != null ? gp.getLatitude() : null;
-            Double lng = gp != null ? gp.getLongitude() : null;
-
-            PontoColeta p = new PontoColeta(
-                    nome != null ? nome : "",
-                    endereco != null ? endereco : "",
-                    disp,
-                    lat, lng
-            );
-            allData.add(p);
-        }
-
-        recalcDistances(allData);
-        aplicarFiltroEOrdenacao();
+    @Override protected void onStop() {
+        super.onStop();
+        alive = false;
+        stopLocationUpdatesSafe();
+        if (rv != null) rv.setAdapter(null);
     }
 
-    private void mostrarListaVazia() {
-        visibleData.clear();
-        adapter.notifyDataSetChanged();
-    }
-
-    // ===================== Localização =====================
+    // ===== Permissões & Localização =====
     private void ensureLocationFlow() {
         if (hasLocationPermission()) {
             fetchLastLocationSafe();
@@ -244,7 +193,9 @@ public class pontosdecoleta extends AppCompatActivity {
 
     private void startLocationUpdatesSafe() {
         if (!hasLocationPermission() || fused == null || locCallback == null || locRequest == null) return;
-        try { fused.requestLocationUpdates(locRequest, locCallback, getMainLooper()); } catch (SecurityException ignored) {}
+        try {
+            fused.requestLocationUpdates(locRequest, locCallback, getMainLooper());
+        } catch (SecurityException ignored) {}
     }
 
     private void stopLocationUpdatesSafe() {
@@ -253,7 +204,67 @@ public class pontosdecoleta extends AppCompatActivity {
         }
     }
 
-    // ===================== Filtro & Ordenação =====================
+    // ===== Firestore =====
+    private void carregarPontosUmaVez() {
+        db.collection(COLECAO)
+                .get()
+                .addOnSuccessListener(this::aplicarSnapshot)
+                .addOnFailureListener(e ->
+                        Snackbar.make(root, "Erro ao carregar pontos: " + e.getMessage(), Snackbar.LENGTH_LONG).show());
+    }
+
+    private void aplicarSnapshot(@NonNull QuerySnapshot snap) {
+        if (!alive) return;
+        allData.clear();
+
+        for (DocumentSnapshot d : snap.getDocuments()) {
+            String nome = d.getString("nome");
+            String endereco = d.getString("endereco");
+            String disp = d.getString("disponibilidade");
+
+            // ---- location pode ser GeoPoint OU Map {lat,lng} ----
+            Double lat = null, lng = null;
+
+            // 1) tenta GeoPoint
+            GeoPoint gp = null;
+            try { gp = d.getGeoPoint("location"); } catch (Throwable ignore) {}
+            if (gp != null) {
+                lat = gp.getLatitude();
+                lng = gp.getLongitude();
+            } else {
+                // 2) tenta Map
+                try {
+                    Map<String, Object> map = (Map<String, Object>) d.get("location");
+                    if (map != null) {
+                        lat = toDouble(map.get("lat"));
+                        lng = toDouble(map.get("lng"));
+                    }
+                } catch (Throwable ignore) { /* mantém null */ }
+            }
+
+            PontoColeta p = new PontoColeta(
+                    nome != null ? nome : "",
+                    endereco != null ? endereco : "",
+                    disp,
+                    lat, lng
+            );
+            allData.add(p);
+        }
+
+        recalcDistances(allData);
+        aplicarFiltroEOrdenacao();
+    }
+
+    private Double toDouble(Object v) {
+        if (v == null) return null;
+        if (v instanceof Double) return (Double) v;
+        if (v instanceof Float)  return ((Float) v).doubleValue();
+        if (v instanceof Long)   return ((Long) v).doubleValue();
+        if (v instanceof Integer)return ((Integer) v).doubleValue();
+        try { return Double.parseDouble(String.valueOf(v)); } catch (Exception e) { return null; }
+    }
+
+    // ===== Filtro & Ordenação =====
     private void aplicarFiltroEOrdenacao() {
         String q = currentQuery.trim().toLowerCase(Locale.ROOT);
 
@@ -268,17 +279,21 @@ public class pontosdecoleta extends AppCompatActivity {
             }
         }
 
+        ordenar(visibleData);
+        if (rv != null && rv.getAdapter() == null) rv.setAdapter(adapter);
+        adapter.notifyDataSetChanged();
+    }
+
+    private void ordenar(List<PontoColeta> list) {
         if (lastLocation != null) {
-            Collections.sort(visibleData, (a, b) -> Double.compare(a.getDistanciaKm(), b.getDistanciaKm()));
+            Collections.sort(list, (a, b) -> Double.compare(a.getDistanciaKm(), b.getDistanciaKm()));
         } else {
-            Collections.sort(visibleData, (a, b) -> {
+            Collections.sort(list, (a, b) -> {
                 String an = a.getNome() != null ? a.getNome() : "";
                 String bn = b.getNome() != null ? b.getNome() : "";
                 return an.compareToIgnoreCase(bn);
             });
         }
-
-        adapter.notifyDataSetChanged();
     }
 
     private void recalcDistances(List<PontoColeta> list) {

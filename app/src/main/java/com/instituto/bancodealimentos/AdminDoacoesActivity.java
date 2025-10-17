@@ -1,5 +1,6 @@
 package com.instituto.bancodealimentos;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -21,7 +22,6 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
-import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -60,9 +60,7 @@ public class AdminDoacoesActivity extends AppCompatActivity {
         }
 
         ImageButton back = findViewById(R.id.btn_voltar);
-        if (back != null) back.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { finish(); }
-        });
+        if (back != null) back.setOnClickListener(v -> finish());
 
         etBusca = findViewById(R.id.etBusca);
         rv = findViewById(R.id.rvDoacoesAdmin);
@@ -76,9 +74,7 @@ public class AdminDoacoesActivity extends AppCompatActivity {
 
         db = FirebaseFirestore.getInstance();
 
-        swipe.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override public void onRefresh() { carregarUmaVez(); }
-        });
+        swipe.setOnRefreshListener(this::carregarUmaVez);
 
         etBusca.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -92,86 +88,89 @@ public class AdminDoacoesActivity extends AppCompatActivity {
     @Override protected void onStart() {
         super.onStart();
         alive = true;
-        swipe.setRefreshing(true);
+        if (swipe != null) swipe.setRefreshing(true);
         carregarUmaVez();
     }
 
     @Override protected void onStop() {
         super.onStop();
         alive = false;
+        if (rv != null) rv.setAdapter(null); // solta refs/evita leaks
     }
 
     private void carregarUmaVez() {
-        if (!alive) { swipe.setRefreshing(false); return; }
+        try {
+            if (!alive) { if (swipe != null) swipe.setRefreshing(false); return; }
 
-        // 1) exige sessão (mas não navega)
-        if (FirebaseAuth.getInstance().getCurrentUser() == null) {
-            swipe.setRefreshing(false);
-            mostrarVazio(true);
-            Snackbar.make(root, "Sessão indisponível. Puxe para atualizar.", Snackbar.LENGTH_LONG).show();
-            return;
-        }
+            if (FirebaseAuth.getInstance().getCurrentUser() == null) {
+                if (swipe != null) swipe.setRefreshing(false);
+                startActivity(new Intent(this, SplashActivity.class));
+                finish();
+                return;
+            }
 
-        // 2) checa admin UMA vez
-        String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        db.collection("admins").document(uid).get()
-                .addOnSuccessListener(adminDoc -> {
-                    if (!alive) return;
-                    if (adminDoc == null || !adminDoc.exists()) {
-                        swipe.setRefreshing(false);
-                        mostrarVazio(true);
-                        Snackbar.make(root, "Sem permissão de administrador.", Snackbar.LENGTH_LONG).show();
-                        return;
-                    }
-                    // 3) carrega pedidos
-                    db.collection("doacoes")
-                            .orderBy("createdAt", Query.Direction.DESCENDING)
-                            .limit(500)
-                            .get()
-                            .addOnSuccessListener(new com.google.android.gms.tasks.OnSuccessListener<QuerySnapshot>() {
-                                @Override public void onSuccess(QuerySnapshot snap) {
-                                    if (!alive) return;
-                                    aplicarSnapshot(snap);
-                                    swipe.setRefreshing(false);
-                                }
-                            })
-                            .addOnFailureListener(e -> {
-                                if (!alive) return;
-                                swipe.setRefreshing(false);
-                                mostrarVazio(true);
-                                Snackbar.make(root, "Erro ao carregar: " + e.getMessage(), Snackbar.LENGTH_LONG).show();
-                            });
-                })
-                .addOnFailureListener(e -> {
-                    if (!alive) return;
-                    swipe.setRefreshing(false);
-                    mostrarVazio(true);
-                    Snackbar.make(root, "Erro ao verificar admin: " + e.getMessage(), Snackbar.LENGTH_LONG).show();
-                });
-    }
-
-    private void aplicarSnapshot(QuerySnapshot snap) {
-        if (snap == null || snap.isEmpty()) {
-            adapter.setItems(new ArrayList<Doacao>());
-            mostrarVazio(true);
-            return;
-        }
-        List<Doacao> list = snap.toObjects(Doacao.class);
-        adapter.setItems(list);
-        mostrarVazio(list.isEmpty());
-
-        // cache nomes (lookup leve)
-        for (DocumentSnapshot d : snap.getDocuments()) {
-            String uid = d.getString("uid");
-            if (uid == null || uidNameCache.containsKey(uid)) continue;
-            db.collection("usuarios").document(uid).get()
-                    .addOnSuccessListener(doc -> {
+            String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+            db.collection("admins").document(uid).get()
+                    .addOnSuccessListener(adminDoc -> {
                         if (!alive) return;
-                        String nome = doc != null ? doc.getString("nome") : null;
-                        if (nome == null || nome.trim().isEmpty()) nome = "(sem nome)";
-                        uidNameCache.put(uid, nome);
-                        adapter.notifyDataSetChanged();
+
+                        if (adminDoc == null || !adminDoc.exists()) {
+                            if (swipe != null) swipe.setRefreshing(false);
+                            mostrarVazio(true);
+                            Snackbar.make(root, "Sem permissão de administrador.", Snackbar.LENGTH_LONG).show();
+                            return;
+                        }
+
+                        db.collection("doacoes")
+                                .orderBy("createdAt", Query.Direction.DESCENDING)
+                                .limit(500)
+                                .get()
+                                .addOnSuccessListener(snap -> {
+                                    if (!alive) return;
+                                    if (swipe != null) swipe.setRefreshing(false);
+
+                                    if (snap == null || snap.isEmpty()) {
+                                        adapter.setItems(new ArrayList<>());
+                                        mostrarVazio(true);
+                                        return;
+                                    }
+                                    List<Doacao> list = snap.toObjects(Doacao.class);
+                                    adapter.setItems(list);
+                                    mostrarVazio(list.isEmpty());
+
+                                    try {
+                                        for (DocumentSnapshot d : snap.getDocuments()) {
+                                            String u = d.getString("uid");
+                                            if (u == null || uidNameCache.containsKey(u)) continue;
+                                            db.collection("usuarios").document(u).get()
+                                                    .addOnSuccessListener(doc -> {
+                                                        if (!alive) return;
+                                                        String nome = doc != null ? doc.getString("nome") : null;
+                                                        if (nome == null || nome.trim().isEmpty()) nome = "(sem nome)";
+                                                        uidNameCache.put(u, nome);
+                                                        adapter.notifyDataSetChanged();
+                                                    });
+                                        }
+                                    } catch (Throwable ignore) {}
+                                })
+                                .addOnFailureListener(e -> {
+                                    if (!alive) return;
+                                    if (swipe != null) swipe.setRefreshing(false);
+                                    mostrarVazio(true);
+                                    Snackbar.make(root, "Erro ao carregar: " + e.getMessage(), Snackbar.LENGTH_LONG).show();
+                                });
+                    })
+                    .addOnFailureListener(e -> {
+                        if (!alive) return;
+                        if (swipe != null) swipe.setRefreshing(false);
+                        mostrarVazio(true);
+                        Snackbar.make(root, "Erro ao verificar admin: " + e.getMessage(), Snackbar.LENGTH_LONG).show();
                     });
+
+        } catch (Throwable t) {
+            if (swipe != null) swipe.setRefreshing(false);
+            mostrarVazio(true);
+            Snackbar.make(root, "Falha inesperada: " + t.getClass().getSimpleName(), Snackbar.LENGTH_LONG).show();
         }
     }
 
