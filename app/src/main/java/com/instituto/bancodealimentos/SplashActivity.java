@@ -13,13 +13,6 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 
-/**
- * Splash "fonte única da verdade" de navegação:
- * - Espera ~350ms para a sessão estabilizar (refresh de token).
- * - Se não logado => MainActivity (seu login atual).
- * - Se logado => checa admins/{uid} UMA vez (get()) e decide menu_admin ou menu.
- * - Sempre limpa a pilha para evitar voltar ao splash.
- */
 public class SplashActivity extends AppCompatActivity {
 
     private final Handler h = new Handler(Looper.getMainLooper());
@@ -30,7 +23,15 @@ public class SplashActivity extends AppCompatActivity {
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
         super.onCreate(savedInstanceState);
 
-        // Pequeno atraso para evitar corrida de autenticação
+        // *** IMPORTANTE ***
+        // Se a Splash foi apenas "trazida à frente" (ex.: na volta de outra Activity),
+        // NÃO faça nenhum roteamento; apenas encerre para devolver o foco à tela anterior.
+        if ((getIntent().getFlags() & Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT) != 0) {
+            finish();
+            return;
+        }
+
+        // Pequeno atraso para estabilizar sessão
         h.postDelayed(this::routeOnce, 350);
     }
 
@@ -40,14 +41,12 @@ public class SplashActivity extends AppCompatActivity {
 
         FirebaseUser u = FirebaseAuth.getInstance().getCurrentUser();
         if (u == null) {
-            // NÃO logado -> sua tela de login atual (mantive MainActivity como no seu código)
             Intent it = new Intent(this, MainActivity.class);
             it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(it);
             return;
         }
 
-        // Logado -> checa se é admin UMA vez (sem listeners)
         FirebaseFirestore.getInstance()
                 .collection("admins").document(u.getUid())
                 .get()
@@ -58,7 +57,6 @@ public class SplashActivity extends AppCompatActivity {
                     startActivity(it);
                 })
                 .addOnFailureListener(e -> {
-                    // Em caso de falha de rede/latência, não trava o usuário: vai para menu comum
                     Intent it = new Intent(this, menu.class);
                     it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                     startActivity(it);

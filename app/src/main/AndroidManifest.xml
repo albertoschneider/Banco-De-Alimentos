@@ -47,6 +47,10 @@
         <activity android:name=".telaregistro" android:exported="false" />
         <activity android:name=".telalogin" android:exported="false" />
         <activity
+            android:name=".AuthDebugActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".AdminDoacoesActivity"
             android:exported="false" />
         <activity

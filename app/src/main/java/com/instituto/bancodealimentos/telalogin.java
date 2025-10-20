@@ -2,6 +2,7 @@ package com.instituto.bancodealimentos;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.util.Patterns;
 import android.view.View;
 import android.widget.ImageButton;
@@ -32,6 +33,8 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 public class telalogin extends AppCompatActivity {
+
+    private static final String TAG = "TELA_LOGIN";
 
     private TextInputEditText edtEmail, edtSenha;
     private TextView tvLoginError, txtForgot, txtRegister;
@@ -79,41 +82,60 @@ public class telalogin extends AppCompatActivity {
 
         btnEntrar.setOnClickListener(v -> tentarLogin());
 
-        // Google Sign-In
+        // 1) LOGA o default_web_client_id real que está no seu google-services.json
+        String cid = getString(R.string.default_web_client_id);
+        Log.w(TAG, "default_web_client_id: " + cid);
+
+        // 2) Config do Google Sign-In com o *WEB CLIENT ID* acima
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken(getString(R.string.default_web_client_id))
+                .requestIdToken(cid) // importante: usar o default_web_client_id (web client)
                 .requestEmail()
                 .build();
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
 
-        // Activity Result API
+        // 3) Activity Result API p/ capturar o erro real
         googleLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
-                    if (result.getData() == null) {
-                        showError("*Ação cancelada.");
-                        return;
-                    }
-                    Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(result.getData());
+                    Intent data = result.getData();
+                    Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
                     try {
                         GoogleSignInAccount account = task.getResult(ApiException.class);
+
                         if (account == null || account.getIdToken() == null) {
                             showError("*Falha ao obter idToken. Verifique o default_web_client_id / google-services.json.");
+                            Log.e(TAG, "account==null ou idToken==null");
+                            setButtonsEnabled(true);
                             return;
                         }
+
                         mAuth.signInWithCredential(
                                 com.google.firebase.auth.GoogleAuthProvider.getCredential(account.getIdToken(), null)
                         ).addOnCompleteListener(this, t -> {
                             if (!t.isSuccessful()) {
+                                Exception ex = t.getException();
                                 showError("*Falha no login com Google.");
+                                Log.e(TAG, "FirebaseAuth.signInWithCredential falhou", ex);
+                                setButtonsEnabled(true);
                                 return;
                             }
                             FirebaseUser u = FirebaseAuth.getInstance().getCurrentUser();
-                            if (u == null) { showError("*Erro inesperado: usuário nulo."); return; }
+                            if (u == null) { showError("*Erro inesperado: usuário nulo."); setButtonsEnabled(true); return; }
                             checarAdminENavegar(u.getUid());
                         });
+
                     } catch (ApiException e) {
-                        showError("*Falha no login com Google.");
+                        // *** AQUI sai o motivo (status code) do "volta pra tela" ***
+                        // 12500 (DEVELOPER_ERROR), 12501 (CANCELED), 10 (DEVELOPER_ERROR), etc.
+                        int code = e.getStatusCode();
+                        String msg = "GoogleSignIn ApiException statusCode=" + code;
+                        Log.e(TAG, msg, e);
+                        showError("*Google Sign-In falhou (código " + code + "). Veja Logcat para detalhes.");
+                        setButtonsEnabled(true);
+                    } catch (Exception e) {
+                        Log.e(TAG, "Falha inesperada no Google Sign-In", e);
+                        showError("*Falha inesperada no Google Sign-In.");
+                        setButtonsEnabled(true);
                     }
                 }
         );
@@ -121,21 +143,11 @@ public class telalogin extends AppCompatActivity {
         if (btnGoogle != null) {
             btnGoogle.setOnClickListener(v -> {
                 setButtonsEnabled(false);
-                // Força escolher conta (evita reuso silencioso e telas “fantasmas”)
-                mGoogleSignInClient.signOut().addOnCompleteListener(xx -> {
-                    setButtonsEnabled(true);
-                    googleLauncher.launch(mGoogleSignInClient.getSignInIntent());
-                });
+                // força escolher conta sempre (evita estado "pegajoso" bugado)
+                mGoogleSignInClient.signOut().addOnCompleteListener(xx ->
+                        googleLauncher.launch(mGoogleSignInClient.getSignInIntent())
+                );
             });
-        }
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        FirebaseUser current = FirebaseAuth.getInstance().getCurrentUser();
-        if (current != null) {
-            checarAdminENavegar(current.getUid());
         }
     }
 
