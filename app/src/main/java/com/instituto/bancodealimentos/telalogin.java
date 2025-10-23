@@ -18,12 +18,6 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-import com.google.android.gms.auth.api.signin.GoogleSignIn;
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
-import com.google.android.gms.auth.api.signin.GoogleSignInClient;
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
-import com.google.android.gms.common.api.ApiException;
-import com.google.android.gms.tasks.Task;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.ActionCodeSettings;
@@ -43,16 +37,55 @@ public class telalogin extends AppCompatActivity {
 
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
-    private GoogleSignInClient mGoogleSignInClient;
 
     private static final String URL_SUCESSO_EMAIL_VERIFICADO =
             "https://albertoschneider.github.io/success/email-verificado/";
 
-    private ActivityResultLauncher<Intent> googleLauncher;
+    // Lança a AuthBridgeActivity e trata RESULT_OK / RESULT_CANCELED
+    private final ActivityResultLauncher<Intent> authBridgeLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), res -> {
+                Log.w(TAG, "========================================");
+                Log.w(TAG, "=== RETORNO DO AuthBridge ===");
+                Log.w(TAG, "ResultCode recebido: " + res.getResultCode());
+                Log.w(TAG, "RESULT_OK = " + RESULT_OK + " | RESULT_CANCELED = " + RESULT_CANCELED);
+
+                if (res.getResultCode() == RESULT_OK) {
+                    Log.w(TAG, "✓✓✓ RESULT_OK - Login bem-sucedido!");
+                    FirebaseUser u = FirebaseAuth.getInstance().getCurrentUser();
+                    if (u == null) {
+                        Log.e(TAG, "❌ ERRO: usuário Firebase é NULL após RESULT_OK");
+                        showError("*Erro inesperado: usuário nulo após Google.");
+                        setButtonsEnabled(true);
+                        return;
+                    }
+                    Log.w(TAG, "✓ Usuário Firebase encontrado: uid=" + u.getUid() + ", email=" + u.getEmail());
+                    checarAdminENavegar(u.getUid());
+                } else if (res.getResultCode() == RESULT_CANCELED) {
+                    Log.e(TAG, "❌❌❌ RESULT_CANCELED - Login falhou ou foi cancelado");
+                    Intent data = res.getData();
+                    if (data != null) {
+                        int status = data.getIntExtra(AuthBridgeActivity.EXTRA_STATUS, -999);
+                        String msg = data.getStringExtra(AuthBridgeActivity.EXTRA_MESSAGE);
+                        Log.e(TAG, "Status Code: " + status);
+                        Log.e(TAG, "Mensagem: " + msg);
+                        showError("*Google Sign-In falhou (código " + status + "): " + msg);
+                    } else {
+                        Log.e(TAG, "Intent data é NULL - usuário pode ter cancelado");
+                        showError("*Login cancelado.");
+                    }
+                    setButtonsEnabled(true);
+                } else {
+                    Log.e(TAG, "❌ ResultCode INESPERADO: " + res.getResultCode());
+                    showError("*Erro desconhecido no login.");
+                    setButtonsEnabled(true);
+                }
+                Log.w(TAG, "========================================");
+            });
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.w(TAG, "onCreate() da telalogin");
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_telalogin);
 
@@ -75,80 +108,40 @@ public class telalogin extends AppCompatActivity {
         txtRegister  = findViewById(R.id.txtRegister);
 
         if (btnBack != null) btnBack.setOnClickListener(v -> finish());
-        if (txtRegister != null) txtRegister.setOnClickListener(v ->
-                startActivity(new Intent(this, telaregistro.class)));
-        if (txtForgot != null) txtForgot.setOnClickListener(v ->
-                startActivity(new Intent(this, EsqueciSenhaActivity.class)));
+        if (txtRegister != null) txtRegister.setOnClickListener(v -> startActivity(new Intent(this, telaregistro.class)));
+        if (txtForgot != null) txtForgot.setOnClickListener(v -> startActivity(new Intent(this, EsqueciSenhaActivity.class)));
 
         btnEntrar.setOnClickListener(v -> tentarLogin());
 
-        // 1) LOGA o default_web_client_id real que está no seu google-services.json
-        String cid = getString(R.string.default_web_client_id);
-        Log.w(TAG, "default_web_client_id: " + cid);
-
-        // 2) Config do Google Sign-In com o *WEB CLIENT ID* acima
-        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken(cid) // importante: usar o default_web_client_id (web client)
-                .requestEmail()
-                .build();
-        mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
-
-        // 3) Activity Result API p/ capturar o erro real
-        googleLauncher = registerForActivityResult(
-                new ActivityResultContracts.StartActivityForResult(),
-                result -> {
-                    Intent data = result.getData();
-                    Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
-                    try {
-                        GoogleSignInAccount account = task.getResult(ApiException.class);
-
-                        if (account == null || account.getIdToken() == null) {
-                            showError("*Falha ao obter idToken. Verifique o default_web_client_id / google-services.json.");
-                            Log.e(TAG, "account==null ou idToken==null");
-                            setButtonsEnabled(true);
-                            return;
-                        }
-
-                        mAuth.signInWithCredential(
-                                com.google.firebase.auth.GoogleAuthProvider.getCredential(account.getIdToken(), null)
-                        ).addOnCompleteListener(this, t -> {
-                            if (!t.isSuccessful()) {
-                                Exception ex = t.getException();
-                                showError("*Falha no login com Google.");
-                                Log.e(TAG, "FirebaseAuth.signInWithCredential falhou", ex);
-                                setButtonsEnabled(true);
-                                return;
-                            }
-                            FirebaseUser u = FirebaseAuth.getInstance().getCurrentUser();
-                            if (u == null) { showError("*Erro inesperado: usuário nulo."); setButtonsEnabled(true); return; }
-                            checarAdminENavegar(u.getUid());
-                        });
-
-                    } catch (ApiException e) {
-                        // *** AQUI sai o motivo (status code) do "volta pra tela" ***
-                        // 12500 (DEVELOPER_ERROR), 12501 (CANCELED), 10 (DEVELOPER_ERROR), etc.
-                        int code = e.getStatusCode();
-                        String msg = "GoogleSignIn ApiException statusCode=" + code;
-                        Log.e(TAG, msg, e);
-                        showError("*Google Sign-In falhou (código " + code + "). Veja Logcat para detalhes.");
-                        setButtonsEnabled(true);
-                    } catch (Exception e) {
-                        Log.e(TAG, "Falha inesperada no Google Sign-In", e);
-                        showError("*Falha inesperada no Google Sign-In.");
-                        setButtonsEnabled(true);
-                    }
-                }
-        );
-
         if (btnGoogle != null) {
             btnGoogle.setOnClickListener(v -> {
+                Log.w(TAG, ">>> Botão Google clicado! Iniciando AuthBridge...");
+                clearMsg();
                 setButtonsEnabled(false);
-                // força escolher conta sempre (evita estado "pegajoso" bugado)
-                mGoogleSignInClient.signOut().addOnCompleteListener(xx ->
-                        googleLauncher.launch(mGoogleSignInClient.getSignInIntent())
-                );
+                Intent intent = new Intent(this, AuthBridgeActivity.class);
+                Log.w(TAG, ">>> Lançando AuthBridgeActivity via launcher...");
+                authBridgeLauncher.launch(intent);
+                Log.w(TAG, ">>> authBridgeLauncher.launch() chamado. Aguardando retorno...");
             });
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.w(TAG, "onResume() da telalogin");
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Log.w(TAG, "onPause() da telalogin");
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Log.w(TAG, "onDestroy() da telalogin");
     }
 
     private void tentarLogin() {
@@ -198,14 +191,19 @@ public class telalogin extends AppCompatActivity {
     }
 
     private void checarAdminENavegar(String uid) {
+        Log.w(TAG, ">>> checarAdminENavegar() chamado para uid=" + uid);
         db.collection("admins").document(uid).get()
                 .addOnSuccessListener((DocumentSnapshot snap) -> {
-                    Intent it = new Intent(this, (snap != null && snap.exists()) ? menu_admin.class : menu.class);
+                    boolean isAdmin = snap != null && snap.exists();
+                    Class<?> target = isAdmin ? menu_admin.class : menu.class;
+                    Log.w(TAG, "✓ Admin check concluído. É admin? " + isAdmin + " -> Navegando para " + target.getSimpleName());
+                    Intent it = new Intent(this, target);
                     it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                     startActivity(it);
                     finish();
                 })
                 .addOnFailureListener(e -> {
+                    Log.e(TAG, "❌ Falha ao checar admin, navegando para menu padrão. Erro: " + e.getMessage());
                     Intent it = new Intent(this, menu.class);
                     it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                     startActivity(it);

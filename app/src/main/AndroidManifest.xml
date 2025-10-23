@@ -51,6 +51,11 @@
             android:exported="false" />
 
         <activity
+            android:name=".AuthBridgeActivity"
+            android:exported="false"
+            android:launchMode="singleTop" />
+
+        <activity
             android:name=".AdminDoacoesActivity"
             android:exported="false" />
         <activity
