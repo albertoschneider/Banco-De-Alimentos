@@ -61,16 +61,25 @@ public class configuracoes_google extends AppCompatActivity {
     private final ActivityResultLauncher<Intent> reauthGoogleLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
                 Intent data = result.getData();
-                if (data == null) { toast("Reautenticação cancelada."); return; }
+                if (data == null) {
+                    toast("Reautenticação cancelada.");
+                    return;
+                }
                 try {
                     GoogleSignInAccount acct = GoogleSignIn.getSignedInAccountFromIntent(data)
                             .getResult(ApiException.class);
                     String idToken = acct.getIdToken();
-                    if (idToken == null) { toast("Falha ao obter token do Google. Verifique o SHA-1/SHA-256 e o google-services.json."); return; }
+                    if (idToken == null) {
+                        toast("Falha ao obter token do Google. Verifique o SHA-1/SHA-256 e o google-services.json.");
+                        return;
+                    }
                     AuthCredential cred = GoogleAuthProvider.getCredential(idToken, null);
                     user.reauthenticate(cred)
                             .addOnSuccessListener(unused -> {
-                                if (pendingAfterReauth != null) { pendingAfterReauth.run(); pendingAfterReauth = null; }
+                                if (pendingAfterReauth != null) {
+                                    pendingAfterReauth.run();
+                                    pendingAfterReauth = null;
+                                }
                             })
                             .addOnFailureListener(e -> toast("Reautenticação falhou: " + e.getMessage()));
                 } catch (ApiException e) {
@@ -95,7 +104,10 @@ public class configuracoes_google extends AppCompatActivity {
 
         auth = FirebaseAuth.getInstance();
         user = auth.getCurrentUser();
-        if (user == null) { goToStart(); return; }
+        if (user == null) {
+            goToStart();
+            return;
+        }
 
         // === GoogleSignInClient DINÂMICO (sem depender de R.string.default_web_client_id em compile-time) ===
         String webClientId = getWebClientIdOrNull();
@@ -113,7 +125,7 @@ public class configuracoes_google extends AppCompatActivity {
 
         btn_voltar = findViewById(R.id.btn_voltar);
         imgFoto = findViewById(R.id.imgFoto);
-        tvNome  = findViewById(R.id.tvNome);
+        tvNome = findViewById(R.id.tvNome);
         tvEmail = findViewById(R.id.tvEmail);
         btnDesconectarGoogle = findViewById(R.id.btnDesconectarGoogle);
         btnSairGoogle = findViewById(R.id.btnSairGoogle);
@@ -153,6 +165,88 @@ public class configuracoes_google extends AppCompatActivity {
     private String getWebClientIdOrNull() {
         int resId = getResources().getIdentifier("default_web_client_id", "string", getPackageName());
         return (resId != 0) ? getString(resId) : null;
+    }
+
+    private void reauthWithGoogle() {
+        // Garante que o client usado para reautenticar tenha requestIdToken se o recurso existir
+        String webClientId = getWebClientIdOrNull();
+        GoogleSignInOptions.Builder builder =
+                new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                        .requestEmail();
+        if (webClientId != null && !webClientId.isEmpty()) {
+            builder.requestIdToken(webClientId);
+        }
+        googleClient = GoogleSignIn.getClient(this, builder.build());
+        reauthGoogleLauncher.launch(googleClient.getSignInIntent());
+    }
+
+    /* ===== POP-UP "Sair da conta" (Google) – menor largura ===== */
+    private void mostrarDialogSairGoogle() {
+        final Dialog dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(dp(20), dp(20), dp(20), dp(16));
+        card.setGravity(Gravity.CENTER_HORIZONTAL);
+
+        GradientDrawable bg = new GradientDrawable();
+        bg.setCornerRadius(dp(16));
+        bg.setColor(0xFFFFFFFF);
+        card.setBackground(bg);
+
+        TextView titulo = new TextView(this);
+        titulo.setText("Sair");
+        titulo.setTextSize(18);
+        titulo.setTypeface(Typeface.DEFAULT_BOLD);
+        titulo.setTextColor(0xFF111827);
+
+        TextView msg = new TextView(this);
+        msg.setText("Tem certeza de que deseja sair?\nSua conta não será excluída, mas você precisará fazer login novamente.");
+        msg.setTextSize(14);
+        msg.setTextColor(0xFF4B5563);
+        msg.setGravity(Gravity.CENTER);
+
+        MaterialButton btnConfirmar = new MaterialButton(this);
+        btnConfirmar.setText("Sair");
+        btnConfirmar.setAllCaps(false);
+        btnConfirmar.setTypeface(Typeface.DEFAULT_BOLD);
+        btnConfirmar.setCornerRadius(dp(12));
+        btnConfirmar.setBackgroundTintList(ColorStateList.valueOf(0xFF1E3A8A));
+        btnConfirmar.setTextColor(0xFFFFFFFF);
+
+        MaterialButton btnCancelar = new MaterialButton(this);
+        btnCancelar.setText("Cancelar");
+        btnCancelar.setAllCaps(false);
+        btnCancelar.setCornerRadius(dp(12));
+        btnCancelar.setBackgroundTintList(ColorStateList.valueOf(0xFFE5E7EB));
+        btnCancelar.setTextColor(0xFF374151);
+
+        card.addView(titulo);
+        LinearLayout.LayoutParams lpMsg = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpMsg.topMargin = dp(8);
+        card.addView(msg, lpMsg);
+
+        LinearLayout.LayoutParams lpB1 = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, dp(48));
+        lpB1.topMargin = dp(16);
+        card.addView(btnConfirmar, lpB1);
+
+        LinearLayout.LayoutParams lpB2 = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, dp(48));
+        lpB2.topMargin = dp(8);
+        card.addView(btnCancelar, lpB2);
+
+        dialog.setContentView(card);
+        sizeAndDimDialog(dialog, 0.9f);
+        dialog.show();
+
+        btnCancelar.setOnClickListener(v -> dialog.dismiss());
+        btnConfirmar.setOnClickListener(v -> {
+            dialog.dismiss();
+            signOutAndGoHome();
+        });
     }
 
     /* ===== POP-UP "Desvincular Google" (com checkbox) ===== */
@@ -263,78 +357,12 @@ public class configuracoes_google extends AppCompatActivity {
         });
     }
 
-    /* ===== POP-UP "Sair da conta" (Google) – menor largura ===== */
-    private void mostrarDialogSairGoogle() {
-        final Dialog dialog = new Dialog(this);
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-
-        LinearLayout card = new LinearLayout(this);
-        card.setOrientation(LinearLayout.VERTICAL);
-        card.setPadding(dp(20), dp(20), dp(20), dp(16));
-        card.setGravity(Gravity.CENTER_HORIZONTAL);
-
-        GradientDrawable bg = new GradientDrawable();
-        bg.setCornerRadius(dp(16));
-        bg.setColor(0xFFFFFFFF);
-        card.setBackground(bg);
-
-        TextView titulo = new TextView(this);
-        titulo.setText("Sair");
-        titulo.setTextSize(18);
-        titulo.setTypeface(Typeface.DEFAULT_BOLD);
-        titulo.setTextColor(0xFF111827);
-
-        TextView msg = new TextView(this);
-        msg.setText("Tem certeza de que deseja sair?\nSua conta não será excluída, mas você precisará fazer login novamente.");
-        msg.setTextSize(14);
-        msg.setTextColor(0xFF4B5563);
-        msg.setGravity(Gravity.CENTER);
-
-        MaterialButton btnConfirmar = new MaterialButton(this);
-        btnConfirmar.setText("Sair");
-        btnConfirmar.setAllCaps(false);
-        btnConfirmar.setTypeface(Typeface.DEFAULT_BOLD);
-        btnConfirmar.setCornerRadius(dp(12));
-        btnConfirmar.setBackgroundTintList(ColorStateList.valueOf(0xFF1E3A8A));
-        btnConfirmar.setTextColor(0xFFFFFFFF);
-
-        MaterialButton btnCancelar = new MaterialButton(this);
-        btnCancelar.setText("Cancelar");
-        btnCancelar.setAllCaps(false);
-        btnCancelar.setCornerRadius(dp(12));
-        btnCancelar.setBackgroundTintList(ColorStateList.valueOf(0xFFE5E7EB));
-        btnCancelar.setTextColor(0xFF374151);
-
-        card.addView(titulo);
-        LinearLayout.LayoutParams lpMsg = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        lpMsg.topMargin = dp(8);
-        card.addView(msg, lpMsg);
-
-        LinearLayout.LayoutParams lpB1 = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, dp(48));
-        lpB1.topMargin = dp(16);
-        card.addView(btnConfirmar, lpB1);
-
-        LinearLayout.LayoutParams lpB2 = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, dp(48));
-        lpB2.topMargin = dp(8);
-        card.addView(btnCancelar, lpB2);
-
-        dialog.setContentView(card);
-        sizeAndDimDialog(dialog, 0.9f);
-        dialog.show();
-
-        btnCancelar.setOnClickListener(v -> dialog.dismiss());
-        btnConfirmar.setOnClickListener(v -> {
-            dialog.dismiss();
-            signOutAndGoHome();
-        });
-    }
-
     /* ===== UNLINK GOOGLE — também faz sign-out e volta pra Main ===== */
     private void unlinkGoogleSomente() {
-        if (user == null) { goToStart(); return; }
+        if (user == null) {
+            goToStart();
+            return;
+        }
 
         user.unlink("google.com")
                 .addOnSuccessListener(result -> {
@@ -351,35 +379,26 @@ public class configuracoes_google extends AppCompatActivity {
                 });
     }
 
-    /* ===== Sign-out completo + navegação ===== */
+    /* ===== Sign-out completo + navegação (CORRIGIDO) ===== */
     private void signOutAndGoHome() {
+        // Primeiro: sign out do Firebase Auth
+        try {
+            auth.signOut();
+        } catch (Exception e) {
+            toast("Erro ao sair do Firebase: " + e.getMessage());
+        }
+
+        // Segundo: sign out do Google (se o client foi inicializado)
         if (googleClient != null) {
             googleClient.signOut()
-                    .addOnCompleteListener(t -> {
-                        FirebaseAuth.getInstance().signOut();
-                        goToStart();
-                    })
-                    .addOnFailureListener(err -> {
-                        FirebaseAuth.getInstance().signOut();
+                    .addOnCompleteListener(task -> {
+                        // Independente de sucesso ou falha, navega para a tela inicial
                         goToStart();
                     });
         } else {
-            FirebaseAuth.getInstance().signOut();
+            // Se não tem googleClient, vai direto para a tela inicial
             goToStart();
         }
-    }
-
-    private void reauthWithGoogle() {
-        // Garante que o client usado para reautenticar tenha requestIdToken se o recurso existir
-        String webClientId = getWebClientIdOrNull();
-        GoogleSignInOptions.Builder builder =
-                new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                        .requestEmail();
-        if (webClientId != null && !webClientId.isEmpty()) {
-            builder.requestIdToken(webClientId);
-        }
-        googleClient = GoogleSignIn.getClient(this, builder.build());
-        reauthGoogleLauncher.launch(googleClient.getSignInIntent());
     }
 
     /* ===== Utilidades ===== */
@@ -409,5 +428,7 @@ public class configuracoes_google extends AppCompatActivity {
         }
     }
 
-    private void toast(String s) { Toast.makeText(this, s, Toast.LENGTH_LONG).show(); }
+    private void toast(String s) {
+        Toast.makeText(this, s, Toast.LENGTH_LONG).show();
+    }
 }
