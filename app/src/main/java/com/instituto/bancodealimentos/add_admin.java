@@ -36,6 +36,7 @@ public class add_admin extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        WindowInsetsHelper.setupEdgeToEdge(this);
         setContentView(R.layout.activity_add_admin);
 
         // Ajuste de status bar no header (igual ao gerenciar_admins)
