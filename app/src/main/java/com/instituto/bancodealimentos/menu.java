@@ -29,8 +29,12 @@ public class menu extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        WindowInsetsHelper.setupEdgeToEdge(this);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_menu);
+
+        // Aplicar insets
+        WindowInsetsHelper.applyTopAndBottomInsets(findViewById(R.id.scroll));
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());

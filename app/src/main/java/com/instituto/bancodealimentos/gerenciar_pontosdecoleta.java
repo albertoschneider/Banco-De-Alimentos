@@ -39,18 +39,14 @@ public class gerenciar_pontosdecoleta extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        WindowInsetsHelper.setupEdgeToEdge(this);
         setContentView(R.layout.activity_gerenciar_pontosdecoleta);
 
+        // Aplicar insets
+        WindowInsetsHelper.applyTopInsets(findViewById(R.id.header));
+        WindowInsetsHelper.applyScrollInsets(findViewById(R.id.rvPontos));
+
         // Ajuste de status bar no header amarelo
-        View header = findViewById(R.id.header);
-        if (header != null) {
-            ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
-                Insets sb = insets.getInsets(WindowInsetsCompat.Type.statusBars());
-                v.setPadding(v.getPaddingLeft(), sb.top, v.getPaddingRight(), v.getPaddingBottom());
-                return insets;
-            });
-            ViewCompat.requestApplyInsets(header);
-        }
 
         FirebaseApp.initializeApp(this);
         db = FirebaseFirestore.getInstance();

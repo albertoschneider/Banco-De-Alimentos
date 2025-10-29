@@ -5,14 +5,19 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
+    
     android:layout_height="match_parent"
+
+    
+    android:fitsSystemWindows="false"
     android:background="#EEF3F8">
 
     <!-- HEADER -->
     <LinearLayout
         android:id="@+id/header"
-        android:layout_width="0dp"
-        android:layout_height="72dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="56dp"
         android:orientation="vertical"
         android:background="#F4B400"
         android:paddingStart="16dp"
@@ -26,28 +31,33 @@
             android:layout_height="match_parent"
             android:gravity="center_vertical">
 
-            <ImageButton
+                        <ImageButton
                 android:id="@+id/btn_voltar"
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:layout_alignParentStart="true"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
                 android:layout_centerVertical="true"
-                android:adjustViewBounds="true"
                 android:background="@android:color/transparent"
                 android:contentDescription="@string/sem_descricao"
                 android:scaleType="fitCenter"
                 android:src="@drawable/arrow_back_png" />
 
 
-            <TextView
+                        <TextView
                 android:id="@+id/tvTitulo"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_centerInParent="true"
+                android:layout_centerVertical="true"
+                android:layout_toEndOf="@id/btn_voltar"
+                android:layout_alignParentEnd="true"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="16dp"
+                android:gravity="center"
+                android:maxLines="1"
+                android:ellipsize="end"
                 android:text="Configurações da conta"
                 android:textColor="#004E7C"
-                android:textStyle="bold"
-                android:textSize="18sp"/>
+                android:textSize="18sp"
+                android:textStyle="bold" />
         </RelativeLayout>
     </LinearLayout>
 
@@ -221,9 +231,11 @@
     <!-- FOOTER -->
     <LinearLayout
         android:id="@+id/footer"
-        android:layout_width="415dp"
-        android:layout_height="122dp"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:minHeight="122dp"
         android:orientation="vertical"
+        android:clipToPadding="true"
         android:padding="12dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

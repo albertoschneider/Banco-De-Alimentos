@@ -39,16 +39,10 @@ public class add_admin extends AppCompatActivity {
         WindowInsetsHelper.setupEdgeToEdge(this);
         setContentView(R.layout.activity_add_admin);
 
+        // Aplicar insets
+        WindowInsetsHelper.applyTopInsets(findViewById(R.id.header));
+
         // Ajuste de status bar no header (igual ao gerenciar_admins)
-        View header = findViewById(R.id.header);
-        if (header != null) {
-            ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
-                Insets sb = insets.getInsets(WindowInsetsCompat.Type.statusBars());
-                v.setPadding(v.getPaddingLeft(), sb.top, v.getPaddingRight(), v.getPaddingBottom());
-                return insets;
-            });
-            ViewCompat.requestApplyInsets(header);
-        }
 
         ImageButton voltar = findViewById(R.id.btn_voltar);
         if (voltar != null) voltar.setOnClickListener(v -> onBackPressed());
@@ -69,7 +63,7 @@ public class add_admin extends AppCompatActivity {
     }
 
     private void abrirBottomSheetConfirmar(String email) {
-        BottomSheetDialog bs = new BottomSheetDialog(this, com.google.android.material.R.style.ThemeOverlay_Material3_BottomSheetDialog);
+        BottomSheetDialog bs = new BottomSheetDialog(this);
         View view = LayoutInflater.from(this).inflate(R.layout.bottomsheet_add_admin, null, false);
         bs.setContentView(view);
 

@@ -5,16 +5,20 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
+    
     android:layout_height="match_parent"
+    android:fitsSystemWindows="false"
     android:background="#EAF0F6"
     tools:context=".pontosdecoleta">
 
     <LinearLayout
         android:id="@+id/header"
         android:layout_width="match_parent"
-        android:layout_height="132dp"
+        android:layout_height="wrap_content"
+        android:minHeight="56dp"
         android:background="#F4B400"
         android:orientation="vertical"
+        android:clipToPadding="true"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
         android:paddingTop="12dp"
@@ -25,30 +29,38 @@
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:paddingBottom="8dp">
+            android:minHeight="32dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp">
 
-            <ImageButton
+                        <ImageButton
                 android:id="@+id/btn_voltar"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/voltar"
-                android:scaleType="centerInside"
-                android:padding="4dp"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_centerVertical="true"
+                android:background="@android:color/transparent"
+                android:contentDescription="@string/sem_descricao"
+                android:scaleType="fitCenter"
                 android:src="@drawable/arrow_back_png" />
 
-            <TextView
+                        <TextView
                 android:id="@+id/tvTitulo"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_centerHorizontal="true"
+                android:layout_centerVertical="true"
+                android:layout_toEndOf="@id/btn_voltar"
+                android:layout_alignParentEnd="true"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="16dp"
+                android:gravity="center"
+                android:maxLines="1"
+                android:ellipsize="end"
                 android:text="Pontos de Coleta"
-                android:textColor="#153E75"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:singleLine="true"
-                android:ellipsize="end"/>
+                android:textColor="#004E7C"
+                android:textSize="18sp"
+                android:textStyle="bold" />
         </RelativeLayout>
 
         <LinearLayout
@@ -99,5 +111,6 @@
         android:paddingBottom="12dp"
         android:overScrollMode="never"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-        tools:listitem="@layout/item_ponto_coleta"/>
+        tools:listitem="@layout/item_ponto_coleta"
+        android:clipChildren="false"/>
 </androidx.constraintlayout.widget.ConstraintLayout>

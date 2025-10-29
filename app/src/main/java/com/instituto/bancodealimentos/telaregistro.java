@@ -54,8 +54,12 @@ public class telaregistro extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        WindowInsetsHelper.setupEdgeToEdge(this);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_telaregistro);
+
+        // Aplicar insets
+        WindowInsetsHelper.applyTopAndBottomInsets(findViewById(R.id.scroll));
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets sb = insets.getInsets(WindowInsetsCompat.Type.systemBars());

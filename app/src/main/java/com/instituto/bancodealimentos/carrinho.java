@@ -27,18 +27,14 @@ public class carrinho extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        WindowInsetsHelper.setupEdgeToEdge(this);
         setContentView(R.layout.activity_carrinho);
 
-        // Header com o MESMO tratamento de insets
-        View header = findViewById(R.id.header);
-        if (header != null) {
-            ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
-                Insets sb = insets.getInsets(WindowInsetsCompat.Type.statusBars());
-                v.setPadding(v.getPaddingLeft(), sb.top, v.getPaddingRight(), v.getPaddingBottom());
-                return insets;
-            });
-            ViewCompat.requestApplyInsets(header);
-        }
+        // Aplicar insets
+        WindowInsetsHelper.applyTopInsets(findViewById(R.id.header));
+        WindowInsetsHelper.applyBottomInsets(findViewById(R.id.footer));
+        WindowInsetsHelper.applyScrollInsets(findViewById(R.id.rvCarrinho));
+
 
         tvTotal = findViewById(R.id.tvTotal);
         tvErroVazio = findViewById(R.id.tvErroVazio);

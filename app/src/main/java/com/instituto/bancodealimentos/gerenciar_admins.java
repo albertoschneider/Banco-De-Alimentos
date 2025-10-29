@@ -40,17 +40,13 @@ public class gerenciar_admins extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        WindowInsetsHelper.setupEdgeToEdge(this);
         setContentView(R.layout.activity_gerenciar_admins);
 
-        View header = findViewById(R.id.header);
-        if (header != null) {
-            ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
-                Insets sb = insets.getInsets(WindowInsetsCompat.Type.statusBars());
-                v.setPadding(v.getPaddingLeft(), sb.top, v.getPaddingRight(), v.getPaddingBottom());
-                return insets;
-            });
-            ViewCompat.requestApplyInsets(header);
-        }
+        // Aplicar insets
+        WindowInsetsHelper.applyTopInsets(findViewById(R.id.header));
+        WindowInsetsHelper.applyScrollInsets(findViewById(R.id.recyclerAdmins));
+
 
         ImageButton voltar = findViewById(R.id.btn_voltar);
         if (voltar != null) voltar.setOnClickListener(v -> onBackPressed());
@@ -175,7 +171,7 @@ public class gerenciar_admins extends AppCompatActivity {
     }
 
     private void abrirBottomSheetRemover(AdminUser user) {
-        BottomSheetDialog bs = new BottomSheetDialog(this, com.google.android.material.R.style.ThemeOverlay_Material3_BottomSheetDialog);
+        BottomSheetDialog bs = new BottomSheetDialog(this);
         View view = LayoutInflater.from(this).inflate(R.layout.bottomsheet_remover_admin, null, false);
         bs.setContentView(view);
 

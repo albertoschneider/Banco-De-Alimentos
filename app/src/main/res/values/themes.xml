@@ -1,17 +1,11 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme -->
     <style name="Base.Theme.BancoDeAlimentos" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Forçar light mode -->
         <item name="android:forceDarkAllowed" tools:ignore="NewApi">false</item>
-
-        <!-- NOVO: Edge-to-edge para controle total de insets -->
         <item name="android:windowLayoutInDisplayCutoutMode" tools:targetApi="p">shortEdges</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowTranslucentStatus">false</item>
         <item name="android:windowTranslucentNavigation">false</item>
-
-        <!-- Garantir que o sistema não force layouts -->
         <item name="android:fitsSystemWindows">false</item>
     </style>
 

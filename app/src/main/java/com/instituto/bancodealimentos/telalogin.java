@@ -85,6 +85,7 @@ public class telalogin extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        WindowInsetsHelper.setupEdgeToEdge(this);
         Log.w(TAG, "onCreate() da telalogin");
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_telalogin);

@@ -46,8 +46,8 @@ public class NovoEmailActivity extends AppCompatActivity {
     private SharedPreferences prefs;
     private static final String PREFS = "email_change_prefs";
     private static final String K_LEVEL = "em_level";
-    private static final String K_LAST  = "em_last";
-    private static final String K_END   = "em_end";
+    private static final String K_LAST = "em_last";
+    private static final String K_END = "em_end";
     private static final long TEN_MIN_MS = 10 * 60 * 1000L;
     private CountDownTimer timer;
 
@@ -57,7 +57,11 @@ public class NovoEmailActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        WindowInsetsHelper.setupEdgeToEdge(this);
         setContentView(R.layout.activity_novo_email);
+
+        // Aplicar insets
+        WindowInsetsHelper.applyTopInsets(findViewById(R.id.header));
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.header), (v, insets) -> {
             Insets sb = insets.getInsets(WindowInsetsCompat.Type.statusBars());
@@ -68,14 +72,17 @@ public class NovoEmailActivity extends AppCompatActivity {
         auth = FirebaseAuth.getInstance();
         auth.useAppLanguage(); // PT-BR nos e-mails do Firebase
         user = auth.getCurrentUser();
-        if (user == null) { finish(); return; }
+        if (user == null) {
+            finish();
+            return;
+        }
 
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
 
-        edtNovoEmail  = findViewById(R.id.edtNovoEmail);
+        edtNovoEmail = findViewById(R.id.edtNovoEmail);
         btnEnviarLink = findViewById(R.id.btnEnviarLink);
         tvStatusEnvio = findViewById(R.id.tvStatusEnvio);
-        tvDicaSpam    = findViewById(R.id.tvDicaSpam);
+        tvDicaSpam = findViewById(R.id.tvDicaSpam);
 
         ImageButton back = findViewById(R.id.btn_voltar);
         back.setOnClickListener(v -> finish());
@@ -144,7 +151,7 @@ public class NovoEmailActivity extends AppCompatActivity {
                     prefs.edit()
                             .putInt(K_LEVEL, newLevel)
                             .putLong(K_LAST, now)
-                            .putLong(K_END,  now + cooldown * 1000L)
+                            .putLong(K_END, now + cooldown * 1000L)
                             .apply();
                 })
                 .addOnFailureListener(e -> {
@@ -177,10 +184,13 @@ public class NovoEmailActivity extends AppCompatActivity {
         showMsg("Enviamos o link. Você poderá reenviar em " + format(secs) + ".", false);
         if (timer != null) timer.cancel();
         timer = new CountDownTimer(secs * 1000L, 1000L) {
-            @Override public void onTick(long ms) {
-                showMsg("Enviamos o link. Você poderá reenviar em " + format((int)(ms/1000L)) + ".", false);
+            @Override
+            public void onTick(long ms) {
+                showMsg("Enviamos o link. Você poderá reenviar em " + format((int) (ms / 1000L)) + ".", false);
             }
-            @Override public void onFinish() {
+
+            @Override
+            public void onFinish() {
                 setEnabled(true);
                 tvStatusEnvio.setVisibility(TextView.GONE);
                 tvDicaSpam.setVisibility(TextView.GONE);
@@ -192,7 +202,7 @@ public class NovoEmailActivity extends AppCompatActivity {
         long end = prefs.getLong(K_END, 0L);
         long now = System.currentTimeMillis();
         if (end > now) {
-            startCooldown((int)((end - now)/1000L));
+            startCooldown((int) ((end - now) / 1000L));
         } else {
             setEnabled(true);
             tvStatusEnvio.setVisibility(TextView.GONE);
