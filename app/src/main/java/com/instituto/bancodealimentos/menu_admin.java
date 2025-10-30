@@ -15,11 +15,6 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 
-import com.google.android.material.card.MaterialCardView;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.ListenerRegistration;
-
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.UserInfo;
 
 public class menu_admin extends AppCompatActivity {
@@ -35,7 +30,11 @@ public class menu_admin extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        WindowInsetsHelper.setupEdgeToEdge(this);
         setContentView(R.layout.activity_menu_admin);
+
+        // Aplicar insets no scroll view
+        WindowInsetsHelper.applyTopAndBottomInsets(findViewById(R.id.scroll));
 
         // Firebase
         auth = FirebaseAuth.getInstance();
@@ -78,111 +77,113 @@ public class menu_admin extends AppCompatActivity {
         }
         if (cardChaves != null) {
 
+            // Chaves PIX e WhatsApp
             cardChaves.setOnClickListener(v ->
                     startActivity(new Intent(menu_admin.this, AlterarPixWhatsappActivity.class)));
         }
 
-        // Preencher nome no header
-        bindAdminNameToHeader();
-
-        btnSettings = findViewById(R.id.btnSettings);
-
-        if (btnSettings != null) {
-            btnSettings.setOnClickListener(v -> openSettings(true)); // true = origem: admin
-        }
+        // Carrega o nome do admin
+        loadAdminName();
     }
 
-    @Override
-    protected void onDestroy() {
-        if (userListener != null) {
-            userListener.remove();
-            userListener = null;
-        }
-        super.onDestroy();
-    }
-
-    private void bindAdminNameToHeader() {
-        FirebaseUser fu = auth.getCurrentUser();
-        if (fu == null) {
-            tvName.setText("");
+    private void loadAdminName() {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) {
+            tvName.setText("Admin");
             return;
         }
-        final String uid = fu.getUid();
 
-        // 1) Tenta ouvir em tempo real o doc de usuarios/{uid}
-        userListener = db.collection("usuarios")
-                .document(uid)
-                .addSnapshotListener((snapshot, e) -> {
-                    if (e != null) {
-                        // Em caso de erro, usa fallback rápido
-                        tvName.setText(makeFallbackName(fu));
+        String uid = user.getUid();
+
+        // Escuta o documento do admin em tempo real
+        userListener = db.collection("usuarios").document(uid)
+                .addSnapshotListener((doc, error) -> {
+                    if (error != null) {
+                        Toast.makeText(this, "Erro ao carregar dados: " + error.getMessage(),
+                                Toast.LENGTH_SHORT).show();
                         return;
                     }
-                    if (snapshot != null && snapshot.exists()) {
-                        String nome = snapshot.getString("nome");
-                        if (!TextUtils.isEmpty(nome)) {
-                            tvName.setText(nome);
-                            return;
-                        }
-                        // Se veio vazio, tenta admins/{uid}
-                        fetchNameFromAdminsThenFallback(uid, fu);
-                    } else {
-                        // Não existe usuarios/{uid}: tenta admins/{uid}
-                        fetchNameFromAdminsThenFallback(uid, fu);
-                    }
-                });
-    }
 
-    private void openSettings(boolean fromAdmin) {
-        FirebaseUser fu = auth.getCurrentUser();
-        if (fu == null) {
-            startActivity(new Intent(this, MainActivity.class));
-            return;
-        }
-
-        boolean hasGoogle = false, hasPassword = false;
-        for (UserInfo info : fu.getProviderData()) {
-            String p = info.getProviderId();
-            if ("google.com".equals(p)) hasGoogle = true;
-            if ("password".equals(p))   hasPassword = true;
-        }
-
-        Class<?> next = hasPassword ? configuracoes_email_senha.class : configuracoes_google.class;
-        Intent i = new Intent(this, next);
-        i.putExtra("from_admin", fromAdmin); // se quiser usar na tela de configs
-        startActivity(i);
-    }
-
-    private void fetchNameFromAdminsThenFallback(String uid, FirebaseUser fu) {
-        db.collection("admins").document(uid).get()
-                .addOnSuccessListener(doc -> {
                     if (doc != null && doc.exists()) {
                         String nome = doc.getString("nome");
                         if (!TextUtils.isEmpty(nome)) {
                             tvName.setText(nome);
-                            return;
+                        } else {
+                            tryDisplayName(user);
                         }
+                    } else {
+                        tryDisplayName(user);
                     }
-                    // Último recurso: displayName → prefixo do email
-                    tvName.setText(makeFallbackName(fu));
-                })
-                .addOnFailureListener(ignored ->
-                        tvName.setText(makeFallbackName(fu)));
+                });
     }
 
-    private String makeFallbackName(FirebaseUser fu) {
-        if (fu == null) return "";
-        if (!TextUtils.isEmpty(fu.getDisplayName())) {
-            return fu.getDisplayName();
-        }
-        String email = fu.getEmail();
-        if (!TextUtils.isEmpty(email) && email.contains("@")) {
-            String first = email.substring(0, email.indexOf("@"));
-            if (!first.isEmpty()) {
-                // Capitaliza primeira letra
-                return first.substring(0, 1).toUpperCase() + first.substring(1);
+    private void tryDisplayName(FirebaseUser user) {
+        String displayName = user.getDisplayName();
+        if (!TextUtils.isEmpty(displayName)) {
+            tvName.setText(displayName);
+        } else {
+            // Tenta pegar de qualquer provider
+            for (UserInfo profile : user.getProviderData()) {
+                String name = profile.getDisplayName();
+                if (!TextUtils.isEmpty(name)) {
+                    tvName.setText(name);
+                    return;
+                }
             }
+            tvName.setText("Admin");
         }
-        return "Administrador";
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        // Recarrega o nome quando a Activity volta ao foco
+        FirebaseUser user = auth.getCurrentUser();
+        if (user != null && userListener == null) {
+            loadAdminName();
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        // Remove o listener ao sair da Activity
+        if (userListener != null) {
+            userListener.remove();
+            userListener = null;
+        }
+    }
+
+    /**
+     * Verifica se o usuário atual é admin.
+     * Se não for, volta pra tela de login (opcional)
+     */
+    private void checkAdminPermission() {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) {
+            finish();
+            return;
+        }
+
+        String uid = user.getUid();
+        db.collection("usuarios").document(uid)
+                .get()
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        Boolean isAdmin = doc.getBoolean("isAdmin");
+                        if (isAdmin == null || !isAdmin) {
+                            Toast.makeText(this, "Você não tem permissão de admin!", Toast.LENGTH_SHORT).show();
+                            finish();
+                        }
+                    } else {
+                        Toast.makeText(this, "Usuário não encontrado!", Toast.LENGTH_SHORT).show();
+                        finish();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Erro ao verificar permissões: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                    finish();
+                });
     }
 }

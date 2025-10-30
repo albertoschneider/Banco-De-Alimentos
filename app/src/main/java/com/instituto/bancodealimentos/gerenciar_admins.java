@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FieldPath;
@@ -26,6 +27,8 @@ import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +39,7 @@ public class gerenciar_admins extends AppCompatActivity {
     private AdminAdapter adapter;
     private FirebaseFirestore db;
     private ListenerRegistration listener;
+    private String currentUserId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,13 +51,17 @@ public class gerenciar_admins extends AppCompatActivity {
         WindowInsetsHelper.applyTopInsets(findViewById(R.id.header));
         WindowInsetsHelper.applyScrollInsets(findViewById(R.id.recyclerAdmins));
 
-
         ImageButton voltar = findViewById(R.id.btn_voltar);
         if (voltar != null) voltar.setOnClickListener(v -> onBackPressed());
 
         recycler = findViewById(R.id.recyclerAdmins);
         recycler.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new AdminAdapter(this::abrirBottomSheetRemover);
+
+        // Pega o ID do usuário atual
+        FirebaseAuth auth = FirebaseAuth.getInstance();
+        currentUserId = auth.getUid();
+
+        adapter = new AdminAdapter(this::abrirBottomSheetRemover, currentUserId);
         recycler.setAdapter(adapter);
 
         View btnAdd = findViewById(R.id.btnAddAdmin);
@@ -71,7 +79,6 @@ public class gerenciar_admins extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        // Ouvimos ADMINS (sem Blaze) e completamos nome/email pelo USUARIOS quando faltar
         listener = db.collection("admins")
                 .addSnapshotListener(new EventListener<QuerySnapshot>() {
                     @Override
@@ -99,6 +106,9 @@ public class gerenciar_admins extends AppCompatActivity {
                             }
                         }
 
+                        // Ordena: usuário atual primeiro, depois os outros
+                        ordenarAdmins(base);
+
                         // Mostra imediatamente o que já temos
                         adapter.setItems(base);
 
@@ -117,6 +127,22 @@ public class gerenciar_admins extends AppCompatActivity {
             listener.remove();
             listener = null;
         }
+    }
+
+    private void ordenarAdmins(List<AdminUser> lista) {
+        Collections.sort(lista, new Comparator<AdminUser>() {
+            @Override
+            public int compare(AdminUser a, AdminUser b) {
+                // Usuário atual sempre vem primeiro
+                if (a.getId().equals(currentUserId)) return -1;
+                if (b.getId().equals(currentUserId)) return 1;
+
+                // Outros ordenados por nome
+                String nomeA = a.getNome() != null ? a.getNome() : "";
+                String nomeB = b.getNome() != null ? b.getNome() : "";
+                return nomeA.compareToIgnoreCase(nomeB);
+            }
+        });
     }
 
     // Busca usuarios/{uid} em lotes de 10 (limite do whereIn) e preenche nome/email na lista
@@ -152,7 +178,8 @@ public class gerenciar_admins extends AppCompatActivity {
                                     }
                                 }
                             }
-                            // Atualiza a lista visível após cada lote
+                            // Reordena e atualiza
+                            ordenarAdmins(base);
                             adapter.setItems(new ArrayList<>(base));
                         }
                     })

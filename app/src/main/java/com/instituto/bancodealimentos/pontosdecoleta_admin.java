@@ -6,7 +6,9 @@ import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.text.Editable;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -41,12 +43,14 @@ import java.util.Map;
 
 public class pontosdecoleta_admin extends AppCompatActivity {
 
-    private EditText etNome, etEndereco, etLatitude, etLongitude;
-    private Button btnBuscar, btnCancelar, btnSalvar;
+    private EditText etNome, etRua, etNumero, etBairro, etCidade, etEstado, etCep;
+    private EditText etLatitude, etLongitude;
+    private Button btnCancelar, btnSalvar;
     private TextView tvErro, tvLinkManual;
     private Spinner spDisponibilidade;
 
     private FirebaseFirestore db;
+    private boolean isSearching = false;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -57,13 +61,16 @@ public class pontosdecoleta_admin extends AppCompatActivity {
         // Aplicar insets
         WindowInsetsHelper.applyTopInsets(findViewById(R.id.header));
 
-
         ImageButton btnVoltar = findViewById(R.id.btn_voltar);
         etNome = findViewById(R.id.etNome);
-        etEndereco = findViewById(R.id.etEndereco);
+        etRua = findViewById(R.id.etRua);
+        etNumero = findViewById(R.id.etNumero);
+        etBairro = findViewById(R.id.etBairro);
+        etCidade = findViewById(R.id.etCidade);
+        etEstado = findViewById(R.id.etEstado);
+        etCep = findViewById(R.id.etCep);
         etLatitude = findViewById(R.id.etLatitude);
         etLongitude = findViewById(R.id.etLongitude);
-        btnBuscar = findViewById(R.id.btnBuscar);
         btnCancelar = findViewById(R.id.btnCancelar);
         btnSalvar = findViewById(R.id.btnSalvar);
         tvErro = findViewById(R.id.tvErro);
@@ -79,17 +86,33 @@ public class pontosdecoleta_admin extends AppCompatActivity {
 
         btnVoltar.setOnClickListener(v -> finish());
         btnCancelar.setOnClickListener(v -> finish());
-        atualizarEstadoSalvar();
 
-        btnBuscar.setOnClickListener(v -> {
-            String endereco = etEndereco.getText().toString().trim();
-            if (TextUtils.isEmpty(endereco)) {
-                Toast.makeText(this, "Digite um endereço.", Toast.LENGTH_SHORT).show();
-                return;
+        // TextWatcher para buscar coordenadas automaticamente
+        TextWatcher addressWatcher = new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                atualizarEstadoSalvar();
+                if (todosEnderecosCamposPreenchidos()) {
+                    buscarCoordenadasAutomaticamente();
+                }
             }
-            tvErro.setVisibility(View.GONE);
-            buscarCoordenadas(endereco);
-        });
+
+            @Override
+            public void afterTextChanged(Editable s) {}
+        };
+
+        // Adiciona watchers em todos os campos de endereço
+        etRua.addTextChangedListener(addressWatcher);
+        etNumero.addTextChangedListener(addressWatcher);
+        etBairro.addTextChangedListener(addressWatcher);
+        etCidade.addTextChangedListener(addressWatcher);
+        etEstado.addTextChangedListener(addressWatcher);
+        etCep.addTextChangedListener(addressWatcher);
+
+        atualizarEstadoSalvar();
 
         tvLinkManual.setOnClickListener(v -> abrirDialogManual());
 
@@ -100,9 +123,69 @@ public class pontosdecoleta_admin extends AppCompatActivity {
         btnSalvar.setOnClickListener(v -> salvarNoFirestore());
     }
 
+    private boolean todosEnderecosCamposPreenchidos() {
+        String rua = etRua.getText().toString().trim();
+        String cidade = etCidade.getText().toString().trim();
+        String estado = etEstado.getText().toString().trim();
+
+        // Pelo menos rua, cidade e estado devem estar preenchidos
+        return !TextUtils.isEmpty(rua) && !TextUtils.isEmpty(cidade) && !TextUtils.isEmpty(estado);
+    }
+
+    private String montarEnderecoCompleto() {
+        StringBuilder sb = new StringBuilder();
+
+        String rua = etRua.getText().toString().trim();
+        String numero = etNumero.getText().toString().trim();
+        String bairro = etBairro.getText().toString().trim();
+        String cidade = etCidade.getText().toString().trim();
+        String estado = etEstado.getText().toString().trim();
+        String cep = etCep.getText().toString().trim();
+
+        if (!TextUtils.isEmpty(rua)) {
+            sb.append(rua);
+            if (!TextUtils.isEmpty(numero)) {
+                sb.append(", ").append(numero);
+            }
+        }
+
+        if (!TextUtils.isEmpty(bairro)) {
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(bairro);
+        }
+
+        if (!TextUtils.isEmpty(cidade)) {
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(cidade);
+        }
+
+        if (!TextUtils.isEmpty(estado)) {
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(estado);
+        }
+
+        if (!TextUtils.isEmpty(cep)) {
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(cep);
+        }
+
+        return sb.toString();
+    }
+
+    private void buscarCoordenadasAutomaticamente() {
+        if (isSearching) return;
+
+        String endereco = montarEnderecoCompleto();
+        if (TextUtils.isEmpty(endereco)) return;
+
+        isSearching = true;
+        tvErro.setVisibility(View.GONE);
+        buscarCoordenadas(endereco);
+    }
+
     private void salvarNoFirestore() {
         String nome = etNome.getText().toString().trim();
-        String endereco = etEndereco.getText().toString().trim();
+        String enderecoCompleto = montarEnderecoCompleto();
         String lat = etLatitude.getText().toString().trim();
         String lng = etLongitude.getText().toString().trim();
         String disp = spDisponibilidade.getSelectedItem().toString();
@@ -111,18 +194,18 @@ public class pontosdecoleta_admin extends AppCompatActivity {
             Toast.makeText(this, "Digite o nome do ponto.", Toast.LENGTH_SHORT).show();
             return;
         }
-        if (TextUtils.isEmpty(endereco)) {
-            Toast.makeText(this, "Digite o endereço.", Toast.LENGTH_SHORT).show();
+        if (TextUtils.isEmpty(enderecoCompleto)) {
+            Toast.makeText(this, "Preencha os campos de endereço.", Toast.LENGTH_SHORT).show();
             return;
         }
         if (TextUtils.isEmpty(lat) || TextUtils.isEmpty(lng)) {
-            Toast.makeText(this, "Busque ou informe as coordenadas.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Aguarde a busca das coordenadas ou informe-as manualmente.", Toast.LENGTH_SHORT).show();
             return;
         }
 
         Map<String, Object> doc = new HashMap<>();
         doc.put("nome", nome);
-        doc.put("endereco", endereco);
+        doc.put("endereco", enderecoCompleto);
 
         Map<String, Object> location = new HashMap<>();
         location.put("lat", Double.parseDouble(lat));
@@ -134,7 +217,7 @@ public class pontosdecoleta_admin extends AppCompatActivity {
 
         btnSalvar.setEnabled(false);
 
-        db.collection("pontos")  // ← nome da coleção (use o mesmo que seu app lê hoje)
+        db.collection("pontos")
                 .add(doc)
                 .addOnSuccessListener(ref -> {
                     Toast.makeText(this, "Ponto salvo!", Toast.LENGTH_SHORT).show();
@@ -162,7 +245,6 @@ public class pontosdecoleta_admin extends AppCompatActivity {
             btnSalvar.setTextColor(Color.parseColor("#FFFFFF")); // texto branco mesmo desabilitado
         }
     }
-
 
     private void abrirDialogManual() {
         EditText input = new EditText(this);
@@ -261,6 +343,7 @@ public class pontosdecoleta_admin extends AppCompatActivity {
 
             @Override
             protected void onPostExecute(double[] result) {
+                isSearching = false;
                 if (result != null) {
                     etLatitude.setText(String.format(Locale.US, "%.8f", result[0]));
                     etLongitude.setText(String.format(Locale.US, "%.8f", result[1]));

@@ -20,9 +20,11 @@ public class AdminAdapter extends RecyclerView.Adapter<AdminAdapter.AdminVH> {
 
     private final List<AdminUser> data = new ArrayList<>();
     private final OnExcluirClick callback;
+    private final String currentUserId;
 
-    public AdminAdapter(OnExcluirClick callback) {
+    public AdminAdapter(OnExcluirClick callback, String currentUserId) {
         this.callback = callback;
+        this.currentUserId = currentUserId;
     }
 
     public void setItems(List<AdminUser> items) {
@@ -40,11 +42,28 @@ public class AdminAdapter extends RecyclerView.Adapter<AdminAdapter.AdminVH> {
     @Override
     public void onBindViewHolder(@NonNull AdminVH h, int i) {
         AdminUser u = data.get(i);
-        h.nome.setText(u.getNome());
+
+        // Verifica se é o usuário atual
+        boolean isCurrentUser = u.getId().equals(currentUserId);
+
+        // Adiciona "Você" ao nome se for o usuário atual
+        String nomeExibir = u.getNome();
+        if (isCurrentUser) {
+            nomeExibir = u.getNome() + " (Você)";
+        }
+
+        h.nome.setText(nomeExibir);
         h.email.setText(u.getEmail());
-        h.excluir.setOnClickListener(v -> {
-            if (callback != null) callback.onExcluir(u);
-        });
+
+        // Esconde o botão de excluir se for o usuário atual
+        if (isCurrentUser) {
+            h.excluir.setVisibility(View.GONE);
+        } else {
+            h.excluir.setVisibility(View.VISIBLE);
+            h.excluir.setOnClickListener(v -> {
+                if (callback != null) callback.onExcluir(u);
+            });
+        }
     }
 
     @Override

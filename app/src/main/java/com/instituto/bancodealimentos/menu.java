@@ -4,11 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.widget.TextView;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.card.MaterialCardView;
 import com.google.firebase.auth.FirebaseAuth;
@@ -30,17 +26,10 @@ public class menu extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         WindowInsetsHelper.setupEdgeToEdge(this);
-        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_menu);
 
-        // Aplicar insets
+        // Aplicar insets no scroll view
         WindowInsetsHelper.applyTopAndBottomInsets(findViewById(R.id.scroll));
-
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
 
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
@@ -78,41 +67,52 @@ public class menu extends AppCompatActivity {
                 String nome = document.getString("nome");
                 if (nome != null && !nome.isEmpty()) {
                     tvName.setText(nome);
+                } else {
+                    tryDisplayName(fu);
+                }
+            } else {
+                tryDisplayName(fu);
+            }
+        }).addOnFailureListener(e -> {
+            tryDisplayName(fu);
+        });
+    }
+
+    private void tryDisplayName(FirebaseUser fu) {
+        String dn = fu.getDisplayName();
+        if (dn != null && !dn.isEmpty()) {
+            tvName.setText(dn);
+        } else {
+            for (UserInfo ui : fu.getProviderData()) {
+                String displayName = ui.getDisplayName();
+                if (displayName != null && !displayName.isEmpty()) {
+                    tvName.setText(displayName);
                     return;
                 }
             }
-            // Fallback
-            if (fu.getDisplayName() != null && !fu.getDisplayName().isEmpty()) {
-                tvName.setText(fu.getDisplayName());
-            } else if (fu.getEmail() != null && fu.getEmail().contains("@")) {
-                String first = fu.getEmail().substring(0, fu.getEmail().indexOf("@"));
-                tvName.setText(first.substring(0,1).toUpperCase() + first.substring(1));
-            } else {
-                tvName.setText("Nome não definido");
-            }
-        }).addOnFailureListener(e -> tvName.setText("Erro ao carregar nome"));
+            tvName.setText("Usuário");
+        }
     }
 
-    private void openSettings(boolean fromAdmin) {
+    private void openSettings(boolean isAdmin) {
+        Intent intent;
         FirebaseUser fu = mAuth.getCurrentUser();
-        if (fu == null) {
-            // Deixa o Splash decidir a rota correta (login x menu)
-            startActivity(new Intent(this, SplashActivity.class));
-            finish();
-            return;
+        if (fu == null) return;
+
+        boolean isGoogleUser = false;
+        for (UserInfo profile : fu.getProviderData()) {
+            if ("google.com".equals(profile.getProviderId())) {
+                isGoogleUser = true;
+                break;
+            }
         }
 
-        boolean hasGoogle = false, hasPassword = false;
-        for (UserInfo info : fu.getProviderData()) {
-            String p = info.getProviderId();
-            if ("google.com".equals(p)) hasGoogle = true;
-            if ("password".equals(p))   hasPassword = true;
+        if (isGoogleUser) {
+            intent = new Intent(this, configuracoes_google.class);
+        } else {
+            intent = new Intent(this, configuracoes_email_senha.class);
         }
-
-        Class<?> next = hasPassword ? configuracoes_email_senha.class : configuracoes_google.class;
-        Intent i = new Intent(this, next);
-        i.putExtra("from_admin", fromAdmin);
-        startActivity(i);
+        intent.putExtra("IS_ADMIN", isAdmin);
+        startActivity(intent);
     }
-
 }

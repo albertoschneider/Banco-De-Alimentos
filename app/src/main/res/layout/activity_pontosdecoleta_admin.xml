@@ -3,10 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/main"
     android:layout_width="match_parent"
-    
     android:layout_height="match_parent"
-
-    
     android:fitsSystemWindows="false"
     android:background="#F2F5F9">
 
@@ -20,6 +17,7 @@
         android:clipToPadding="true"
         android:paddingStart="16dp"
         android:paddingTop="12dp"
+        android:paddingBottom="12dp"
         android:paddingEnd="16dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -34,7 +32,7 @@
             android:paddingTop="4dp"
             android:paddingBottom="4dp">
 
-                        <ImageButton
+            <ImageButton
                 android:id="@+id/btn_voltar"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
@@ -44,8 +42,7 @@
                 android:scaleType="fitCenter"
                 android:src="@drawable/arrow_back_png" />
 
-                        <TextView
-                android:id="@+id/tvTitulo"
+            <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_centerVertical="true"
@@ -118,13 +115,13 @@
                     android:layout_width="match_parent"
                     android:layout_height="12dp" />
 
-                <!-- Endereço -->
+                <!-- Rua -->
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Endereço"
-                    app:placeholderText="Rua, número, bairro, cidade..."
+                    android:hint="Rua"
+                    app:placeholderText="Ex: Rua das Flores"
                     app:boxBackgroundMode="outline"
                     app:boxBackgroundColor="#FFFFFF"
                     app:boxStrokeColor="#C9D2E0"
@@ -135,7 +132,7 @@
                     app:boxCornerRadiusBottomEnd="12dp">
 
                     <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etEndereco"
+                        android:id="@+id/etRua"
                         android:layout_width="match_parent"
                         android:layout_height="56dp"
                         android:background="@drawable/bg_textfield_outline_12dp"
@@ -150,12 +147,193 @@
                     android:layout_width="match_parent"
                     android:layout_height="12dp" />
 
-                <!-- Latitude / Longitude -->
+                <!-- Número e Bairro -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:weightSum="2">
+                    android:weightSum="3">
+
+                    <!-- Número -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:hint="Número"
+                        app:placeholderText="123"
+                        app:boxBackgroundMode="outline"
+                        app:boxBackgroundColor="#FFFFFF"
+                        app:boxStrokeColor="#C9D2E0"
+                        app:boxStrokeWidth="1dp"
+                        app:boxCornerRadiusTopStart="12dp"
+                        app:boxCornerRadiusTopEnd="12dp"
+                        app:boxCornerRadiusBottomStart="12dp"
+                        app:boxCornerRadiusBottomEnd="12dp">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etNumero"
+                            android:layout_width="match_parent"
+                            android:layout_height="56dp"
+                            android:background="@drawable/bg_textfield_outline_12dp"
+                            android:inputType="number"
+                            android:paddingStart="12dp"
+                            android:paddingEnd="12dp"
+                            android:textColor="#1A1D29"
+                            android:textSize="15sp" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <Space
+                        android:layout_width="8dp"
+                        android:layout_height="match_parent" />
+
+                    <!-- Bairro -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="2"
+                        android:hint="Bairro"
+                        app:placeholderText="Ex: Centro"
+                        app:boxBackgroundMode="outline"
+                        app:boxBackgroundColor="#FFFFFF"
+                        app:boxStrokeColor="#C9D2E0"
+                        app:boxStrokeWidth="1dp"
+                        app:boxCornerRadiusTopStart="12dp"
+                        app:boxCornerRadiusTopEnd="12dp"
+                        app:boxCornerRadiusBottomStart="12dp"
+                        app:boxCornerRadiusBottomEnd="12dp">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etBairro"
+                            android:layout_width="match_parent"
+                            android:layout_height="56dp"
+                            android:background="@drawable/bg_textfield_outline_12dp"
+                            android:inputType="textPostalAddress"
+                            android:paddingStart="12dp"
+                            android:paddingEnd="12dp"
+                            android:textColor="#1A1D29"
+                            android:textSize="15sp" />
+                    </com.google.android.material.textfield.TextInputLayout>
+                </LinearLayout>
+
+                <Space
+                    android:layout_width="match_parent"
+                    android:layout_height="12dp" />
+
+                <!-- Cidade e Estado -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:weightSum="3">
+
+                    <!-- Cidade -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="2"
+                        android:hint="Cidade"
+                        app:placeholderText="Ex: Porto Alegre"
+                        app:boxBackgroundMode="outline"
+                        app:boxBackgroundColor="#FFFFFF"
+                        app:boxStrokeColor="#C9D2E0"
+                        app:boxStrokeWidth="1dp"
+                        app:boxCornerRadiusTopStart="12dp"
+                        app:boxCornerRadiusTopEnd="12dp"
+                        app:boxCornerRadiusBottomStart="12dp"
+                        app:boxCornerRadiusBottomEnd="12dp">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etCidade"
+                            android:layout_width="match_parent"
+                            android:layout_height="56dp"
+                            android:background="@drawable/bg_textfield_outline_12dp"
+                            android:inputType="textPostalAddress"
+                            android:paddingStart="12dp"
+                            android:paddingEnd="12dp"
+                            android:textColor="#1A1D29"
+                            android:textSize="15sp" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <Space
+                        android:layout_width="8dp"
+                        android:layout_height="match_parent" />
+
+                    <!-- Estado -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:hint="Estado"
+                        app:placeholderText="RS"
+                        app:boxBackgroundMode="outline"
+                        app:boxBackgroundColor="#FFFFFF"
+                        app:boxStrokeColor="#C9D2E0"
+                        app:boxStrokeWidth="1dp"
+                        app:boxCornerRadiusTopStart="12dp"
+                        app:boxCornerRadiusTopEnd="12dp"
+                        app:boxCornerRadiusBottomStart="12dp"
+                        app:boxCornerRadiusBottomEnd="12dp">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etEstado"
+                            android:layout_width="match_parent"
+                            android:layout_height="56dp"
+                            android:background="@drawable/bg_textfield_outline_12dp"
+                            android:inputType="textPostalAddress"
+                            android:paddingStart="12dp"
+                            android:paddingEnd="12dp"
+                            android:textColor="#1A1D29"
+                            android:textSize="15sp" />
+                    </com.google.android.material.textfield.TextInputLayout>
+                </LinearLayout>
+
+                <Space
+                    android:layout_width="match_parent"
+                    android:layout_height="12dp" />
+
+                <!-- CEP (largura total) -->
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="CEP"
+                    app:placeholderText="Ex: 93900000"
+                    app:boxBackgroundMode="outline"
+                    app:boxBackgroundColor="#FFFFFF"
+                    app:boxStrokeColor="#C9D2E0"
+                    app:boxStrokeWidth="1dp"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusBottomEnd="12dp">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etCep"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:background="@drawable/bg_textfield_outline_12dp"
+                        android:inputType="number"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:textColor="#1A1D29"
+                        android:textSize="15sp" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <Space
+                    android:layout_width="match_parent"
+                    android:layout_height="12dp" />
+
+                <!-- Latitude / Longitude (ocultos - apenas para backend) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:weightSum="2"
+                    android:visibility="gone">
 
                     <!-- Latitude -->
                     <com.google.android.material.textfield.TextInputLayout
@@ -224,19 +402,7 @@
 
                 <Space
                     android:layout_width="match_parent"
-                    android:layout_height="14dp" />
-
-                <!-- Botão Buscar coordenadas -->
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnBuscar"
-                    android:layout_width="match_parent"
-                    android:layout_height="52dp"
-                    android:text="Buscar coordenadas"
-                    android:textAllCaps="false"
-                    android:textSize="16sp"
-                    android:textColor="#FFFFFF"
-                    app:cornerRadius="12dp"
-                    app:backgroundTint="#1F3A8A" />
+                    android:layout_height="8dp" />
 
                 <!-- Erro -->
                 <TextView
@@ -244,22 +410,23 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="Não encontramos esse endereço. Tente ajustar o texto ou use a opção abaixo."
+                    android:text="Não encontramos esse endereço. Verifique os campos ou use a opção abaixo."
                     android:textColor="#D92D20"
                     android:textSize="13sp"
                     android:visibility="gone" />
 
-                <!-- Link manual -->
+                <!-- Link manual (oculto - mantido para compatibilidade do código) -->
                 <TextView
                     android:id="@+id/tvLinkManual"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
-                    android:text="Não encontrou? Colar coordenadas ou Plus Code"
+                    android:text="Coordenadas não encontradas? Colar manualmente"
                     android:textColor="#1F3A8A"
                     android:textSize="13sp"
                     android:clickable="true"
-                    android:focusable="true" />
+                    android:focusable="true"
+                    android:visibility="gone" />
 
                 <Space
                     android:layout_width="match_parent"

@@ -42,19 +42,15 @@ import java.util.Map;
 
 public class editar_pontodecoleta extends AppCompatActivity {
 
-    private EditText etNome, etEndereco, etLatitude, etLongitude;
-    private Button btnBuscar, btnCancelar, btnSalvar;
+    private EditText etNome, etRua, etNumero, etBairro, etCidade, etEstado, etCep;
+    private EditText etLatitude, etLongitude;
+    private Button btnCancelar, btnSalvar;
     private TextView tvErro, tvLinkManual, tvTitulo;
     private Spinner spDisponibilidade;
 
     private FirebaseFirestore db;
-    private String docId;  // id do documento no Firestore
-
-    // Cores (hex) para o botão Salvar
-    private static final String COR_ATIVO   = "#2563EB";  // azul
-    private static final String COR_INATIVO = "#9CA3AF";  // cinza
-    private static final String TEXTO_ATIVO = "#FFFFFF";
-    private static final String TEXTO_INATIVO = "#FFFFFF";
+    private String docId;
+    private boolean isSearching = false;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -65,16 +61,19 @@ public class editar_pontodecoleta extends AppCompatActivity {
         // Aplicar insets
         WindowInsetsHelper.applyTopInsets(findViewById(R.id.header));
 
-
         FirebaseApp.initializeApp(this);
         db = FirebaseFirestore.getInstance();
 
         ImageButton btnVoltar = findViewById(R.id.btn_voltar);
         etNome       = findViewById(R.id.etNome);
-        etEndereco   = findViewById(R.id.etEndereco);
+        etRua        = findViewById(R.id.etRua);
+        etNumero     = findViewById(R.id.etNumero);
+        etBairro     = findViewById(R.id.etBairro);
+        etCidade     = findViewById(R.id.etCidade);
+        etEstado     = findViewById(R.id.etEstado);
+        etCep        = findViewById(R.id.etCep);
         etLatitude   = findViewById(R.id.etLatitude);
         etLongitude  = findViewById(R.id.etLongitude);
-        btnBuscar    = findViewById(R.id.btnBuscar);
         btnCancelar  = findViewById(R.id.btnCancelar);
         btnSalvar    = findViewById(R.id.btnSalvar);
         tvErro       = findViewById(R.id.tvErro);
@@ -96,64 +95,144 @@ public class editar_pontodecoleta extends AppCompatActivity {
         // --- recebe dados do ponto via Intent ---
         docId = getIntent().getStringExtra("docId");
         etNome.setText(getIntent().getStringExtra("nome"));
-        etEndereco.setText(getIntent().getStringExtra("endereco"));
+
+        // Tentar parsear o endereço completo nos campos
+        String enderecoCompleto = getIntent().getStringExtra("endereco");
+        parsearEndereco(enderecoCompleto);
+
         etLatitude.setText(getIntent().getStringExtra("lat"));
         etLongitude.setText(getIntent().getStringExtra("lng"));
         String disp = getIntent().getStringExtra("disponibilidade");
         if (disp != null) spDisponibilidade.setSelection("Indisponível".equalsIgnoreCase(disp) ? 1 : 0);
 
-        // watchers para habilitar/desabilitar o botão conforme campos mudam
+        // watchers para habilitar/desabilitar o botão e buscar coordenadas
         TextWatcher watcher = new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            @Override public void onTextChanged(CharSequence s, int start, int before, int count) { atualizarEstadoSalvar(); }
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                atualizarEstadoSalvar();
+                if (todosEnderecosCamposPreenchidos()) {
+                    buscarCoordenadasAutomaticamente();
+                }
+            }
             @Override public void afterTextChanged(Editable s) {}
         };
         etNome.addTextChangedListener(watcher);
-        etEndereco.addTextChangedListener(watcher);
-        etLatitude.addTextChangedListener(watcher);
-        etLongitude.addTextChangedListener(watcher);
+        etRua.addTextChangedListener(watcher);
+        etNumero.addTextChangedListener(watcher);
+        etBairro.addTextChangedListener(watcher);
+        etCidade.addTextChangedListener(watcher);
+        etEstado.addTextChangedListener(watcher);
+        etCep.addTextChangedListener(watcher);
 
         // Atualiza estado inicial com os dados já preenchidos
         atualizarEstadoSalvar();
-
-        // buscar coordenadas / colar manual
-        btnBuscar.setOnClickListener(v -> {
-            String endereco = etEndereco.getText().toString().trim();
-            if (TextUtils.isEmpty(endereco)) {
-                Toast.makeText(this, "Digite um endereço.", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            tvErro.setVisibility(android.view.View.GONE);
-            buscarCoordenadas(endereco);
-        });
 
         tvLinkManual.setOnClickListener(v -> abrirDialogManual());
 
         btnSalvar.setOnClickListener(v -> salvarAlteracoes());
     }
 
-    /** Habilita/desabilita o botão de salvar e troca cores (hex). */
-    /** Habilita/desabilita o botão de salvar e aplica as cores iguais à outra tela */
+    private void parsearEndereco(String enderecoCompleto) {
+        if (TextUtils.isEmpty(enderecoCompleto)) return;
+
+        // Tenta parsear o endereço - formato esperado: "Rua, número, Bairro, Cidade, Estado, CEP"
+        String[] partes = enderecoCompleto.split(",");
+
+        if (partes.length >= 1) etRua.setText(partes[0].trim());
+        if (partes.length >= 2) {
+            // Tenta identificar se é número
+            String parte2 = partes[1].trim();
+            if (parte2.matches("\\d+.*")) {
+                etNumero.setText(parte2);
+                if (partes.length >= 3) etBairro.setText(partes[2].trim());
+                if (partes.length >= 4) etCidade.setText(partes[3].trim());
+                if (partes.length >= 5) etEstado.setText(partes[4].trim());
+                if (partes.length >= 6) etCep.setText(partes[5].trim());
+            } else {
+                etBairro.setText(parte2);
+                if (partes.length >= 3) etCidade.setText(partes[2].trim());
+                if (partes.length >= 4) etEstado.setText(partes[3].trim());
+                if (partes.length >= 5) etCep.setText(partes[4].trim());
+            }
+        }
+    }
+
+    private boolean todosEnderecosCamposPreenchidos() {
+        String rua = etRua.getText().toString().trim();
+        String cidade = etCidade.getText().toString().trim();
+        String estado = etEstado.getText().toString().trim();
+
+        return !TextUtils.isEmpty(rua) && !TextUtils.isEmpty(cidade) && !TextUtils.isEmpty(estado);
+    }
+
+    private String montarEnderecoCompleto() {
+        StringBuilder sb = new StringBuilder();
+
+        String rua = etRua.getText().toString().trim();
+        String numero = etNumero.getText().toString().trim();
+        String bairro = etBairro.getText().toString().trim();
+        String cidade = etCidade.getText().toString().trim();
+        String estado = etEstado.getText().toString().trim();
+        String cep = etCep.getText().toString().trim();
+
+        if (!TextUtils.isEmpty(rua)) {
+            sb.append(rua);
+            if (!TextUtils.isEmpty(numero)) {
+                sb.append(", ").append(numero);
+            }
+        }
+
+        if (!TextUtils.isEmpty(bairro)) {
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(bairro);
+        }
+
+        if (!TextUtils.isEmpty(cidade)) {
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(cidade);
+        }
+
+        if (!TextUtils.isEmpty(estado)) {
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(estado);
+        }
+
+        if (!TextUtils.isEmpty(cep)) {
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(cep);
+        }
+
+        return sb.toString();
+    }
+
+    private void buscarCoordenadasAutomaticamente() {
+        if (isSearching) return;
+
+        String endereco = montarEnderecoCompleto();
+        if (TextUtils.isEmpty(endereco)) return;
+
+        isSearching = true;
+        tvErro.setVisibility(View.GONE);
+        buscarCoordenadas(endereco);
+    }
+
     private void atualizarEstadoSalvar() {
         boolean ok =
                 !TextUtils.isEmpty(etNome.getText().toString().trim()) &&
-                        !TextUtils.isEmpty(etEndereco.getText().toString().trim()) &&
+                        todosEnderecosCamposPreenchidos() &&
                         !TextUtils.isEmpty(etLatitude.getText().toString().trim()) &&
                         !TextUtils.isEmpty(etLongitude.getText().toString().trim());
 
         btnSalvar.setEnabled(ok);
 
         if (ok) {
-            // botão ativo
             btnSalvar.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#F4B400")));
             btnSalvar.setTextColor(Color.parseColor("#004E7C"));
         } else {
-            // botão desativado
-            btnSalvar.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#9CA3AF"))); // cinza
-            btnSalvar.setTextColor(Color.parseColor("#FFFFFF")); // texto branco mesmo desabilitado
+            btnSalvar.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#9CA3AF")));
+            btnSalvar.setTextColor(Color.parseColor("#FFFFFF"));
         }
     }
-
 
     private void salvarAlteracoes() {
         if (TextUtils.isEmpty(docId)) {
@@ -161,12 +240,12 @@ public class editar_pontodecoleta extends AppCompatActivity {
             return;
         }
         String nome = etNome.getText().toString().trim();
-        String endereco = etEndereco.getText().toString().trim();
+        String enderecoCompleto = montarEnderecoCompleto();
         String lat = etLatitude.getText().toString().trim();
         String lng = etLongitude.getText().toString().trim();
         String disp = spDisponibilidade.getSelectedItem().toString();
 
-        if (TextUtils.isEmpty(nome) || TextUtils.isEmpty(endereco) ||
+        if (TextUtils.isEmpty(nome) || TextUtils.isEmpty(enderecoCompleto) ||
                 TextUtils.isEmpty(lat) || TextUtils.isEmpty(lng)) {
             Toast.makeText(this, "Preencha todos os campos.", Toast.LENGTH_SHORT).show();
             return;
@@ -178,7 +257,7 @@ public class editar_pontodecoleta extends AppCompatActivity {
 
         Map<String, Object> doc = new HashMap<>();
         doc.put("nome", nome);
-        doc.put("endereco", endereco);
+        doc.put("endereco", enderecoCompleto);
         doc.put("location", location);
         doc.put("disponibilidade", disp);
 
@@ -196,7 +275,6 @@ public class editar_pontodecoleta extends AppCompatActivity {
                 });
     }
 
-    // ====== utilitários ======
     private void abrirDialogManual() {
         EditText input = new EditText(this);
         input.setHint("Ex: -29.6000826,-51.1621926");
@@ -264,6 +342,7 @@ public class editar_pontodecoleta extends AppCompatActivity {
                 return null;
             }
             @Override protected void onPostExecute(double[] r) {
+                isSearching = false;
                 if (r != null) {
                     etLatitude.setText(String.format(Locale.US, "%.8f", r[0]));
                     etLongitude.setText(String.format(Locale.US, "%.8f", r[1]));
