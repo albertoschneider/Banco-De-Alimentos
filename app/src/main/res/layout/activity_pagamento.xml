@@ -4,66 +4,62 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
-    
     android:layout_height="match_parent"
     android:fitsSystemWindows="false"
-    android:background="#F5F6FA"
+    android:background="#F8FAFC"
     tools:context=".pagamento">
 
-    <!-- HEADER amarelo (mesma estrutura do Pontos de Coleta, sem busca) -->
-    <LinearLayout
+    <!-- HEADER modernizado -->
+    <com.google.android.material.card.MaterialCardView
         android:id="@+id/header"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:minHeight="56dp"
-        android:background="#F4B400"
-        android:orientation="vertical"
-        android:clipToPadding="true"
-        android:paddingStart="16dp"
-        android:paddingTop="12dp"
-        android:paddingBottom="12dp"
-        android:paddingEnd="16dp"
+        app:cardCornerRadius="0dp"
+        app:cardElevation="4dp"
+        android:backgroundTint="#F4B400"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <RelativeLayout
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:minHeight="32dp"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp">
+            android:orientation="vertical"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:paddingTop="16dp"
+            android:paddingBottom="16dp">
 
-                        <ImageButton
-                android:id="@+id/btn_voltar"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_centerVertical="true"
-                android:background="@android:color/transparent"
-                android:contentDescription="@string/sem_descricao"
-                android:scaleType="fitCenter"
-                android:src="@drawable/arrow_back_png" />
-
-                        <TextView
-                android:id="@+id/tvTitulo"
-                android:layout_width="0dp"
+            <RelativeLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:layout_toEndOf="@id/btn_voltar"
-                android:layout_alignParentEnd="true"
-                android:layout_marginStart="12dp"
-                android:layout_marginEnd="16dp"
-                android:gravity="center"
-                android:maxLines="1"
-                android:ellipsize="end"
-                android:text="Pagamento"
-                android:textColor="#004E7C"
-                android:textSize="18sp"
-                android:textStyle="bold" />
-        </RelativeLayout>
-    </LinearLayout>
+                android:gravity="center_vertical">
+
+                <ImageButton
+                    android:id="@+id/btn_voltar"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_centerVertical="true"
+                    android:background="@drawable/bg_back_button"
+                    android:contentDescription="@string/sem_descricao"
+                    android:padding="10dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/arrow_back_png"
+                    app:tint="#004E7C" />
+
+                <TextView
+                    android:id="@+id/tvTitulo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerInParent="true"
+                    android:text="Pagamento"
+                    android:textColor="#004E7C"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-medium" />
+            </RelativeLayout>
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
 
     <!-- CONTEÚDO SCROLLÁVEL -->
     <ScrollView
@@ -80,30 +76,33 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:padding="20dp">
 
+            <!-- Card principal com PIX -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                app:cardBackgroundColor="@android:color/white"
-                app:cardCornerRadius="14dp"
-                app:cardUseCompatPadding="true">
+                app:cardCornerRadius="16dp"
+                app:cardElevation="4dp"
+                app:cardUseCompatPadding="false"
+                android:backgroundTint="#FFFFFF">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:padding="24dp">
 
+                    <!-- Valor da doação destaque -->
                     <TextView
                         android:id="@+id/tvValorTotalLabel"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Valor da doação"
-                        android:textColor="#6B778C"
-                        android:textSize="14sp"
+                        android:textColor="#64748B"
+                        android:textSize="15sp"
                         android:layout_gravity="center"/>
 
                     <TextView
@@ -112,27 +111,38 @@
                         android:layout_height="wrap_content"
                         android:text="R$ 50,00"
                         android:textStyle="bold"
-                        android:textSize="26sp"
-                        android:textColor="#1B1F3B"
-                        android:layout_marginTop="2dp"
+                        android:textSize="32sp"
+                        android:textColor="#004E7C"
+                        android:fontFamily="sans-serif-medium"
+                        android:layout_marginTop="4dp"
                         android:layout_gravity="center"/>
 
+                    <!-- Divisor -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="20dp"
+                        android:layout_marginBottom="20dp"
+                        android:background="#E2E8F0" />
+
+                    <!-- Instruções PIX -->
                     <TextView
                         android:id="@+id/tvPixTitulo"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Pague com Pix para confirmar"
-                        android:textColor="#202020"
-                        android:textSize="14sp"
-                        android:layout_marginTop="16dp"
+                        android:textColor="#1E293B"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
                         android:layout_gravity="center"/>
 
+                    <!-- Temporizador -->
                     <LinearLayout
                         android:id="@+id/timerBlock"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="12dp"
                         android:gravity="center_horizontal">
 
                         <TextView
@@ -140,8 +150,8 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Expira em"
-                            android:textColor="#6B778C"
-                            android:textSize="12sp" />
+                            android:textColor="#64748B"
+                            android:textSize="13sp" />
 
                         <TextView
                             android:id="@+id/tvCountdown"
@@ -149,112 +159,145 @@
                             android:layout_height="wrap_content"
                             android:text="10:00"
                             android:textStyle="bold"
-                            android:textSize="18sp"
-                            android:textColor="#1B1F3B"
-                            android:layout_marginTop="2dp" />
+                            android:textSize="20sp"
+                            android:textColor="#DC2626"
+                            android:fontFamily="sans-serif-medium"
+                            android:layout_marginTop="4dp" />
 
                         <ProgressBar
                             android:id="@+id/timeProgress"
                             style="?android:attr/progressBarStyleHorizontal"
                             android:layout_width="match_parent"
-                            android:layout_height="6dp"
-                            android:layout_marginTop="8dp"
+                            android:layout_height="8dp"
+                            android:layout_marginTop="12dp"
                             android:max="600"
                             android:progress="600"
-                            android:indeterminate="false"/>
+                            android:indeterminate="false"
+                            android:progressTint="#F4B400"
+                            android:progressBackgroundTint="#E2E8F0"/>
                     </LinearLayout>
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center"
-                        android:layout_marginTop="12dp">
+                    <!-- QR Code -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="220dp"
+                        android:layout_height="220dp"
+                        android:layout_gravity="center"
+                        android:layout_marginTop="20dp"
+                        app:cardCornerRadius="16dp"
+                        app:cardElevation="2dp"
+                        app:strokeColor="#E2E8F0"
+                        app:strokeWidth="1dp"
+                        android:backgroundTint="#FFFFFF">
 
                         <ImageView
                             android:id="@+id/ivQrCode"
                             android:layout_width="200dp"
                             android:layout_height="200dp"
+                            android:layout_gravity="center"
                             android:contentDescription="QRCode do PIX"
                             android:scaleType="fitCenter"
                             android:src="@android:drawable/ic_menu_report_image"/>
-                    </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
 
+                    <!-- Chave Pix Copia e Cola -->
                     <TextView
                         android:id="@+id/tvPixOuChave"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Ou use a chave Pix Copia e Cola:"
-                        android:textColor="#202020"
+                        android:textColor="#475569"
                         android:textSize="14sp"
-                        android:layout_marginTop="16dp"
+                        android:layout_marginTop="24dp"
                         android:layout_gravity="center"/>
 
-                    <androidx.constraintlayout.widget.ConstraintLayout
+                    <!-- Campo de chave PIX -->
+                    <com.google.android.material.card.MaterialCardView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp">
+                        android:layout_marginTop="12dp"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="0dp"
+                        app:strokeColor="#E2E8F0"
+                        app:strokeWidth="2dp"
+                        android:backgroundTint="#F8FAFC">
 
-                        <EditText
-                            android:id="@+id/etPixKey"
-                            android:layout_width="0dp"
+                        <androidx.constraintlayout.widget.ConstraintLayout
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:background="@drawable/bg_edit_rounded"
-                            android:hint="Chave Pix"
-                            android:padding="12dp"
-                            android:textColor="#1B1F3B"
-                            android:textColorHint="#9AA4B2"
-                            android:singleLine="true"
-                            android:focusable="false"
-                            android:clickable="false"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintEnd_toStartOf="@id/btnCopyPix"
-                            app:layout_constraintTop_toTopOf="parent"
-                            app:layout_constraintBottom_toBottomOf="parent"/>
+                            android:padding="4dp">
 
-                        <ImageButton
-                            android:id="@+id/btnCopyPix"
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
-                            android:layout_marginStart="8dp"
-                            android:background="@android:color/transparent"
-                            android:contentDescription="Copiar chave PIX"
-                            android:src="@drawable/ic_content_copy"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintTop_toTopOf="@+id/etPixKey"
-                            app:layout_constraintBottom_toBottomOf="@+id/etPixKey"/>
+                            <EditText
+                                android:id="@+id/etPixKey"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:background="@android:color/transparent"
+                                android:hint="Chave Pix"
+                                android:padding="12dp"
+                                android:textColor="#1E293B"
+                                android:textColorHint="#94A3B8"
+                                android:textSize="14sp"
+                                android:singleLine="true"
+                                android:focusable="false"
+                                android:clickable="false"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintEnd_toStartOf="@id/btnCopyPix"
+                                app:layout_constraintTop_toTopOf="parent"
+                                app:layout_constraintBottom_toBottomOf="parent"/>
 
-                    </androidx.constraintlayout.widget.ConstraintLayout>
+                            <ImageButton
+                                android:id="@+id/btnCopyPix"
+                                android:layout_width="44dp"
+                                android:layout_height="44dp"
+                                android:layout_marginStart="8dp"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:contentDescription="Copiar chave PIX"
+                                android:padding="10dp"
+                                android:src="@drawable/ic_content_copy"
+                                app:tint="#004E7C"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintTop_toTopOf="parent"
+                                app:layout_constraintBottom_toBottomOf="parent"/>
+                        </androidx.constraintlayout.widget.ConstraintLayout>
+                    </com.google.android.material.card.MaterialCardView>
 
+                    <!-- Botão gerar novo PIX -->
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnGerarNovoPix"
                         android:layout_width="match_parent"
-                        android:layout_height="46dp"
-                        android:layout_marginTop="12dp"
+                        android:layout_height="52dp"
+                        android:layout_marginTop="16dp"
                         android:text="Gerar novo PIX"
                         android:textAllCaps="false"
+                        android:textSize="15sp"
                         android:textStyle="bold"
                         android:visibility="gone"
-                        app:backgroundTint="#EF4444"
-                        app:cornerRadius="14dp" />
+                        app:backgroundTint="#DC2626"
+                        app:cornerRadius="12dp"
+                        android:elevation="2dp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-
         </LinearLayout>
     </ScrollView>
 
+    <!-- Botão voltar ao menu -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnVoltarMenu"
         android:layout_width="0dp"
-        android:layout_height="46dp"
-        android:layout_margin="16dp"
+        android:layout_height="56dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="20dp"
         android:text="Voltar ao Menu"
         android:textAllCaps="false"
         android:textColor="#004E7C"
+        android:textSize="16sp"
         android:textStyle="bold"
-        app:backgroundTint="#FFF1B100"
-        app:cornerRadius="24dp"
+        app:backgroundTint="@null"
+        android:background="@drawable/bg_button_yellow"
+        app:cornerRadius="12dp"
+        android:elevation="4dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
