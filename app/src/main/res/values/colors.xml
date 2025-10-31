@@ -1,15 +1,52 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Cores básicas -->
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="yellow_600">#F5BD19</color>
-    <color name="blue_700">#1F3D99</color>
+    
+    <!-- Cores principais do Banco de Alimentos -->
+    <color name="bda_blue">#004E7C</color>
+    <color name="bda_yellow">#F4B400</color>
+    
+    <!-- Variações do azul -->
+    <color name="bda_blue_dark">#003D62</color>
+    <color name="bda_blue_light">#0B5A8A</color>
+    <color name="bda_blue_lighter">#0D7AB8</color>
+    
+    <!-- Variações do amarelo -->
+    <color name="bda_yellow_dark">#D49A00</color>
+    <color name="bda_yellow_light">#F5C633</color>
+    
+    <!-- Cores de apoio -->
     <color name="gray_050">#F6F7F9</color>
     <color name="gray_100">#ECEFF3</color>
+    <color name="gray_200">#E5E7EB</color>
+    <color name="gray_300">#D1D5DB</color>
+    <color name="gray_400">#9CA3AF</color>
+    <color name="gray_500">#6B7280</color>
+    <color name="gray_600">#4B5563</color>
+    <color name="gray_700">#374151</color>
+    <color name="gray_800">#1F2937</color>
+    <color name="gray_900">#111827</color>
+    
+    <!-- Cores de texto -->
     <color name="text_primary">#212121</color>
     <color name="text_secondary">#80212121</color>
+    <color name="text_tertiary">#60212121</color>
+    
+    <!-- Cores funcionais -->
+    <color name="success">#10B981</color>
+    <color name="error">#DC2626</color>
+    <color name="warning">#F59E0B</color>
+    <color name="info">#3B82F6</color>
+    
+    <!-- Ícones -->
     <color name="bda_icon_tint">#374151</color>
     <color name="bda_counter_text">#374151</color>
     <color name="bda_counter_overflow_text">#DC2626</color>
-    <color name="blue_header_text">#004E7C</color>
+    
+    <!-- Compatibilidade com código antigo (redireciona para as novas cores) -->
+    <color name="yellow_600">@color/bda_yellow</color>
+    <color name="blue_700">@color/bda_blue</color>
+    <color name="blue_header_text">@color/bda_blue</color>
 </resources>

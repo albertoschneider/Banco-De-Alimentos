@@ -66,7 +66,7 @@
                         android:layout_gravity="center_horizontal"
                         app:cardCornerRadius="24dp"
                         app:cardElevation="4dp"
-                        android:backgroundTint="#0B5A8A">
+                        android:backgroundTint="#004E7C">
 
                         <ImageView
                             android:id="@+id/imgLogo"
@@ -86,7 +86,7 @@
                         android:layout_gravity="center_horizontal"
                         android:layout_marginTop="20dp"
                         android:text="Banco de Alimentos"
-                        android:textColor="#0B5A8A"
+                        android:textColor="#004E7C"
                         android:textSize="24sp"
                         android:textStyle="bold"
                         android:fontFamily="sans-serif-medium" />
@@ -205,7 +205,7 @@
                         android:layout_marginTop="8dp"
                         android:text="Esqueci minha senha"
                         android:textSize="14sp"
-                        android:textColor="#0B5A8A"
+                        android:textColor="#004E7C"
                         android:textStyle="bold"
                         android:clickable="true"
                         android:focusable="true"
@@ -311,7 +311,7 @@
                             android:text="Registre-se"
                             android:textStyle="bold"
                             android:textSize="14sp"
-                            android:textColor="#0B5A8A"
+                            android:textColor="#004E7C"
                             android:clickable="true"
                             android:focusable="true"
                             android:padding="4dp"

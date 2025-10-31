@@ -43,7 +43,7 @@
                 android:contentDescription="Logo"
                 android:scaleType="fitCenter"
                 android:src="@drawable/passarinho_barc"
-                app:tint="#0B5A8A" />
+                app:tint="#004E7C" />
         </com.google.android.material.card.MaterialCardView>
 
         <!-- Título -->
@@ -87,7 +87,7 @@
             android:layout_marginTop="24dp"
             android:text="Transformando vidas através\nda solidariedade"
             android:textAlignment="center"
-            android:textColor="#FFC107"
+            android:textColor="#F4B400"
             android:textSize="14sp"
             android:textStyle="italic"
             android:alpha="0.9"

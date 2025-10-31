@@ -55,11 +55,12 @@ public class menu_admin extends AppCompatActivity {
             cardAdmins.setOnClickListener(v ->
                     startActivity(new Intent(menu_admin.this, gerenciar_admins.class)));
         }
+        
+        // Botão de configurações - detecta o tipo de autenticação e redireciona
         if (btnSettings != null) {
-            // Pode abrir a mesma tela de gerenciar admins ou outra tela de configurações
-            btnSettings.setOnClickListener(v ->
-                    startActivity(new Intent(menu_admin.this, gerenciar_admins.class)));
+            btnSettings.setOnClickListener(v -> abrirConfiguracoes());
         }
+        
         if (cardDoe != null) {
             // Tela para gerenciar produtos (admin)
             cardDoe.setOnClickListener(v ->
@@ -84,6 +85,35 @@ public class menu_admin extends AppCompatActivity {
 
         // Carrega o nome do admin
         loadAdminName();
+    }
+
+    /**
+     * Abre a tela de configurações apropriada baseada no método de autenticação
+     */
+    private void abrirConfiguracoes() {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) {
+            Toast.makeText(this, "Usuário não autenticado", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Verifica se o usuário usa autenticação Google
+        boolean isGoogleAuth = false;
+        for (UserInfo profile : user.getProviderData()) {
+            if ("google.com".equals(profile.getProviderId())) {
+                isGoogleAuth = true;
+                break;
+            }
+        }
+
+        // Redireciona para a tela apropriada
+        Intent intent;
+        if (isGoogleAuth) {
+            intent = new Intent(menu_admin.this, configuracoes_google.class);
+        } else {
+            intent = new Intent(menu_admin.this, configuracoes_email_senha.class);
+        }
+        startActivity(intent);
     }
 
     private void loadAdminName() {
