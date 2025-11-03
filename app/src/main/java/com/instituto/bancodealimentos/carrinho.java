@@ -6,9 +6,6 @@ import android.view.View;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -27,19 +24,25 @@ public class carrinho extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // 1. SEMPRE chamar setupEdgeToEdge PRIMEIRO
         WindowInsetsHelper.setupEdgeToEdge(this);
+
         setContentView(R.layout.activity_carrinho);
 
-        // Aplicar insets
+        // 2. Aplicar insets no HEADER (24dp extra no topo)
         WindowInsetsHelper.applyTopInsets(findViewById(R.id.header));
-        WindowInsetsHelper.applyBottomInsets(findViewById(R.id.footer));
+
+        // 3. Aplicar insets no RecyclerView (proteção contra navigation bar)
         WindowInsetsHelper.applyScrollInsets(findViewById(R.id.rvCarrinho));
 
+        // 4. Aplicar insets no FOOTER FIXO (proteção contra navigation bar)
+        WindowInsetsHelper.applyBottomInsets(findViewById(R.id.footer));
 
         tvTotal = findViewById(R.id.tvTotal);
         tvErroVazio = findViewById(R.id.tvErroVazio);
 
-        itens = CartStore.load(this); // mantém sua persistência
+        itens = CartStore.load(this);
 
         RecyclerView rv = findViewById(R.id.rvCarrinho);
         rv.setLayoutManager(new LinearLayoutManager(this));

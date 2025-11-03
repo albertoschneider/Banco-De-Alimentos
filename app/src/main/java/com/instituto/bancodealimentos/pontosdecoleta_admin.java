@@ -20,9 +20,6 @@ import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 import android.location.Address;
 import android.location.Geocoder;
@@ -55,10 +52,13 @@ public class pontosdecoleta_admin extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // 1. SEMPRE chamar setupEdgeToEdge PRIMEIRO
         WindowInsetsHelper.setupEdgeToEdge(this);
+
         setContentView(R.layout.activity_pontosdecoleta_admin);
 
-        // Aplicar insets
+        // 2. Aplicar insets no HEADER (24dp extra no topo)
         WindowInsetsHelper.applyTopInsets(findViewById(R.id.header));
 
         ImageButton btnVoltar = findViewById(R.id.btn_voltar);
@@ -116,7 +116,7 @@ public class pontosdecoleta_admin extends AppCompatActivity {
 
         tvLinkManual.setOnClickListener(v -> abrirDialogManual());
 
-        // ---- Firestore ----
+        // Firestore
         FirebaseApp.initializeApp(this);
         db = FirebaseFirestore.getInstance();
 
@@ -126,10 +126,8 @@ public class pontosdecoleta_admin extends AppCompatActivity {
     private boolean todosEnderecosCamposPreenchidos() {
         String rua = etRua.getText().toString().trim();
         String cidade = etCidade.getText().toString().trim();
-        String estado = etEstado.getText().toString().trim();
 
-        // Pelo menos rua, cidade e estado devem estar preenchidos
-        return !TextUtils.isEmpty(rua) && !TextUtils.isEmpty(cidade) && !TextUtils.isEmpty(estado);
+        return !TextUtils.isEmpty(rua) && !TextUtils.isEmpty(cidade);
     }
 
     private String montarEnderecoCompleto() {
@@ -139,8 +137,6 @@ public class pontosdecoleta_admin extends AppCompatActivity {
         String numero = etNumero.getText().toString().trim();
         String bairro = etBairro.getText().toString().trim();
         String cidade = etCidade.getText().toString().trim();
-        String estado = etEstado.getText().toString().trim();
-        String cep = etCep.getText().toString().trim();
 
         if (!TextUtils.isEmpty(rua)) {
             sb.append(rua);
@@ -157,16 +153,6 @@ public class pontosdecoleta_admin extends AppCompatActivity {
         if (!TextUtils.isEmpty(cidade)) {
             if (sb.length() > 0) sb.append(", ");
             sb.append(cidade);
-        }
-
-        if (!TextUtils.isEmpty(estado)) {
-            if (sb.length() > 0) sb.append(", ");
-            sb.append(estado);
-        }
-
-        if (!TextUtils.isEmpty(cep)) {
-            if (sb.length() > 0) sb.append(", ");
-            sb.append(cep);
         }
 
         return sb.toString();
@@ -236,22 +222,20 @@ public class pontosdecoleta_admin extends AppCompatActivity {
         btnSalvar.setEnabled(ok);
 
         if (ok) {
-            // botão ativo
             btnSalvar.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#F4B400")));
             btnSalvar.setTextColor(Color.parseColor("#004E7C"));
         } else {
-            // botão desativado
-            btnSalvar.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#9CA3AF"))); // cinza
-            btnSalvar.setTextColor(Color.parseColor("#FFFFFF")); // texto branco mesmo desabilitado
+            btnSalvar.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#9CA3AF")));
+            btnSalvar.setTextColor(Color.parseColor("#FFFFFF"));
         }
     }
 
     private void abrirDialogManual() {
         EditText input = new EditText(this);
-        input.setHint("Ex: -29.6000826,-51.1621926 ou 7H6R+X3 Ivoti");
+        input.setHint("Ex: -29.6000826,-51.1621926");
 
         AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle("Colar coordenadas ou Plus Code")
+                .setTitle("Colar coordenadas")
                 .setView(input)
                 .setPositiveButton("Usar", null)
                 .setNegativeButton("Cancelar", (d, w) -> d.dismiss())
@@ -262,7 +246,7 @@ public class pontosdecoleta_admin extends AppCompatActivity {
             b.setOnClickListener(v -> {
                 String text = input.getText().toString().trim();
                 if (TextUtils.isEmpty(text)) {
-                    input.setError("Cole as coordenadas ou o Plus Code");
+                    input.setError("Cole as coordenadas");
                     return;
                 }
                 if (text.contains(",")) {
@@ -280,7 +264,7 @@ public class pontosdecoleta_admin extends AppCompatActivity {
                         } catch (Exception ignored) { }
                     }
                 }
-                Toast.makeText(this, "Formato inválido. Use lat,lng ou ative suporte a Plus Code.", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "Formato inválido. Use lat,lng", Toast.LENGTH_LONG).show();
             });
         });
 
@@ -293,7 +277,7 @@ public class pontosdecoleta_admin extends AppCompatActivity {
             protected double[] doInBackground(String... strings) {
                 String query = strings[0];
 
-                // 1) Geocoder nativo (grátis)
+                // Geocoder nativo
                 try {
                     Geocoder geocoder = new Geocoder(pontosdecoleta_admin.this, Locale.getDefault());
                     List<Address> list = geocoder.getFromLocationName(query, 1);
@@ -303,10 +287,11 @@ public class pontosdecoleta_admin extends AppCompatActivity {
                     }
                 } catch (Exception ignored) { }
 
-                // 2) Fallback: Nominatim (OSM) via HTTPS (grátis)
+                // Fallback: Nominatim
                 try {
                     String encoded = URLEncoder.encode(query, "UTF-8");
-                    String urlStr = "https://nominatim.openstreetmap.org/search?q=" + encoded + "&format=json&limit=1&addressdetails=0";
+                    String urlStr = "https://nominatim.openstreetmap.org/search?q=" + encoded +
+                            "&format=json&limit=1&addressdetails=0";
                     URL url = new URL(urlStr);
                     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                     conn.setRequestMethod("GET");

@@ -33,9 +33,6 @@ public class menu_admin extends AppCompatActivity {
         WindowInsetsHelper.setupEdgeToEdge(this);
         setContentView(R.layout.activity_menu_admin);
 
-        // Aplicar insets no scroll view
-        WindowInsetsHelper.applyTopAndBottomInsets(findViewById(R.id.scroll));
-
         // Firebase
         auth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();

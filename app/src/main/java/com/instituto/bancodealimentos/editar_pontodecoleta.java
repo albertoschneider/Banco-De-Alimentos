@@ -17,9 +17,6 @@ import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 import android.location.Address;
 import android.location.Geocoder;
@@ -55,10 +52,13 @@ public class editar_pontodecoleta extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // 1. SEMPRE chamar setupEdgeToEdge PRIMEIRO
         WindowInsetsHelper.setupEdgeToEdge(this);
+
         setContentView(R.layout.activity_editar_pontodecoleta);
 
-        // Aplicar insets
+        // 2. Aplicar insets no HEADER (24dp extra no topo)
         WindowInsetsHelper.applyTopInsets(findViewById(R.id.header));
 
         FirebaseApp.initializeApp(this);
@@ -92,11 +92,10 @@ public class editar_pontodecoleta extends AppCompatActivity {
         btnVoltar.setOnClickListener(v -> finish());
         btnCancelar.setOnClickListener(v -> finish());
 
-        // --- recebe dados do ponto via Intent ---
+        // Recebe dados do ponto via Intent
         docId = getIntent().getStringExtra("docId");
         etNome.setText(getIntent().getStringExtra("nome"));
 
-        // Tentar parsear o endereço completo nos campos
         String enderecoCompleto = getIntent().getStringExtra("endereco");
         parsearEndereco(enderecoCompleto);
 
@@ -105,7 +104,7 @@ public class editar_pontodecoleta extends AppCompatActivity {
         String disp = getIntent().getStringExtra("disponibilidade");
         if (disp != null) spDisponibilidade.setSelection("Indisponível".equalsIgnoreCase(disp) ? 1 : 0);
 
-        // watchers para habilitar/desabilitar o botão e buscar coordenadas
+        // Watchers para habilitar/desabilitar o botão e buscar coordenadas
         TextWatcher watcher = new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
             @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
@@ -124,7 +123,6 @@ public class editar_pontodecoleta extends AppCompatActivity {
         etEstado.addTextChangedListener(watcher);
         etCep.addTextChangedListener(watcher);
 
-        // Atualiza estado inicial com os dados já preenchidos
         atualizarEstadoSalvar();
 
         tvLinkManual.setOnClickListener(v -> abrirDialogManual());
@@ -135,12 +133,10 @@ public class editar_pontodecoleta extends AppCompatActivity {
     private void parsearEndereco(String enderecoCompleto) {
         if (TextUtils.isEmpty(enderecoCompleto)) return;
 
-        // Tenta parsear o endereço - formato esperado: "Rua, número, Bairro, Cidade, Estado, CEP"
         String[] partes = enderecoCompleto.split(",");
 
         if (partes.length >= 1) etRua.setText(partes[0].trim());
         if (partes.length >= 2) {
-            // Tenta identificar se é número
             String parte2 = partes[1].trim();
             if (parte2.matches("\\d+.*")) {
                 etNumero.setText(parte2);
@@ -160,9 +156,8 @@ public class editar_pontodecoleta extends AppCompatActivity {
     private boolean todosEnderecosCamposPreenchidos() {
         String rua = etRua.getText().toString().trim();
         String cidade = etCidade.getText().toString().trim();
-        String estado = etEstado.getText().toString().trim();
 
-        return !TextUtils.isEmpty(rua) && !TextUtils.isEmpty(cidade) && !TextUtils.isEmpty(estado);
+        return !TextUtils.isEmpty(rua) && !TextUtils.isEmpty(cidade);
     }
 
     private String montarEnderecoCompleto() {
@@ -172,8 +167,6 @@ public class editar_pontodecoleta extends AppCompatActivity {
         String numero = etNumero.getText().toString().trim();
         String bairro = etBairro.getText().toString().trim();
         String cidade = etCidade.getText().toString().trim();
-        String estado = etEstado.getText().toString().trim();
-        String cep = etCep.getText().toString().trim();
 
         if (!TextUtils.isEmpty(rua)) {
             sb.append(rua);
@@ -190,16 +183,6 @@ public class editar_pontodecoleta extends AppCompatActivity {
         if (!TextUtils.isEmpty(cidade)) {
             if (sb.length() > 0) sb.append(", ");
             sb.append(cidade);
-        }
-
-        if (!TextUtils.isEmpty(estado)) {
-            if (sb.length() > 0) sb.append(", ");
-            sb.append(estado);
-        }
-
-        if (!TextUtils.isEmpty(cep)) {
-            if (sb.length() > 0) sb.append(", ");
-            sb.append(cep);
         }
 
         return sb.toString();
@@ -301,7 +284,8 @@ public class editar_pontodecoleta extends AppCompatActivity {
 
     private void buscarCoordenadas(String endereco) {
         new AsyncTask<String, Void, double[]>() {
-            @Override protected double[] doInBackground(String... s) {
+            @Override
+            protected double[] doInBackground(String... s) {
                 try {
                     Geocoder g = new Geocoder(editar_pontodecoleta.this, Locale.getDefault());
                     List<Address> list = g.getFromLocationName(s[0], 1);
@@ -313,7 +297,8 @@ public class editar_pontodecoleta extends AppCompatActivity {
 
                 try {
                     String encoded = URLEncoder.encode(endereco, "UTF-8");
-                    String urlStr = "https://nominatim.openstreetmap.org/search?q=" + encoded + "&format=json&limit=1&addressdetails=0";
+                    String urlStr = "https://nominatim.openstreetmap.org/search?q=" + encoded +
+                            "&format=json&limit=1&addressdetails=0";
                     URL url = new URL(urlStr);
                     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                     conn.setRequestMethod("GET");
@@ -323,7 +308,8 @@ public class editar_pontodecoleta extends AppCompatActivity {
                     conn.setRequestProperty("Accept", "application/json");
                     if (conn.getResponseCode() == 200) {
                         BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-                        StringBuilder sb = new StringBuilder(); String line;
+                        StringBuilder sb = new StringBuilder();
+                        String line;
                         while ((line = br.readLine()) != null) sb.append(line);
                         br.close();
                         String json = sb.toString();
@@ -341,7 +327,9 @@ public class editar_pontodecoleta extends AppCompatActivity {
                 } catch (Exception ignored) {}
                 return null;
             }
-            @Override protected void onPostExecute(double[] r) {
+
+            @Override
+            protected void onPostExecute(double[] r) {
                 isSearching = false;
                 if (r != null) {
                     etLatitude.setText(String.format(Locale.US, "%.8f", r[0]));

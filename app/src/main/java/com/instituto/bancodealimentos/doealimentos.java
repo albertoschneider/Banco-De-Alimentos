@@ -10,11 +10,6 @@ import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowCompat;
-import androidx.core.view.WindowInsetsCompat;
-import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 
 import com.google.firebase.auth.FirebaseAuth;
@@ -41,25 +36,26 @@ public class doealimentos extends AppCompatActivity {
     private ListenerRegistration listener;
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-    @Override protected void onCreate(@Nullable Bundle savedInstanceState) {
+    @Override
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        WindowInsetsHelper.setupEdgeToEdge(this);
 
-        WindowCompat.setDecorFitsSystemWindows(getWindow(), true);
-        getWindow().setStatusBarColor(Color.parseColor("#FFF1B100"));
-        WindowInsetsControllerCompat c = ViewCompat.getWindowInsetsController(getWindow().getDecorView());
-        if (c != null) c.setAppearanceLightStatusBars(true);
+        // 1. SEMPRE chamar setupEdgeToEdge PRIMEIRO
+        WindowInsetsHelper.setupEdgeToEdge(this);
 
         setContentView(R.layout.activity_doealimentos);
 
-        // Aplicar insets
+        // 2. Aplicar insets no HEADER (24dp extra no topo)
         WindowInsetsHelper.applyTopInsets(findViewById(R.id.header));
+
+        // 3. Aplicar insets no RecyclerView (proteção contra navigation bar)
         WindowInsetsHelper.applyScrollInsets(findViewById(R.id.recyclerView));
 
-        // Header com insets (evita corte no título)
+        // 4. Aplicar insets no FOOTER FIXO (proteção contra navigation bar)
+        WindowInsetsHelper.applyBottomInsets(findViewById(R.id.footer));
 
         tvValorTotal = findViewById(R.id.tvValorTotal);
-        recyclerView  = findViewById(R.id.recyclerView);
+        recyclerView = findViewById(R.id.recyclerView);
 
         recyclerView.setLayoutManager(new GridLayoutManager(this, 2));
         adapter = new ProdutoUsuarioAdapter(lista, this::atualizarTotal);
@@ -80,7 +76,10 @@ public class doealimentos extends AppCompatActivity {
         listener = db.collection("produtos")
                 .orderBy("nome", Query.Direction.ASCENDING)
                 .addSnapshotListener((snap, e) -> {
-                    if (e != null) { Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show(); return; }
+                    if (e != null) {
+                        Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
+                        return;
+                    }
                     if (snap == null) return;
 
                     int[] quantidadesAntigas = adapter.dumpQuantidadesByOrder();
@@ -118,7 +117,9 @@ public class doealimentos extends AppCompatActivity {
             int qtd = Math.max(0, adapter.getQuantidadeByPosition(i));
             if (qtd > 0) {
                 Produto copy = new Produto(p.getId(), p.getNome(), p.getPreco(), p.getImagemUrl());
-                try { copy.getClass().getMethod("setQuantidade", int.class).invoke(copy, qtd); } catch (Exception ignored) {}
+                try {
+                    copy.getClass().getMethod("setQuantidade", int.class).invoke(copy, qtd);
+                } catch (Exception ignored) {}
                 selecionados.add(copy);
                 total += (p.getPreco() == null ? 0.0 : p.getPreco()) * qtd;
             }
@@ -142,7 +143,7 @@ public class doealimentos extends AppCompatActivity {
         String displayId = orderId.substring(0, Math.min(7, orderId.length())).toUpperCase(Locale.ROOT);
 
         Timestamp createdAt = Timestamp.now();
-        Date expDate        = new Date(System.currentTimeMillis() + 10 * 60 * 1000L); // +10 min
+        Date expDate        = new Date(System.currentTimeMillis() + 10 * 60 * 1000L);
         Timestamp expiresAt = new Timestamp(expDate);
 
         Map<String, Object> pedido = new HashMap<>();
@@ -168,15 +169,20 @@ public class doealimentos extends AppCompatActivity {
                 .collection("orders").document(orderId)
                 .set(pedido)
                 .addOnSuccessListener(a -> startActivity(new Intent(doealimentos.this, carrinho.class)))
-                .addOnFailureListener(err -> Toast.makeText(this, "Não foi possível criar o pedido: " + err.getMessage(), Toast.LENGTH_LONG).show());
+                .addOnFailureListener(err -> Toast.makeText(this,
+                        "Não foi possível criar o pedido: " + err.getMessage(), Toast.LENGTH_LONG).show());
     }
 
     private int safeQtd(Produto p) {
-        try { return (int) p.getClass().getMethod("getQuantidade").invoke(p); }
-        catch (Exception ignored) { return 0; }
+        try {
+            return (int) p.getClass().getMethod("getQuantidade").invoke(p);
+        } catch (Exception ignored) {
+            return 0;
+        }
     }
 
-    @Override protected void onDestroy() {
+    @Override
+    protected void onDestroy() {
         if (listener != null) listener.remove();
         super.onDestroy();
     }

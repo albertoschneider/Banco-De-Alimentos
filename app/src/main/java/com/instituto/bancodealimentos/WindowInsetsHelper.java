@@ -1,182 +1,126 @@
 package com.instituto.bancodealimentos;
 
 import android.view.View;
-import android.view.ViewGroup;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.appcompat.app.AppCompatActivity;
 
 /**
- * WindowInsetsHelper - Classe para gerenciar insets de sistema (status bar e navigation bar)
- * Versão CORRIGIDA - Com espaçamento adequado nos cabeçalhos
+ * Helper class para gerenciar WindowInsets (edge-to-edge)
+ * ATUALIZADO: Mais espaçamento no topo (24dp) e proteção contra navigation bar
  */
 public class WindowInsetsHelper {
 
     /**
-     * Configura Edge-to-Edge para a Activity
-     * Deve ser chamado ANTES de setContentView()
+     * Configura a activity para edge-to-edge
      */
     public static void setupEdgeToEdge(AppCompatActivity activity) {
         if (activity == null) return;
-        WindowCompat.setDecorFitsSystemWindows(activity.getWindow(), false);
+
+        View decorView = activity.getWindow().getDecorView();
+        decorView.setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+        );
     }
 
     /**
-     * Aplica padding no topo para evitar sobreposição com a status bar
-     * Uso: Headers/Toolbars
-     * CORRIGIDO: Adiciona 8dp extra para espaçamento adequado
+     * Aplica insets no topo (para headers fixos)
+     * ATUALIZADO: Adiciona 24dp de espaçamento extra para afastar MUITO do topo
      */
     public static void applyTopInsets(View view) {
         if (view == null) return;
 
-        final int originalPaddingLeft = view.getPaddingLeft();
-        final int originalPaddingTop = view.getPaddingTop();
-        final int originalPaddingRight = view.getPaddingRight();
-        final int originalPaddingBottom = view.getPaddingBottom();
-
         ViewCompat.setOnApplyWindowInsetsListener(view, (v, insets) -> {
-            Insets statusBar = insets.getInsets(WindowInsetsCompat.Type.statusBars());
-            // Adiciona 8dp extra para mais espaçamento visual
-            int extraPadding = dpToPx(v, 8);
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+
+            // Calcula o espaçamento extra (24dp convertido para pixels)
+            int extraSpacingPx = (int) (24 * view.getContext().getResources().getDisplayMetrics().density);
+
+            // Aplica padding no topo com espaçamento extra
             v.setPadding(
-                    originalPaddingLeft,
-                    originalPaddingTop + statusBar.top + extraPadding,
-                    originalPaddingRight,
-                    originalPaddingBottom
+                    v.getPaddingLeft(),
+                    systemBars.top + extraSpacingPx, // ADICIONA 24dp de espaçamento
+                    v.getPaddingRight(),
+                    v.getPaddingBottom()
             );
+
             return insets;
         });
-        ViewCompat.requestApplyInsets(view);
     }
 
     /**
-     * Aplica padding no fundo para evitar sobreposição com a navigation bar
-     * Uso: Footers/Botões inferiores
+     * Aplica insets em conteúdo scrollável (ScrollView, RecyclerView, etc)
+     * ATUALIZADO: Adiciona padding inferior para evitar que navigation bar sobreponha conteúdo
+     */
+    public static void applyScrollInsets(View view) {
+        if (view == null) return;
+
+        ViewCompat.setOnApplyWindowInsetsListener(view, (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+
+            // CRÍTICO: Adiciona padding inferior para evitar sobreposição da navigation bar
+            int extraBottomPadding = (int) (16 * view.getContext().getResources().getDisplayMetrics().density);
+
+            v.setPadding(
+                    v.getPaddingLeft(),
+                    v.getPaddingTop(),
+                    v.getPaddingRight(),
+                    systemBars.bottom + extraBottomPadding // PROTEÇÃO contra navigation bar
+            );
+
+            return insets;
+        });
+    }
+
+    /**
+     * NOVO: Aplica insets em views fixas no rodapé (footers, botões fixos)
+     * Garante que navigation bar não sobreponha os botões
      */
     public static void applyBottomInsets(View view) {
         if (view == null) return;
 
-        final int originalPaddingLeft = view.getPaddingLeft();
-        final int originalPaddingTop = view.getPaddingTop();
-        final int originalPaddingRight = view.getPaddingRight();
-        final int originalPaddingBottom = view.getPaddingBottom();
-
         ViewCompat.setOnApplyWindowInsetsListener(view, (v, insets) -> {
-            Insets navBar = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+
+            // Adiciona padding extra no rodapé (24dp para segurança)
+            int extraBottomPadding = (int) (24 * view.getContext().getResources().getDisplayMetrics().density);
+
             v.setPadding(
-                    originalPaddingLeft,
-                    originalPaddingTop,
-                    originalPaddingRight,
-                    originalPaddingBottom + navBar.bottom
+                    v.getPaddingLeft(),
+                    v.getPaddingTop(),
+                    v.getPaddingRight(),
+                    systemBars.bottom + extraBottomPadding // PROTEÇÃO contra navigation bar
             );
+
             return insets;
         });
-        ViewCompat.requestApplyInsets(view);
     }
 
     /**
-     * Aplica padding no topo E no fundo
-     * Uso: Conteúdo que precisa evitar ambas as barras
+     * NOVO: Aplica marginBottom em views para evitar sobreposição
+     * Útil para botões fixos no rodapé
      */
-    public static void applyTopAndBottomInsets(View view) {
+    public static void applyBottomMargin(View view) {
         if (view == null) return;
 
-        final int originalPaddingLeft = view.getPaddingLeft();
-        final int originalPaddingTop = view.getPaddingTop();
-        final int originalPaddingRight = view.getPaddingRight();
-        final int originalPaddingBottom = view.getPaddingBottom();
-
         ViewCompat.setOnApplyWindowInsetsListener(view, (v, insets) -> {
-            Insets statusBar = insets.getInsets(WindowInsetsCompat.Type.statusBars());
-            Insets navBar = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
-            v.setPadding(
-                    originalPaddingLeft,
-                    originalPaddingTop + statusBar.top,
-                    originalPaddingRight,
-                    originalPaddingBottom + navBar.bottom
-            );
-            return insets;
-        });
-        ViewCompat.requestApplyInsets(view);
-    }
-
-    /**
-     * Aplica insets para RecyclerViews e ScrollViews
-     * Adiciona padding inferior para não ficar atrás da navigation bar
-     */
-    public static void applyScrollInsets(View scrollView) {
-        if (scrollView == null) return;
-
-        final int originalPaddingLeft = scrollView.getPaddingLeft();
-        final int originalPaddingTop = scrollView.getPaddingTop();
-        final int originalPaddingRight = scrollView.getPaddingRight();
-        final int originalPaddingBottom = scrollView.getPaddingBottom();
-
-        ViewCompat.setOnApplyWindowInsetsListener(scrollView, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(
-                    originalPaddingLeft,
-                    originalPaddingTop,
-                    originalPaddingRight,
-                    originalPaddingBottom + systemBars.bottom
-            );
-            return insets;
-        });
-        ViewCompat.requestApplyInsets(scrollView);
-    }
 
-    /**
-     * Aplica insets em um header com toolbar/título
-     * Garante que o header não fique atrás da status bar
-     * E mantém altura fixa para evitar "esticamento"
-     */
-    public static void setupWithToolbar(View header) {
-        if (header == null) return;
+            if (v.getLayoutParams() instanceof android.view.ViewGroup.MarginLayoutParams) {
+                android.view.ViewGroup.MarginLayoutParams params =
+                        (android.view.ViewGroup.MarginLayoutParams) v.getLayoutParams();
 
-        final int originalPaddingLeft = header.getPaddingLeft();
-        final int originalPaddingTop = header.getPaddingTop();
-        final int originalPaddingRight = header.getPaddingRight();
-        final int originalPaddingBottom = header.getPaddingBottom();
+                // Adiciona margin extra no rodapé (24dp)
+                int extraBottomMargin = (int) (24 * view.getContext().getResources().getDisplayMetrics().density);
 
-        ViewCompat.setOnApplyWindowInsetsListener(header, (v, insets) -> {
-            Insets statusBar = insets.getInsets(WindowInsetsCompat.Type.statusBars());
-
-            // Aplica padding no topo
-            v.setPadding(
-                    originalPaddingLeft,
-                    originalPaddingTop + statusBar.top,
-                    originalPaddingRight,
-                    originalPaddingBottom
-            );
-
-            // Força altura mínima para evitar "esticamento"
-            ViewGroup.LayoutParams params = v.getLayoutParams();
-            if (params != null && params.height == ViewGroup.LayoutParams.WRAP_CONTENT) {
-                // Mantém wrap_content mas define uma altura mínima
-                v.setMinimumHeight(dpToPx(v, 56) + statusBar.top);
+                params.bottomMargin = systemBars.bottom + extraBottomMargin;
+                v.setLayoutParams(params);
             }
 
-            return WindowInsetsCompat.CONSUMED;
+            return insets;
         });
-        ViewCompat.requestApplyInsets(header);
-    }
-
-    /**
-     * Converte DP para PX
-     */
-    private static int dpToPx(View view, int dp) {
-        float density = view.getContext().getResources().getDisplayMetrics().density;
-        return Math.round(dp * density);
-    }
-
-    /**
-     * Remove todos os listeners de insets de uma view
-     * Útil para resetar configurações
-     */
-    public static void clearInsets(View view) {
-        if (view == null) return;
-        ViewCompat.setOnApplyWindowInsetsListener(view, null);
     }
 }
