@@ -5,68 +5,61 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
-    
     android:layout_height="match_parent"
-
-    
     android:fitsSystemWindows="false"
     android:background="#EEF3F8">
 
-    <!-- HEADER -->
-    <LinearLayout
+    <!-- HEADER NOVO (padrão MaterialCardView) -->
+    <com.google.android.material.card.MaterialCardView
         android:id="@+id/header"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:minHeight="56dp"
-        android:orientation="vertical"
-        android:background="#F4B400"
-        android:clipToPadding="true"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:paddingTop="12dp"
-        android:paddingBottom="12dp"
+        app:cardCornerRadius="0dp"
+        app:cardElevation="4dp"
+        android:backgroundTint="#F4B400"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <RelativeLayout
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:minHeight="32dp"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp">
+            android:orientation="vertical"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:paddingTop="16dp"
+            android:paddingBottom="16dp">
 
-                        <ImageButton
-                android:id="@+id/btn_voltar"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_centerVertical="true"
-                android:background="@android:color/transparent"
-                android:contentDescription="@string/sem_descricao"
-                android:scaleType="fitCenter"
-                android:src="@drawable/arrow_back_png" />
-
-
-                        <TextView
-                android:id="@+id/tvTitulo"
-                android:layout_width="0dp"
+            <RelativeLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:layout_toEndOf="@id/btn_voltar"
-                android:layout_alignParentEnd="true"
-                android:layout_marginStart="12dp"
-                android:layout_marginEnd="16dp"
-                android:gravity="center"
-                android:maxLines="1"
-                android:ellipsize="end"
-                android:text="Configurações da conta"
-                android:textColor="#004E7C"
-                android:textSize="18sp"
-                android:textStyle="bold" />
-        </RelativeLayout>
-    </LinearLayout>
+                android:gravity="center_vertical">
+
+                <ImageButton
+                    android:id="@+id/btn_voltar"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_centerVertical="true"
+                    android:background="@drawable/bg_back_button"
+                    android:contentDescription="@string/sem_descricao"
+                    android:padding="10dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/arrow_back_png"
+                    app:tint="#004E7C" />
+
+                <TextView
+                    android:id="@+id/tvTitulo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerInParent="true"
+                    android:text="Configurações"
+                    android:textColor="#004E7C"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-medium" />
+            </RelativeLayout>
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
 
     <!-- SCROLL -->
     <androidx.core.widget.NestedScrollView
@@ -141,7 +134,7 @@
                     android:inputType="textEmailAddress"/>
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- ALTERAR E-MAIL (melhorado: largura total, 48dp, cantos 10dp) -->
+            <!-- ALTERAR E-MAIL -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnAlterarEmail"
                 android:layout_width="match_parent"
@@ -216,7 +209,7 @@
                 android:backgroundTint="#F4B400"
                 app:cornerRadius="12dp"/>
 
-            <!-- Excluir conta (botão suave em rosa, igual ao mock) -->
+            <!-- Excluir conta -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/tvExcluirConta"
                 android:layout_width="match_parent"
@@ -266,5 +259,4 @@
                 app:cornerRadius="14dp" />
         </LinearLayout>
     </LinearLayout>
-
 </androidx.constraintlayout.widget.ConstraintLayout>

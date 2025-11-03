@@ -5,65 +5,61 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
-    
     android:layout_height="match_parent"
     android:fitsSystemWindows="false"
     android:background="#EAF0F6">
 
-    <!-- HEADER corrigido -->
-    <LinearLayout
+    <!-- HEADER NOVO (padrão MaterialCardView) -->
+    <com.google.android.material.card.MaterialCardView
         android:id="@+id/header"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:minHeight="56dp"
-        android:background="#F4B400"
-        android:orientation="vertical"
-        android:clipToPadding="true"
-        android:paddingStart="16dp"
-        android:paddingTop="8dp"
-        android:paddingBottom="12dp"
-        android:paddingEnd="16dp"
+        app:cardCornerRadius="0dp"
+        app:cardElevation="4dp"
+        android:backgroundTint="#F4B400"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <RelativeLayout
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:minHeight="32dp"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp">
+            android:orientation="vertical"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:paddingTop="16dp"
+            android:paddingBottom="16dp">
 
-                        <ImageButton
-                android:id="@+id/btn_voltar"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_centerVertical="true"
-                android:background="@android:color/transparent"
-                android:contentDescription="@string/sem_descricao"
-                android:scaleType="fitCenter"
-                android:src="@drawable/arrow_back_png" />
-
-                        <TextView
-                android:id="@+id/tvTitulo"
-                android:layout_width="0dp"
+            <RelativeLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:layout_toEndOf="@id/btn_voltar"
-                android:layout_alignParentEnd="true"
-                android:layout_marginStart="12dp"
-                android:layout_marginEnd="16dp"
-                android:gravity="center"
-                android:maxLines="1"
-                android:ellipsize="end"
-                android:text="Configurações"
-                android:textColor="#004E7C"
-                android:textSize="18sp"
-                android:textStyle="bold" />
-        </RelativeLayout>
-    </LinearLayout>
+                android:gravity="center_vertical">
+
+                <ImageButton
+                    android:id="@+id/btn_voltar"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_centerVertical="true"
+                    android:background="@drawable/bg_back_button"
+                    android:contentDescription="@string/sem_descricao"
+                    android:padding="10dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/arrow_back_png"
+                    app:tint="#004E7C" />
+
+                <TextView
+                    android:id="@+id/tvTitulo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerInParent="true"
+                    android:text="Configurações"
+                    android:textColor="#004E7C"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-medium" />
+            </RelativeLayout>
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
 
     <!-- CONTEÚDO -->
     <androidx.core.widget.NestedScrollView
@@ -167,13 +163,10 @@
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
     <!-- Botão Sair (inferior) -->
-
-    <!-- Botão Desvincular (inferior) -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnSairGoogle"
         android:layout_width="0dp"
@@ -189,15 +182,14 @@
         app:cornerRadius="12dp"
         app:layout_constraintBottom_toTopOf="@id/btnDesconectarGoogle"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent" />
 
+    <!-- Botão Desvincular (inferior) -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnDesconectarGoogle"
         android:layout_width="0dp"
         android:layout_height="52dp"
         android:layout_margin="16dp"
-        android:layout_marginBottom="64dp"
         android:text="Desvincular Conta do Google"
         android:textAllCaps="false"
         android:textColor="@android:color/white"

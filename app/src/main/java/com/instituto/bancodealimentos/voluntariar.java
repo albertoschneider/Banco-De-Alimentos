@@ -5,14 +5,12 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageButton;
-import android.widget.LinearLayout;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 import androidx.viewpager2.widget.ViewPager2;
+
+import com.google.android.material.button.MaterialButton;
 
 import java.util.Arrays;
 import java.util.List;
@@ -33,13 +31,11 @@ public class voluntariar extends AppCompatActivity {
         WindowInsetsHelper.applyTopInsets(findViewById(R.id.header));
         WindowInsetsHelper.applyScrollInsets(findViewById(R.id.scroll));
 
-        // Header edge-to-edge
-
         viewPager = findViewById(R.id.viewPager);
         ImageButton btnNext = findViewById(R.id.btn_next);
         ImageButton btnPrev = findViewById(R.id.btn_prev);
         ImageButton imgBtnBack = findViewById(R.id.btn_voltar);
-        LinearLayout btnWhatsapp = findViewById(R.id.btn_whatsapp);
+        MaterialButton btnWhatsapp = findViewById(R.id.btn_whatsapp); // CORRIGIDO
 
         // Imagens do carrossel
         imageList = Arrays.asList(
@@ -50,7 +46,7 @@ public class voluntariar extends AppCompatActivity {
                 R.drawable.voluntario_imagem5
         );
 
-        adapter = new ImageAdapter(imageList); // seu adapter com looping
+        adapter = new ImageAdapter(imageList);
         viewPager.setAdapter(adapter);
         viewPager.setOffscreenPageLimit(1);
         viewPager.setPadding(0, 0, 0, 0);
@@ -71,18 +67,20 @@ public class voluntariar extends AppCompatActivity {
             viewPager.setCurrentItem(i == 0 ? last : i - 1, true);
         });
 
-        // --- WhatsApp: usa a MESMA mensagem do seu link original ---
+        // WhatsApp
         final String mensagem =
                 "Olá! Tenho interesse em me tornar voluntário no Banco de Alimentos e gostaria de saber como posso ajudar.";
 
-        btnWhatsapp.setOnClickListener(v -> {
-            // SettingsRepository monta o wa.me com o número salvo (ou vazio) + URL-encode da mensagem
-            Uri uri = SettingsRepository.buildWhatsUrl(this, mensagem);
-            startActivity(new Intent(Intent.ACTION_VIEW, uri));
-        });
-        // ------------------------------------------------------------
+        if (btnWhatsapp != null) {
+            btnWhatsapp.setOnClickListener(v -> {
+                Uri uri = SettingsRepository.buildWhatsUrl(this, mensagem);
+                startActivity(new Intent(Intent.ACTION_VIEW, uri));
+            });
+        }
 
         // Voltar
-        imgBtnBack.setOnClickListener(v -> finish());
+        if (imgBtnBack != null) {
+            imgBtnBack.setOnClickListener(v -> finish());
+        }
     }
 }

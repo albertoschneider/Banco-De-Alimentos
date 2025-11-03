@@ -1,6 +1,7 @@
 package com.instituto.bancodealimentos;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.util.Patterns;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,16 +10,13 @@ import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.Timestamp;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FieldPath;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.SetOptions;
@@ -29,9 +27,11 @@ import java.util.Map;
 
 public class add_admin extends AppCompatActivity {
 
+    private static final String TAG = "ADD_ADMIN";
     private TextInputEditText edtEmail;
     private MaterialButton btnAdicionar;
     private FirebaseFirestore db;
+    private FirebaseAuth auth;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -42,8 +42,6 @@ public class add_admin extends AppCompatActivity {
         // Aplicar insets
         WindowInsetsHelper.applyTopInsets(findViewById(R.id.header));
 
-        // Ajuste de status bar no header (igual ao gerenciar_admins)
-
         ImageButton voltar = findViewById(R.id.btn_voltar);
         if (voltar != null) voltar.setOnClickListener(v -> onBackPressed());
 
@@ -51,6 +49,7 @@ public class add_admin extends AppCompatActivity {
         btnAdicionar = findViewById(R.id.btnAdicionar);
 
         db = FirebaseFirestore.getInstance();
+        auth = FirebaseAuth.getInstance();
 
         btnAdicionar.setOnClickListener(v -> {
             String email = edtEmail.getText() != null ? edtEmail.getText().toString().trim() : "";
@@ -80,59 +79,76 @@ public class add_admin extends AppCompatActivity {
     }
 
     /**
-     * Busca o UID pelo e-mail em 'usuarios' e promove:
-     *  - set usuarios/{uid}.isAdmin = true (merge)
-     *  - set admins/{uid} com nome/email/criadoEm
+     * Busca o UID pelo e-mail em 'usuarios'
+     * CORRIGIDO: Busca com whereEqualTo em 'email' (funciona para Google e email/senha)
      */
     private void promoverPorEmail(String email) {
         travarBotao(true);
 
+        Log.d(TAG, "Buscando usuário com email: " + email);
+
+        // Busca por email (funciona para ambos: login normal e Google)
         db.collection("usuarios")
                 .whereEqualTo("email", email)
                 .limit(1)
                 .get()
-                .addOnSuccessListener(this::onUsuarioPorEmail)
+                .addOnSuccessListener(snap -> {
+                    if (snap == null || snap.isEmpty()) {
+                        Log.w(TAG, "Nenhum usuário encontrado com email: " + email);
+                        travarBotao(false);
+                        Toast.makeText(this, "Nenhum usuário encontrado com este e-mail.", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+
+                    DocumentSnapshot d = snap.getDocuments().get(0);
+                    String uid = d.getId();
+                    String nome = d.contains("nome") ? d.getString("nome") : "";
+                    String emailDoc = d.contains("email") ? d.getString("email") : "";
+
+                    Log.d(TAG, "Usuário encontrado! UID: " + uid + ", Nome: " + nome + ", Email: " + emailDoc);
+
+                    promoverUsuario(uid, nome != null ? nome : "", emailDoc != null ? emailDoc : email);
+                })
                 .addOnFailureListener(e -> {
+                    Log.e(TAG, "Erro ao buscar usuário: " + e.getMessage(), e);
                     travarBotao(false);
                     Toast.makeText(this, "Erro ao buscar usuário: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
 
-    private void onUsuarioPorEmail(QuerySnapshot snap) {
-        if (snap == null || snap.isEmpty()) {
-            travarBotao(false);
-            Toast.makeText(this, "Nenhum usuário encontrado com este e-mail.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        DocumentSnapshot d = snap.getDocuments().get(0);
-        String uid = d.getId();
-        String nome = d.contains("nome") ? d.getString("nome") : "";
-        String email = d.contains("email") ? d.getString("email") : "";
-
+    /**
+     * Promove o usuário a admin:
+     * - Atualiza usuarios/{uid}.isAdmin = true
+     * - Cria admins/{uid} com nome, email e criadoEm
+     */
+    private void promoverUsuario(String uid, String nome, String email) {
         WriteBatch batch = db.batch();
 
-        // usuarios/{uid}
+        // usuarios/{uid} - atualiza isAdmin
         Map<String, Object> uData = new HashMap<>();
         uData.put("isAdmin", true);
         if (nome != null && !nome.isEmpty()) uData.put("nome", nome);
         if (email != null && !email.isEmpty()) uData.put("email", email);
         batch.set(db.collection("usuarios").document(uid), uData, SetOptions.merge());
 
-        // admins/{uid}
+        // admins/{uid} - cria documento
         Map<String, Object> aData = new HashMap<>();
         aData.put("nome", nome != null ? nome : "");
         aData.put("email", email != null ? email : "");
         aData.put("criadoEm", Timestamp.now());
         batch.set(db.collection("admins").document(uid), aData);
 
+        Log.d(TAG, "Promovendo usuário " + uid + " a administrador...");
+
         batch.commit()
                 .addOnSuccessListener(unused -> {
+                    Log.d(TAG, "Usuário promovido com sucesso!");
                     travarBotao(false);
-                    Toast.makeText(this, "Administrador adicionado.", Toast.LENGTH_SHORT).show();
-                    finish(); // volta para a lista; ela atualiza sozinha
+                    Toast.makeText(this, "Administrador adicionado com sucesso.", Toast.LENGTH_SHORT).show();
+                    finish();
                 })
                 .addOnFailureListener(e -> {
+                    Log.e(TAG, "Falha ao promover admin: " + e.getMessage(), e);
                     travarBotao(false);
                     Toast.makeText(this, "Falha ao adicionar admin: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });

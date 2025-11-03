@@ -10,7 +10,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 /**
  * WindowInsetsHelper - Classe para gerenciar insets de sistema (status bar e navigation bar)
- * Versão DEFINITIVA - 100% funcional e testada
+ * Versão CORRIGIDA - Com espaçamento adequado nos cabeçalhos
  */
 public class WindowInsetsHelper {
 
@@ -26,6 +26,7 @@ public class WindowInsetsHelper {
     /**
      * Aplica padding no topo para evitar sobreposição com a status bar
      * Uso: Headers/Toolbars
+     * CORRIGIDO: Adiciona 8dp extra para espaçamento adequado
      */
     public static void applyTopInsets(View view) {
         if (view == null) return;
@@ -37,9 +38,11 @@ public class WindowInsetsHelper {
 
         ViewCompat.setOnApplyWindowInsetsListener(view, (v, insets) -> {
             Insets statusBar = insets.getInsets(WindowInsetsCompat.Type.statusBars());
+            // Adiciona 8dp extra para mais espaçamento visual
+            int extraPadding = dpToPx(v, 8);
             v.setPadding(
                     originalPaddingLeft,
-                    originalPaddingTop + statusBar.top,
+                    originalPaddingTop + statusBar.top + extraPadding,
                     originalPaddingRight,
                     originalPaddingBottom
             );
