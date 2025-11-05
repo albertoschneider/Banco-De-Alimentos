@@ -8,7 +8,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 /**
  * Helper class para gerenciar WindowInsets (edge-to-edge)
- * ATUALIZADO: Mais espaçamento no topo (24dp) e proteção contra navigation bar
+ * VERSÃO CORRIGIDA: Não mexe no topo (funcionava), corrige SÓ o rodapé
  */
 public class WindowInsetsHelper {
 
@@ -28,7 +28,7 @@ public class WindowInsetsHelper {
 
     /**
      * Aplica insets no topo (para headers fixos)
-     * ATUALIZADO: Adiciona 24dp de espaçamento extra para afastar MUITO do topo
+     * MANTIDO ORIGINAL - Não adiciona espaçamento extra, funciona como antes
      */
     public static void applyTopInsets(View view) {
         if (view == null) return;
@@ -36,13 +36,10 @@ public class WindowInsetsHelper {
         ViewCompat.setOnApplyWindowInsetsListener(view, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
 
-            // Calcula o espaçamento extra (24dp convertido para pixels)
-            int extraSpacingPx = (int) (24 * view.getContext().getResources().getDisplayMetrics().density);
-
-            // Aplica padding no topo com espaçamento extra
+            // SEM espaçamento extra - usa apenas o systemBars.top padrão
             v.setPadding(
                     v.getPaddingLeft(),
-                    systemBars.top + extraSpacingPx, // ADICIONA 24dp de espaçamento
+                    systemBars.top, // SEM ADICIONAR NADA
                     v.getPaddingRight(),
                     v.getPaddingBottom()
             );
@@ -53,7 +50,7 @@ public class WindowInsetsHelper {
 
     /**
      * Aplica insets em conteúdo scrollável (ScrollView, RecyclerView, etc)
-     * ATUALIZADO: Adiciona padding inferior para evitar que navigation bar sobreponha conteúdo
+     * CORRIGIDO: Adiciona padding inferior para navigation bar
      */
     public static void applyScrollInsets(View view) {
         if (view == null) return;
@@ -61,14 +58,11 @@ public class WindowInsetsHelper {
         ViewCompat.setOnApplyWindowInsetsListener(view, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
 
-            // CRÍTICO: Adiciona padding inferior para evitar sobreposição da navigation bar
-            int extraBottomPadding = (int) (16 * view.getContext().getResources().getDisplayMetrics().density);
-
             v.setPadding(
                     v.getPaddingLeft(),
                     v.getPaddingTop(),
                     v.getPaddingRight(),
-                    systemBars.bottom + extraBottomPadding // PROTEÇÃO contra navigation bar
+                    systemBars.bottom // Protege contra navigation bar
             );
 
             return insets;
@@ -76,7 +70,7 @@ public class WindowInsetsHelper {
     }
 
     /**
-     * NOVO: Aplica insets em views fixas no rodapé (footers, botões fixos)
+     * Aplica insets em views fixas no rodapé (footers, botões fixos)
      * Garante que navigation bar não sobreponha os botões
      */
     public static void applyBottomInsets(View view) {
@@ -85,14 +79,14 @@ public class WindowInsetsHelper {
         ViewCompat.setOnApplyWindowInsetsListener(view, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
 
-            // Adiciona padding extra no rodapé (24dp para segurança)
-            int extraBottomPadding = (int) (24 * view.getContext().getResources().getDisplayMetrics().density);
+            // Adiciona padding no rodapé para navigation bar + margem de segurança
+            int extraBottomPadding = (int) (16 * view.getContext().getResources().getDisplayMetrics().density);
 
             v.setPadding(
                     v.getPaddingLeft(),
                     v.getPaddingTop(),
                     v.getPaddingRight(),
-                    systemBars.bottom + extraBottomPadding // PROTEÇÃO contra navigation bar
+                    systemBars.bottom + extraBottomPadding // Proteção navigation bar
             );
 
             return insets;
@@ -100,7 +94,7 @@ public class WindowInsetsHelper {
     }
 
     /**
-     * NOVO: Aplica marginBottom em views para evitar sobreposição
+     * Aplica marginBottom em views para evitar sobreposição
      * Útil para botões fixos no rodapé
      */
     public static void applyBottomMargin(View view) {
@@ -113,8 +107,7 @@ public class WindowInsetsHelper {
                 android.view.ViewGroup.MarginLayoutParams params =
                         (android.view.ViewGroup.MarginLayoutParams) v.getLayoutParams();
 
-                // Adiciona margin extra no rodapé (24dp)
-                int extraBottomMargin = (int) (24 * view.getContext().getResources().getDisplayMetrics().density);
+                int extraBottomMargin = (int) (16 * view.getContext().getResources().getDisplayMetrics().density);
 
                 params.bottomMargin = systemBars.bottom + extraBottomMargin;
                 v.setLayoutParams(params);

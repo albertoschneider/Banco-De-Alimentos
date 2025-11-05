@@ -52,14 +52,7 @@ public class editar_pontodecoleta extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // 1. SEMPRE chamar setupEdgeToEdge PRIMEIRO
-        WindowInsetsHelper.setupEdgeToEdge(this);
-
         setContentView(R.layout.activity_editar_pontodecoleta);
-
-        // 2. Aplicar insets no HEADER (24dp extra no topo)
-        WindowInsetsHelper.applyTopInsets(findViewById(R.id.header));
 
         FirebaseApp.initializeApp(this);
         db = FirebaseFirestore.getInstance();

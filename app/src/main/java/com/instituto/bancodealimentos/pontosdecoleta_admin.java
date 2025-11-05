@@ -52,14 +52,7 @@ public class pontosdecoleta_admin extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // 1. SEMPRE chamar setupEdgeToEdge PRIMEIRO
-        WindowInsetsHelper.setupEdgeToEdge(this);
-
         setContentView(R.layout.activity_pontosdecoleta_admin);
-
-        // 2. Aplicar insets no HEADER (24dp extra no topo)
-        WindowInsetsHelper.applyTopInsets(findViewById(R.id.header));
 
         ImageButton btnVoltar = findViewById(R.id.btn_voltar);
         etNome = findViewById(R.id.etNome);

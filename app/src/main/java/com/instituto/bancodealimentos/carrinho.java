@@ -24,19 +24,10 @@ public class carrinho extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // 1. SEMPRE chamar setupEdgeToEdge PRIMEIRO
-        WindowInsetsHelper.setupEdgeToEdge(this);
-
         setContentView(R.layout.activity_carrinho);
 
-        // 2. Aplicar insets no HEADER (24dp extra no topo)
-        WindowInsetsHelper.applyTopInsets(findViewById(R.id.header));
-
-        // 3. Aplicar insets no RecyclerView (proteção contra navigation bar)
+        // Aplicar insets SOMENTE no conteúdo e rodapé
         WindowInsetsHelper.applyScrollInsets(findViewById(R.id.rvCarrinho));
-
-        // 4. Aplicar insets no FOOTER FIXO (proteção contra navigation bar)
         WindowInsetsHelper.applyBottomInsets(findViewById(R.id.footer));
 
         tvTotal = findViewById(R.id.tvTotal);

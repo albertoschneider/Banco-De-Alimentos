@@ -39,19 +39,10 @@ public class doealimentos extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // 1. SEMPRE chamar setupEdgeToEdge PRIMEIRO
-        WindowInsetsHelper.setupEdgeToEdge(this);
-
         setContentView(R.layout.activity_doealimentos);
 
-        // 2. Aplicar insets no HEADER (24dp extra no topo)
-        WindowInsetsHelper.applyTopInsets(findViewById(R.id.header));
-
-        // 3. Aplicar insets no RecyclerView (proteção contra navigation bar)
+        // Aplicar insets SOMENTE no conteúdo e rodapé (não no header)
         WindowInsetsHelper.applyScrollInsets(findViewById(R.id.recyclerView));
-
-        // 4. Aplicar insets no FOOTER FIXO (proteção contra navigation bar)
         WindowInsetsHelper.applyBottomInsets(findViewById(R.id.footer));
 
         tvValorTotal = findViewById(R.id.tvValorTotal);
@@ -65,6 +56,12 @@ public class doealimentos extends AppCompatActivity {
         if (back != null) back.setOnClickListener(v -> {
             startActivity(new Intent(doealimentos.this, menu.class));
             finish();
+        });
+
+        // CORREÇÃO: Usar o FrameLayout btn_cart ao invés do ImageButton interno
+        View btnCart = findViewById(R.id.btn_cart);
+        if (btnCart != null) btnCart.setOnClickListener(v -> {
+            startActivity(new Intent(doealimentos.this, carrinho.class));
         });
 
         findViewById(R.id.btnContinuar).setOnClickListener(v -> finalizarDoacao());
