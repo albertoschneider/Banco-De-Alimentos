@@ -24,9 +24,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
@@ -39,18 +36,22 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.UserProfileChangeRequest;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class configuracoes_email_senha extends AppCompatActivity {
 
-    private TextInputEditText edtNome, edtEmail, edtSenha;
-    private MaterialButton btnSalvar, btnSair, btnAlterarEmail;
+    private TextInputEditText edtNome, edtEmail;
+    private MaterialButton btnSalvar;
     private ImageButton btnVoltar;
-    private TextView tvAlterarSenha, tvSenhaMsg, tvExcluirConta;
+    private LinearLayout btnAlterarEmail, tvAlterarSenha, btnSair, tvExcluirConta;
+    private TextView tvSenhaMsg;
 
     private FirebaseAuth auth;
     private FirebaseUser user;
     private FirebaseFirestore db;
 
-    // Cooldown "Alterar Senha"
+    // Cooldown "Redefinir Senha"
     private SharedPreferences prefs;
     private static final String PREFS = "pw_reset_prefs";
     private static final String K_LEVEL = "pw_level";
@@ -68,38 +69,38 @@ public class configuracoes_email_senha extends AppCompatActivity {
         // Aplicar insets
         WindowInsetsHelper.applyTopInsets(findViewById(R.id.header));
 
-
         auth = FirebaseAuth.getInstance();
         user = auth.getCurrentUser();
-        db   = FirebaseFirestore.getInstance();
+        db = FirebaseFirestore.getInstance();
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
 
-        if (user == null) { goToLogin(); return; }
+        if (user == null) {
+            goToLogin();
+            return;
+        }
 
         // Views
-        btnVoltar       = findViewById(R.id.btn_voltar);
-        edtNome         = findViewById(R.id.edtNome);
-        edtEmail        = findViewById(R.id.edtEmail);
-        edtSenha        = findViewById(R.id.edtSenha);
-        btnSalvar       = findViewById(R.id.btnSalvar);
-        btnSair         = findViewById(R.id.btnSair);
+        btnVoltar = findViewById(R.id.btn_voltar);
+        edtNome = findViewById(R.id.edtNome);
+        edtEmail = findViewById(R.id.edtEmail);
+        btnSalvar = findViewById(R.id.btnSalvar);
         btnAlterarEmail = findViewById(R.id.btnAlterarEmail);
-        tvAlterarSenha  = findViewById(R.id.tvAlterarSenha);
-        tvSenhaMsg      = findViewById(R.id.tvSenhaMsg);
-        tvExcluirConta  = findViewById(R.id.tvExcluirConta);
+        tvAlterarSenha = findViewById(R.id.tvAlterarSenha);
+        tvSenhaMsg = findViewById(R.id.tvSenhaMsg);
+        btnSair = findViewById(R.id.btnSair);
+        tvExcluirConta = findViewById(R.id.tvExcluirConta);
 
         // Ações
         btnVoltar.setOnClickListener(v -> finish());
-        btnSalvar.setOnClickListener(v -> salvarAlteracoes());
-        btnSair.setOnClickListener(v -> mostrarDialogSair());
-        tvExcluirConta.setOnClickListener(v -> mostrarDialogExclusao());
+        btnSalvar.setOnClickListener(v -> salvarNome());
         btnAlterarEmail.setOnClickListener(v ->
                 startActivity(new Intent(this, NovoEmailActivity.class))
         );
-
         tvAlterarSenha.setOnClickListener(v -> trySendResetLinkWithCooldown());
-        restoreCooldownIfRunning();
+        btnSair.setOnClickListener(v -> mostrarDialogSair());
+        tvExcluirConta.setOnClickListener(v -> mostrarDialogExclusao());
 
+        restoreCooldownIfRunning();
         preencherDados();
     }
 
@@ -124,8 +125,7 @@ public class configuracoes_email_senha extends AppCompatActivity {
         if (nomeAuth != null && !nomeAuth.trim().isEmpty()) {
             edtNome.setText(nomeAuth);
         } else {
-            FirebaseFirestore.getInstance()
-                    .collection("usuarios")
+            db.collection("usuarios")
                     .document(user.getUid())
                     .get()
                     .addOnSuccessListener(doc -> {
@@ -138,92 +138,91 @@ public class configuracoes_email_senha extends AppCompatActivity {
                     });
         }
 
-        if (user.getEmail() != null) edtEmail.setText(user.getEmail());
-        edtSenha.setText("");
-    }
-
-    private void salvarAlteracoes() {
-        final String novoNome  = safe(edtNome.getText());
-        final String novoEmail = safe(edtEmail.getText());
-        final String novaSenha = safe(edtSenha.getText());
-
-        // Atualiza nome no Auth
-        if (novoNome.length() > 0 && !novoNome.equals(user.getDisplayName())) {
-            UserProfileChangeRequest req =
-                    new UserProfileChangeRequest.Builder().setDisplayName(novoNome).build();
-            user.updateProfile(req);
+        // E-mail (somente leitura)
+        if (user.getEmail() != null) {
+            edtEmail.setText(user.getEmail());
         }
-
-        // Atualiza e-mail e/ou senha (com reautenticação se precisar)
-        updateEmailThenPassword(novoEmail, novaSenha);
     }
 
-    private void updateEmailThenPassword(final String novoEmail, final String novaSenha) {
-        final boolean querMudarEmail = novoEmail.length() > 0 && !novoEmail.equals(user.getEmail());
-        final boolean querMudarSenha = novaSenha.length() >= 6;
+    /**
+     * NOVO: Salva apenas o nome (Auth + Firestore)
+     */
+    private void salvarNome() {
+        final String novoNome = safe(edtNome.getText());
 
-        if (!querMudarEmail && !querMudarSenha) {
-            Toast.makeText(this, "Alterações salvas.", Toast.LENGTH_SHORT).show();
+        if (novoNome.isEmpty()) {
+            Toast.makeText(this, "Digite um nome válido", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        if (querMudarEmail) {
-            user.updateEmail(novoEmail)
-                    .addOnSuccessListener(unused -> {
-                        if (querMudarSenha) updatePassword(novaSenha);
-                        else Toast.makeText(this, "Alterações salvas.", Toast.LENGTH_SHORT).show();
-                    })
-                    .addOnFailureListener(e -> {
-                        if (e instanceof FirebaseAuthRecentLoginRequiredException) {
-                            pedirReautenticacao(() -> updateEmailThenPassword(novoEmail, novaSenha));
-                        } else {
-                            Toast.makeText(this, "Falha ao atualizar e-mail: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                        }
-                    });
-        } else if (querMudarSenha) {
-            updatePassword(novaSenha);
+        // Verifica se mudou
+        if (novoNome.equals(user.getDisplayName())) {
+            Toast.makeText(this, "Nenhuma alteração para salvar", Toast.LENGTH_SHORT).show();
+            return;
         }
-    }
 
-    private void updatePassword(final String novaSenha) {
-        user.updatePassword(novaSenha)
-                .addOnSuccessListener(unused ->
-                        Toast.makeText(this, "Alterações salvas.", Toast.LENGTH_SHORT).show()
-                )
+        btnSalvar.setEnabled(false);
+        btnSalvar.setText("Salvando...");
+
+        // PASSO 1: Atualiza nome no Auth
+        UserProfileChangeRequest req = new UserProfileChangeRequest.Builder()
+                .setDisplayName(novoNome)
+                .build();
+
+        user.updateProfile(req)
+                .addOnSuccessListener(unused -> {
+                    // PASSO 2: Atualiza nome no Firestore
+                    Map<String, Object> updates = new HashMap<>();
+                    updates.put("nome", novoNome);
+
+                    db.collection("usuarios")
+                            .document(user.getUid())
+                            .update(updates)
+                            .addOnSuccessListener(aVoid -> {
+                                Toast.makeText(this, "Nome atualizado com sucesso!", Toast.LENGTH_SHORT).show();
+                                resetarBotaoSalvar();
+                            })
+                            .addOnFailureListener(e -> {
+                                Toast.makeText(this, "Nome salvo no Auth, mas erro no Firestore: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                                resetarBotaoSalvar();
+                            });
+                })
                 .addOnFailureListener(e -> {
-                    if (e instanceof FirebaseAuthRecentLoginRequiredException) {
-                        pedirReautenticacao(() -> updatePassword(novaSenha));
-                    } else {
-                        Toast.makeText(this, "Falha ao atualizar senha: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                    }
+                    Toast.makeText(this, "Erro ao atualizar nome: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    resetarBotaoSalvar();
                 });
     }
 
-    // ======== Reset-link + cooldown (e-mail) ========
+    private void resetarBotaoSalvar() {
+        btnSalvar.setEnabled(true);
+        btnSalvar.setText("Salvar Alterações");
+    }
+
+    // ======== Redefinir Senha (Reset-link + cooldown) ========
     private void trySendResetLinkWithCooldown() {
         if (user.getEmail() == null) {
             Toast.makeText(this, "Conta sem e-mail. Refaça login.", Toast.LENGTH_LONG).show();
             return;
         }
+
         long now = System.currentTimeMillis();
         long last = prefs.getLong(K_LAST_CLICK, 0L);
         int level = prefs.getInt(K_LEVEL, -1); // -1 primeira vez
         if (now - last >= TEN_MIN_MS) level = -1;
 
-        int newLevel = Math.min(level + 1, 4);      // 0..4
-        int cooldownSecs = (newLevel + 1) * 60;     // 60..300
+        int newLevel = Math.min(level + 1, 4); // 0..4
+        int cooldownSecs = (newLevel + 1) * 60; // 60..300
 
-        // ContinueUrl → volta pro app via DeepLinkSuccessActivity
+        // ContinueUrl → volta pro app via deep link
         ActionCodeSettings settings = ActionCodeSettings.newBuilder()
                 .setUrl("https://albertoschneider.github.io/success/senha-redefinida/")
                 .setHandleCodeInApp(true)
                 .setAndroidPackageName(getPackageName(), true, null)
                 .build();
 
-        FirebaseAuth.getInstance()
-                .sendPasswordResetEmail(user.getEmail(), settings)
+        auth.sendPasswordResetEmail(user.getEmail(), settings)
                 .addOnSuccessListener(unused -> {
-                    Toast.makeText(this, "Enviamos um link para " + user.getEmail(), Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, "Link enviado para " + user.getEmail(), Toast.LENGTH_LONG).show();
                     startPwdCooldown(cooldownSecs);
                     prefs.edit()
                             .putInt(K_LEVEL, newLevel)
@@ -232,24 +231,28 @@ public class configuracoes_email_senha extends AppCompatActivity {
                             .apply();
                 })
                 .addOnFailureListener(e ->
-                        Toast.makeText(this, "Não foi possível enviar o link: " + e.getMessage(), Toast.LENGTH_LONG).show()
+                        Toast.makeText(this, "Não foi possível enviar: " + e.getMessage(), Toast.LENGTH_LONG).show()
                 );
     }
 
     private void startPwdCooldown(int secs) {
-        if (tvAlterarSenha == null) return;
+        if (tvAlterarSenha == null || tvSenhaMsg == null) return;
+
         setPwdLinkEnabled(false);
-        showPwdMsg("Enviamos um link. Reenviar em " + format(secs));
+        showPwdMsg("Você poderá reenviar em " + format(secs));
 
         if (pwdTimer != null) pwdTimer.cancel();
         pwdTimer = new CountDownTimer(secs * 1000L, 1000L) {
-            @Override public void onTick(long ms) {
+            @Override
+            public void onTick(long ms) {
                 int s = (int) Math.max(0, ms / 1000L);
-                showPwdMsg("Enviamos um link. Reenviar em " + format(s));
+                showPwdMsg("Você poderá reenviar em " + format(s));
             }
-            @Override public void onFinish() {
+
+            @Override
+            public void onFinish() {
                 setPwdLinkEnabled(true);
-                if (tvSenhaMsg != null) tvSenhaMsg.setVisibility(View.GONE);
+                showPwdMsg("Enviar link por e-mail");
             }
         }.start();
     }
@@ -262,15 +265,17 @@ public class configuracoes_email_senha extends AppCompatActivity {
             startPwdCooldown(remaining);
         } else {
             setPwdLinkEnabled(true);
-            if (tvSenhaMsg != null) tvSenhaMsg.setVisibility(View.GONE);
+            if (tvSenhaMsg != null) {
+                showPwdMsg("Enviar link por e-mail");
+            }
         }
     }
 
     private void setPwdLinkEnabled(boolean enabled) {
+        if (tvAlterarSenha == null) return;
         tvAlterarSenha.setEnabled(enabled);
-        tvAlterarSenha.setTextColor(enabled ? Color.parseColor("#004E7C") : Color.parseColor("#9CA3AF"));
-        tvAlterarSenha.setAlpha(enabled ? 1f : 0.7f);
-        if (tvSenhaMsg != null && enabled) tvSenhaMsg.setVisibility(View.GONE);
+        tvAlterarSenha.setAlpha(enabled ? 1f : 0.5f);
+        tvAlterarSenha.setClickable(enabled);
     }
 
     private void showPwdMsg(String msg) {
@@ -300,7 +305,7 @@ public class configuracoes_email_senha extends AppCompatActivity {
         titulo.setTextColor(0xFF111827);
 
         TextView msg = new TextView(this);
-        msg.setText("Tem certeza de que deseja sair?\nSua conta não será excluída, mas você precisará fazer login novamente para acessá-la.");
+        msg.setText("Tem certeza de que deseja sair?\nSua conta não será excluída, mas você precisará fazer login novamente.");
         msg.setTextSize(14);
         msg.setTextColor(0xFF4B5563);
         msg.setGravity(Gravity.CENTER);
@@ -320,7 +325,6 @@ public class configuracoes_email_senha extends AppCompatActivity {
         btnCancelar.setBackgroundTintList(ColorStateList.valueOf(0xFFE5E7EB));
         btnCancelar.setTextColor(0xFF374151);
 
-        // Montagem
         card.addView(titulo);
         LinearLayout.LayoutParams lpMsg = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -344,7 +348,7 @@ public class configuracoes_email_senha extends AppCompatActivity {
         btnCancelar.setOnClickListener(v -> dialog.dismiss());
         btnConfirmar.setOnClickListener(v -> {
             dialog.dismiss();
-            FirebaseAuth.getInstance().signOut();
+            auth.signOut();
             goToLogin();
         });
     }
@@ -370,7 +374,7 @@ public class configuracoes_email_senha extends AppCompatActivity {
         titulo.setTextColor(0xFF111827);
 
         TextView msg = new TextView(this);
-        msg.setText("Tem certeza de que deseja excluir sua conta?\nEsta ação é permanente e não pode ser desfeita.");
+        msg.setText("ATENÇÃO: Isso irá EXCLUIR permanentemente sua conta e todos os seus dados.\n\nEsta ação não pode ser desfeita.");
         msg.setTextSize(14);
         msg.setTextColor(0xFF4B5563);
         msg.setGravity(Gravity.CENTER);
@@ -385,7 +389,6 @@ public class configuracoes_email_senha extends AppCompatActivity {
         btnExcluir.setAllCaps(false);
         btnExcluir.setTypeface(Typeface.DEFAULT_BOLD);
         btnExcluir.setCornerRadius(dp(12));
-        // começa DESABILITADO e CINZA:
         btnExcluir.setEnabled(false);
         btnExcluir.setBackgroundTintList(ColorStateList.valueOf(0xFFD1D5DB));
         btnExcluir.setTextColor(0xFF9CA3AF);
@@ -405,7 +408,6 @@ public class configuracoes_email_senha extends AppCompatActivity {
             btnExcluir.setTextColor(isChecked ? 0xFFFFFFFF : 0xFF9CA3AF);
         });
 
-        // Montagem
         card.addView(titulo);
         LinearLayout.LayoutParams lpMsg = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -441,34 +443,37 @@ public class configuracoes_email_senha extends AppCompatActivity {
     private void confirmarExclusaoConta() {
         Runnable continuar = () -> {
             final String uid = user.getUid();
-            // apaga dados no Firestore (ajuste conforme seu schema)
+
+            // PASSO 1: Excluir dados do Firestore
             db.collection("usuarios").document(uid).delete()
                     .addOnCompleteListener(task -> {
+                        // PASSO 2: Excluir conta do Auth
                         user.delete()
                                 .addOnSuccessListener(unused -> {
-                                    Toast.makeText(this, "Conta excluída.", Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(this, "Conta excluída com sucesso", Toast.LENGTH_SHORT).show();
                                     goToLogin();
                                 })
                                 .addOnFailureListener(e -> {
                                     if (e instanceof FirebaseAuthRecentLoginRequiredException) {
                                         pedirReautenticacao(this::confirmarExclusaoConta);
                                     } else {
-                                        Toast.makeText(this, "Falha ao excluir conta: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                                        Toast.makeText(this, "Erro ao excluir conta: " + e.getMessage(), Toast.LENGTH_LONG).show();
                                     }
                                 });
                     });
         };
 
+        // Tenta excluir diretamente
         user.delete()
                 .addOnSuccessListener(unused -> {
-                    Toast.makeText(this, "Conta excluída.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Conta excluída com sucesso", Toast.LENGTH_SHORT).show();
                     goToLogin();
                 })
                 .addOnFailureListener(e -> {
                     if (e instanceof FirebaseAuthRecentLoginRequiredException) {
                         pedirReautenticacao(continuar);
                     } else {
-                        Toast.makeText(this, "Falha ao excluir conta: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                        Toast.makeText(this, "Erro ao excluir conta: " + e.getMessage(), Toast.LENGTH_LONG).show();
                     }
                 });
     }
@@ -522,7 +527,7 @@ public class configuracoes_email_senha extends AppCompatActivity {
         confirmar.setOnClickListener(v -> {
             String senhaAtual = edt.getText() == null ? "" : edt.getText().toString().trim();
             if (senhaAtual.isEmpty()) {
-                Toast.makeText(this, "Informe sua senha atual.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Informe sua senha atual", Toast.LENGTH_SHORT).show();
                 return;
             }
             String emailAtual = user.getEmail();
@@ -533,7 +538,10 @@ public class configuracoes_email_senha extends AppCompatActivity {
             }
             AuthCredential cred = EmailAuthProvider.getCredential(emailAtual, senhaAtual);
             user.reauthenticate(cred)
-                    .addOnSuccessListener(unused -> { d.dismiss(); onSuccess.run(); })
+                    .addOnSuccessListener(unused -> {
+                        d.dismiss();
+                        onSuccess.run();
+                    })
                     .addOnFailureListener(err ->
                             Toast.makeText(this, "Senha incorreta: " + err.getMessage(), Toast.LENGTH_LONG).show()
                     );
