@@ -8,7 +8,9 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.firebase.auth.ActionCodeInfo;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.HashMap;
@@ -31,10 +33,13 @@ public class EmailActionRouterActivity extends AppCompatActivity {
 
     private void handleIntent(@Nullable Intent intent) {
         Uri link = (intent != null) ? intent.getData() : null;
-        if (link == null) { finishToHome(); return; }
+        if (link == null) {
+            finishToHome();
+            return;
+        }
 
-        final String modeRaw = link.getQueryParameter("mode");   // resetPassword, verifyEmail, recoverEmail, verifyAndChangeEmail
-        final String oob     = link.getQueryParameter("oobCode");
+        final String modeRaw = link.getQueryParameter("mode");
+        final String oob = link.getQueryParameter("oobCode");
 
         if (oob == null || oob.isEmpty() || modeRaw == null || modeRaw.isEmpty()) {
             toast("Link inválido.");
@@ -78,14 +83,22 @@ public class EmailActionRouterActivity extends AppCompatActivity {
                 // CORREÇÃO: Verificar e ALTERAR e-mail + ATUALIZAR FIRESTORE
                 FirebaseAuth.getInstance().checkActionCode(oob)
                         .addOnSuccessListener(result -> {
-                            // Pega o novo email do resultado
-                            String novoEmail = result.getData(1); // Email after change
-                            
+                            // CORREÇÃO: Pega o novo email do ActionCodeInfo
+                            ActionCodeInfo info = result.getInfo();
+                            String novoEmail = null;
+                            if (info != null) {
+                                novoEmail = info.getEmail(); // Email APÓS a mudança
+                            }
+
+                            final String emailFinal = novoEmail;
+
                             FirebaseAuth.getInstance().applyActionCode(oob)
                                     .addOnSuccessListener(unused -> {
-                                        // CORREÇÃO: Atualiza o email no Firestore também
-                                        atualizarEmailNoFirestore(novoEmail);
-                                        
+                                        // Atualiza Firestore se temos o novo email
+                                        if (emailFinal != null && !emailFinal.isEmpty()) {
+                                            atualizarEmailNoFirestore(emailFinal);
+                                        }
+
                                         // Vai para tela de sucesso
                                         startActivity(new Intent(this, EmailAtualizadoSucessoActivity.class)
                                                 .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
@@ -105,15 +118,19 @@ public class EmailActionRouterActivity extends AppCompatActivity {
             case "recoveremail":
                 // Recuperar e-mail (desfazer alteração)
                 FirebaseAuth.getInstance().checkActionCode(oob)
-                        .addOnSuccessListener(info -> {
-                            // Pega o email original
-                            String emailOriginal = info.getData(0); // Email before change
-                            
+                        .addOnSuccessListener(result -> {
+                            // CORREÇÃO: Para recuperar, pegamos o email do user ATUAL
+                            // pois após recuperar ele volta pro email antigo
+                            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                            final String emailAtual = (user != null) ? user.getEmail() : null;
+
                             FirebaseAuth.getInstance().applyActionCode(oob)
                                     .addOnSuccessListener(unused -> {
-                                        // CORREÇÃO: Restaura o email no Firestore também
-                                        atualizarEmailNoFirestore(emailOriginal);
-                                        
+                                        // Atualiza Firestore com o email recuperado
+                                        if (emailAtual != null && !emailAtual.isEmpty()) {
+                                            atualizarEmailNoFirestore(emailAtual);
+                                        }
+
                                         toast("E-mail recuperado com sucesso.");
                                         goToSettingsOrLogin();
                                     })
@@ -129,20 +146,22 @@ public class EmailActionRouterActivity extends AppCompatActivity {
                 break;
 
             default:
-                // Qualquer outro modo desconhecido
                 finishToHome();
         }
     }
 
-    // CORREÇÃO: Novo método para atualizar email no Firestore
+    /**
+     * Atualiza o email no Firestore
+     */
     private void atualizarEmailNoFirestore(String novoEmail) {
-        if (FirebaseAuth.getInstance().getCurrentUser() == null) return;
-        
-        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) return;
+
+        String userId = user.getUid();
+
         Map<String, Object> updates = new HashMap<>();
         updates.put("email", novoEmail);
-        
+
         FirebaseFirestore.getInstance()
                 .collection("usuarios")
                 .document(userId)
@@ -152,7 +171,6 @@ public class EmailActionRouterActivity extends AppCompatActivity {
                 })
                 .addOnFailureListener(e -> {
                     // Falha silenciosa - o Auth já foi atualizado
-                    // Pode logar se quiser debug
                 });
     }
 
@@ -173,5 +191,7 @@ public class EmailActionRouterActivity extends AppCompatActivity {
         finish();
     }
 
-    private void toast(String s) { Toast.makeText(this, s, Toast.LENGTH_SHORT).show(); }
+    private void toast(String s) {
+        Toast.makeText(this, s, Toast.LENGTH_SHORT).show();
+    }
 }

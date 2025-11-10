@@ -145,7 +145,7 @@ public class configuracoes_email_senha extends AppCompatActivity {
     }
 
     /**
-     * NOVO: Salva apenas o nome (Auth + Firestore)
+     * Salva apenas o nome (Auth + Firestore)
      */
     private void salvarNome() {
         final String novoNome = safe(edtNome.getText());
@@ -213,9 +213,14 @@ public class configuracoes_email_senha extends AppCompatActivity {
         int newLevel = Math.min(level + 1, 4); // 0..4
         int cooldownSecs = (newLevel + 1) * 60; // 60..300
 
-        // ContinueUrl → volta pro app via deep link
+        // CORREÇÃO: Usa URL do próprio domínio + projeto Firebase
+        // Formato: https://<PROJECT_ID>.firebaseapp.com/__/auth/action
+        // Isso garante que o Android abre direto no app via intent-filter
+        String projectId = getFirebaseProjectId();
+        String continueUrl = "https://" + projectId + ".firebaseapp.com/__/auth/action";
+
         ActionCodeSettings settings = ActionCodeSettings.newBuilder()
-                .setUrl("https://albertoschneider.github.io/success/senha-redefinida/")
+                .setUrl(continueUrl)
                 .setHandleCodeInApp(true)
                 .setAndroidPackageName(getPackageName(), true, null)
                 .build();
@@ -233,6 +238,29 @@ public class configuracoes_email_senha extends AppCompatActivity {
                 .addOnFailureListener(e ->
                         Toast.makeText(this, "Não foi possível enviar: " + e.getMessage(), Toast.LENGTH_LONG).show()
                 );
+    }
+
+    /**
+     * Pega o PROJECT_ID do Firebase do google-services.json
+     */
+    private String getFirebaseProjectId() {
+        try {
+            // Tenta pegar via recursos (gerado automaticamente pelo plugin)
+            int resId = getResources().getIdentifier("project_id", "string", getPackageName());
+            if (resId != 0) {
+                return getString(resId);
+            }
+        } catch (Exception e) {
+            // Ignora
+        }
+        
+        // Fallback: tenta pegar do FirebaseApp
+        try {
+            return com.google.firebase.FirebaseApp.getInstance().getOptions().getProjectId();
+        } catch (Exception e) {
+            // Último fallback: usa um padrão
+            return "bancodealimentos-app"; // Substitua pelo seu PROJECT_ID real
+        }
     }
 
     private void startPwdCooldown(int secs) {
