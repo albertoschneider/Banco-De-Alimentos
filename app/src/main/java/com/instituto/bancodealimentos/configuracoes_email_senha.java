@@ -258,8 +258,7 @@ public class configuracoes_email_senha extends AppCompatActivity {
         try {
             return com.google.firebase.FirebaseApp.getInstance().getOptions().getProjectId();
         } catch (Exception e) {
-            // Último fallback: usa um padrão
-            return "bancodealimentos-app"; // Substitua pelo seu PROJECT_ID real
+            return "barc-2025";
         }
     }
 
