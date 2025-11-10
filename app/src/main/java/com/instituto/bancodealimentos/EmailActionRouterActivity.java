@@ -9,6 +9,10 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class EmailActionRouterActivity extends AppCompatActivity {
 
@@ -71,20 +75,27 @@ public class EmailActionRouterActivity extends AppCompatActivity {
                 break;
 
             case "verifyandchangeemail":
-                // Verificar e ALTERAR e-mail (fluxo verifyBeforeUpdateEmail)
-                // Primeiro checa se o código é válido (opcional, só pra mensagem mais clara)
+                // CORREÇÃO: Verificar e ALTERAR e-mail + ATUALIZAR FIRESTORE
                 FirebaseAuth.getInstance().checkActionCode(oob)
-                        .addOnSuccessListener(result -> FirebaseAuth.getInstance().applyActionCode(oob)
-                                .addOnSuccessListener(unused -> {
-                                    // E-mail já foi alterado ao aplicar o código
-                                    startActivity(new Intent(this, EmailAtualizadoSucessoActivity.class)
-                                            .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
-                                    finish();
-                                })
-                                .addOnFailureListener(err -> {
-                                    toast("Não foi possível confirmar: " + err.getMessage());
-                                    finishToHome();
-                                }))
+                        .addOnSuccessListener(result -> {
+                            // Pega o novo email do resultado
+                            String novoEmail = result.getData(1); // Email after change
+                            
+                            FirebaseAuth.getInstance().applyActionCode(oob)
+                                    .addOnSuccessListener(unused -> {
+                                        // CORREÇÃO: Atualiza o email no Firestore também
+                                        atualizarEmailNoFirestore(novoEmail);
+                                        
+                                        // Vai para tela de sucesso
+                                        startActivity(new Intent(this, EmailAtualizadoSucessoActivity.class)
+                                                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
+                                        finish();
+                                    })
+                                    .addOnFailureListener(err -> {
+                                        toast("Não foi possível confirmar: " + err.getMessage());
+                                        finishToHome();
+                                    });
+                        })
                         .addOnFailureListener(e -> {
                             toast("Código inválido ou expirado.");
                             finishToHome();
@@ -94,15 +105,23 @@ public class EmailActionRouterActivity extends AppCompatActivity {
             case "recoveremail":
                 // Recuperar e-mail (desfazer alteração)
                 FirebaseAuth.getInstance().checkActionCode(oob)
-                        .addOnSuccessListener(info -> FirebaseAuth.getInstance().applyActionCode(oob)
-                                .addOnSuccessListener(unused -> {
-                                    toast("E-mail recuperado com sucesso.");
-                                    goToSettingsOrLogin();
-                                })
-                                .addOnFailureListener(err -> {
-                                    toast("Falha ao recuperar e-mail.");
-                                    finishToHome();
-                                }))
+                        .addOnSuccessListener(info -> {
+                            // Pega o email original
+                            String emailOriginal = info.getData(0); // Email before change
+                            
+                            FirebaseAuth.getInstance().applyActionCode(oob)
+                                    .addOnSuccessListener(unused -> {
+                                        // CORREÇÃO: Restaura o email no Firestore também
+                                        atualizarEmailNoFirestore(emailOriginal);
+                                        
+                                        toast("E-mail recuperado com sucesso.");
+                                        goToSettingsOrLogin();
+                                    })
+                                    .addOnFailureListener(err -> {
+                                        toast("Falha ao recuperar e-mail.");
+                                        finishToHome();
+                                    });
+                        })
                         .addOnFailureListener(e -> {
                             toast("Link inválido ou expirado.");
                             finishToHome();
@@ -113,6 +132,28 @@ public class EmailActionRouterActivity extends AppCompatActivity {
                 // Qualquer outro modo desconhecido
                 finishToHome();
         }
+    }
+
+    // CORREÇÃO: Novo método para atualizar email no Firestore
+    private void atualizarEmailNoFirestore(String novoEmail) {
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) return;
+        
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("email", novoEmail);
+        
+        FirebaseFirestore.getInstance()
+                .collection("usuarios")
+                .document(userId)
+                .update(updates)
+                .addOnSuccessListener(aVoid -> {
+                    // Email atualizado com sucesso no Firestore
+                })
+                .addOnFailureListener(e -> {
+                    // Falha silenciosa - o Auth já foi atualizado
+                    // Pode logar se quiser debug
+                });
     }
 
     private void goToSettingsOrLogin() {

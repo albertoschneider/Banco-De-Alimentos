@@ -13,15 +13,13 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.firestore.DocumentChange;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
 
 import java.util.ArrayList;
@@ -35,6 +33,9 @@ public class gerenciar_pontosdecoleta extends AppCompatActivity {
     private PontosAdapter adapter;
     private final List<Ponto> base = new ArrayList<>();
     private final List<Ponto> filtrada = new ArrayList<>();
+    
+    // CORREÇÃO: Variável para controlar o listener
+    private ListenerRegistration pontosListener;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -45,8 +46,6 @@ public class gerenciar_pontosdecoleta extends AppCompatActivity {
         // Aplicar insets
         WindowInsetsHelper.applyTopInsets(findViewById(R.id.header));
         WindowInsetsHelper.applyScrollInsets(findViewById(R.id.rvPontos));
-
-        // Ajuste de status bar no header amarelo
 
         FirebaseApp.initializeApp(this);
         db = FirebaseFirestore.getInstance();
@@ -113,11 +112,15 @@ public class gerenciar_pontosdecoleta extends AppCompatActivity {
     }
 
     private void carregarPontos() {
-        db.collection("pontos")
+        // CORREÇÃO: Guarda a referência do listener
+        pontosListener = db.collection("pontos")
                 .orderBy("nome", Query.Direction.ASCENDING)
                 .addSnapshotListener((snap, e) -> {
+                    // CORREÇÃO: Só mostra erro se a activity ainda estiver ativa
                     if (e != null) {
-                        Toast.makeText(this, "Erro ao ler pontos: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                        if (!isFinishing() && !isDestroyed()) {
+                            Toast.makeText(this, "Erro ao ler pontos: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                        }
                         return;
                     }
                     if (snap == null) return;
@@ -175,5 +178,16 @@ public class gerenciar_pontosdecoleta extends AppCompatActivity {
         });
 
         dialog.show();
+    }
+
+    // CORREÇÃO: Adiciona método onDestroy para remover listener
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // Remove o listener quando a activity é destruída
+        if (pontosListener != null) {
+            pontosListener.remove();
+            pontosListener = null;
+        }
     }
 }

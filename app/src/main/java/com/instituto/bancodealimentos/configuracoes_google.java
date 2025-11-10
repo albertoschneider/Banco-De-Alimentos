@@ -11,11 +11,8 @@ import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.TypedValue;
-import android.view.View;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 import android.view.Gravity;
+import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.CheckBox;
@@ -54,6 +51,7 @@ public class configuracoes_google extends AppCompatActivity {
 
     private FirebaseAuth auth;
     private FirebaseUser user;
+    private FirebaseFirestore db;
     private GoogleSignInClient googleClient;
 
     private Runnable pendingAfterReauth;
@@ -96,9 +94,10 @@ public class configuracoes_google extends AppCompatActivity {
         // Aplicar insets
         WindowInsetsHelper.applyTopInsets(findViewById(R.id.header));
 
-
         auth = FirebaseAuth.getInstance();
         user = auth.getCurrentUser();
+        db = FirebaseFirestore.getInstance();
+        
         if (user == null) {
             goToStart();
             return;
@@ -136,8 +135,7 @@ public class configuracoes_google extends AppCompatActivity {
                 .into(imgFoto);
 
         // Fallback: busca nome no Firestore se displayName veio vazio
-        FirebaseFirestore.getInstance()
-                .collection("usuarios")
+        db.collection("usuarios")
                 .document(user.getUid())
                 .get()
                 .addOnSuccessListener(doc -> {
@@ -280,19 +278,19 @@ public class configuracoes_google extends AppCompatActivity {
         titulo.setTextColor(0xFF111827);
 
         TextView msg = new TextView(this);
-        msg.setText("Tem certeza de que deseja desvincular sua conta do Google?\nVocê será desconectado.");
+        msg.setText("ATENÇÃO: Isso irá EXCLUIR permanentemente sua conta e todos os seus dados.\n\nEsta ação não pode ser desfeita.");
         msg.setTextSize(14);
         msg.setTextColor(0xFF4B5563);
         msg.setGravity(Gravity.CENTER);
 
         // Checkbox de confirmação
         CheckBox cb = new CheckBox(this);
-        cb.setText("*Entendo que, uma vez desvinculada, a conta não poderá ser recuperada automaticamente.");
+        cb.setText("Entendo que esta ação é permanente e não pode ser desfeita.");
         cb.setTextColor(0xFF6B7280);
         cb.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
 
         MaterialButton btnSim = new MaterialButton(this);
-        btnSim.setText("Sim, desvincular");
+        btnSim.setText("Sim, excluir conta");
         btnSim.setAllCaps(false);
         btnSim.setTypeface(Typeface.DEFAULT_BOLD);
         btnSim.setCornerRadius(dp(12));
@@ -348,33 +346,47 @@ public class configuracoes_google extends AppCompatActivity {
         btnCancelar.setOnClickListener(v -> dialog.dismiss());
         btnSim.setOnClickListener(v -> {
             dialog.dismiss();
-            unlinkGoogleSomente();
+            excluirContaCompleta();
         });
     }
 
-    /* ===== UNLINK GOOGLE — também faz sign-out e volta pra Main ===== */
-    private void unlinkGoogleSomente() {
+    /* ===== EXCLUIR CONTA COMPLETA (CORRIGIDO) ===== */
+    private void excluirContaCompleta() {
         if (user == null) {
             goToStart();
             return;
         }
 
-        user.unlink("google.com")
-                .addOnSuccessListener(result -> {
-                    toast("Conta do Google desvinculada.");
-                    signOutAndGoHome();
+        String userId = user.getUid();
+
+        // PASSO 1: Excluir dados do Firestore
+        db.collection("usuarios").document(userId)
+                .delete()
+                .addOnSuccessListener(aVoid -> {
+                    // PASSO 2: Revogar acesso do Google
+                    googleClient.revokeAccess().addOnCompleteListener(task -> {
+                        // PASSO 3: Excluir conta do Firebase Auth
+                        user.delete()
+                                .addOnSuccessListener(unused -> {
+                                    toast("Conta excluída com sucesso");
+                                    goToStart();
+                                })
+                                .addOnFailureListener(e -> {
+                                    if (e instanceof FirebaseAuthRecentLoginRequiredException) {
+                                        pendingAfterReauth = this::excluirContaCompleta;
+                                        reauthWithGoogle();
+                                    } else {
+                                        toast("Erro ao excluir conta: " + e.getMessage());
+                                    }
+                                });
+                    });
                 })
                 .addOnFailureListener(e -> {
-                    if (e instanceof FirebaseAuthRecentLoginRequiredException) {
-                        pendingAfterReauth = this::unlinkGoogleSomente;
-                        reauthWithGoogle();
-                    } else {
-                        toast("Falha ao desvincular: " + e.getMessage());
-                    }
+                    toast("Erro ao excluir dados: " + e.getMessage());
                 });
     }
 
-    /* ===== Sign-out completo + navegação (CORRIGIDO) ===== */
+    /* ===== Sign-out completo + navegação (MANTIDO) ===== */
     private void signOutAndGoHome() {
         // Primeiro: sign out do Firebase Auth
         try {
