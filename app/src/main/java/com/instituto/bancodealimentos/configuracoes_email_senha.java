@@ -258,7 +258,8 @@ public class configuracoes_email_senha extends AppCompatActivity {
         try {
             return com.google.firebase.FirebaseApp.getInstance().getOptions().getProjectId();
         } catch (Exception e) {
-            return "barc-2025";
+            // Último fallback: usa um padrão
+            return "barc-2025"; // Seu PROJECT_ID do Firebase
         }
     }
 
@@ -529,6 +530,14 @@ public class configuracoes_email_senha extends AppCompatActivity {
         edt.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
         edt.setPadding(dp(12), dp(12), dp(12), dp(12));
 
+        // CORREÇÃO: TextView de erro DENTRO do dialog
+        final TextView tvErro = new TextView(this);
+        tvErro.setText("");
+        tvErro.setTextSize(13);
+        tvErro.setTextColor(0xFFEF4444); // vermelho
+        tvErro.setVisibility(View.GONE);
+        tvErro.setGravity(Gravity.CENTER);
+
         MaterialButton confirmar = new MaterialButton(this);
         confirmar.setText("Confirmar");
         confirmar.setAllCaps(false);
@@ -543,6 +552,12 @@ public class configuracoes_email_senha extends AppCompatActivity {
         lpEdt.topMargin = dp(10);
         root.addView(edt, lpEdt);
 
+        // CORREÇÃO: Adiciona TextView de erro
+        LinearLayout.LayoutParams lpErro = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lpErro.topMargin = dp(8);
+        root.addView(tvErro, lpErro);
+
         LinearLayout.LayoutParams lpBtn = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, dp(48));
         lpBtn.topMargin = dp(16);
@@ -554,24 +569,35 @@ public class configuracoes_email_senha extends AppCompatActivity {
         confirmar.setOnClickListener(v -> {
             String senhaAtual = edt.getText() == null ? "" : edt.getText().toString().trim();
             if (senhaAtual.isEmpty()) {
-                Toast.makeText(this, "Informe sua senha atual", Toast.LENGTH_SHORT).show();
+                // CORREÇÃO: Mostra erro no dialog
+                tvErro.setText("Informe sua senha atual");
+                tvErro.setVisibility(View.VISIBLE);
                 return;
             }
             String emailAtual = user.getEmail();
             if (emailAtual == null) {
-                Toast.makeText(this, "Conta sem e-mail. Refaça login.", Toast.LENGTH_LONG).show();
-                d.dismiss();
+                tvErro.setText("Conta sem e-mail. Refaça login.");
+                tvErro.setVisibility(View.VISIBLE);
                 return;
             }
+            
+            // Desabilita botão enquanto autentica
+            confirmar.setEnabled(false);
+            confirmar.setText("Verificando...");
+            
             AuthCredential cred = EmailAuthProvider.getCredential(emailAtual, senhaAtual);
             user.reauthenticate(cred)
                     .addOnSuccessListener(unused -> {
                         d.dismiss();
                         onSuccess.run();
                     })
-                    .addOnFailureListener(err ->
-                            Toast.makeText(this, "Senha incorreta: " + err.getMessage(), Toast.LENGTH_LONG).show()
-                    );
+                    .addOnFailureListener(err -> {
+                        // CORREÇÃO: Mostra erro no dialog
+                        tvErro.setText("Senha incorreta. Tente novamente.");
+                        tvErro.setVisibility(View.VISIBLE);
+                        confirmar.setEnabled(true);
+                        confirmar.setText("Confirmar");
+                    });
         });
 
         d.show();
