@@ -10,7 +10,6 @@ import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.text.InputType;
 import android.text.TextUtils;
-import android.util.Log;
 import android.util.Patterns;
 import android.view.Gravity;
 import android.view.Window;
@@ -26,6 +25,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.firebase.auth.ActionCodeSettings;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.EmailAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
@@ -34,8 +34,6 @@ import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException;
 import com.google.firebase.auth.FirebaseUser;
 
 public class NovoEmailActivity extends AppCompatActivity {
-
-    private static final String TAG = "NovoEmailActivity";
 
     private TextInputEditText edtNovoEmail;
     private MaterialButton btnEnviarLink;
@@ -52,12 +50,16 @@ public class NovoEmailActivity extends AppCompatActivity {
     private static final long TEN_MIN_MS = 10 * 60 * 1000L;
     private CountDownTimer timer;
 
+    // CORRIGIDO: Usando mesmo padrão do EsqueciSenhaActivity que FUNCIONA
+    private static final String CONTINUE_URL = "https://albertoschneider.github.io/success/email-alterado/";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         WindowInsetsHelper.setupEdgeToEdge(this);
         setContentView(R.layout.activity_novo_email);
 
+        // Aplicar insets
         WindowInsetsHelper.applyTopInsets(findViewById(R.id.header));
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.header), (v, insets) -> {
@@ -102,6 +104,7 @@ public class NovoEmailActivity extends AppCompatActivity {
 
         setEnabled(false);
 
+        // PRÉ-CHECA: se já existe conta com este e-mail
         FirebaseAuth.getInstance().fetchSignInMethodsForEmail(email)
                 .addOnSuccessListener(result -> {
                     boolean jaExiste = result.getSignInMethods() != null && !result.getSignInMethods().isEmpty();
@@ -109,6 +112,7 @@ public class NovoEmailActivity extends AppCompatActivity {
                         setEnabled(true);
                         showMsg("*Este e-mail já está em uso. Use outro.", true);
                     } else {
+                        // Se não existe, segue para enviar verifyBeforeUpdateEmail
                         sendVerifyBeforeUpdateEmail(email);
                     }
                 })
@@ -127,17 +131,19 @@ public class NovoEmailActivity extends AppCompatActivity {
         int newLevel = Math.min(level + 1, 4);
         int cooldown = (newLevel + 1) * 60;
 
-        Log.d(TAG, "Enviando verifyBeforeUpdateEmail SEM ActionCodeSettings");
+        // CORRIGIDO: ActionCodeSettings EXATAMENTE como no EsqueciSenhaActivity
+        ActionCodeSettings acs = ActionCodeSettings.newBuilder()
+                .setUrl(CONTINUE_URL)
+                .setHandleCodeInApp(true) // IMPORTANTE: processa no app
+                .setAndroidPackageName(getPackageName(), true, null)
+                .build();
 
-        // TESTE: SEM ActionCodeSettings (usa configuração padrão do Firebase)
-        user.verifyBeforeUpdateEmail(novoEmail)
+        user.verifyBeforeUpdateEmail(novoEmail, acs)
                 .addOnSuccessListener(unused -> {
-                    Log.d(TAG, "✅ Email enviado!");
                     showMsg(
-                            "✅ Link enviado para " + novoEmail + "!\n\n" +
-                                    "Abra o e-mail e clique no link.\n\n" +
-                                    "⚠️ IMPORTANTE: Verifique SPAM, Promoções e Lixo Eletrônico!\n\n" +
-                                    "O email pode demorar até 5 minutos.",
+                            "Enviamos um link para " + novoEmail + ".\n" +
+                                    "Abra o e-mail e toque no link para confirmar a alteração.\n" +
+                                    "Se não encontrar, verifique Promoções/Atualizações/Spam e marque como \"Não é spam\".",
                             false
                     );
                     tvDicaSpam.setVisibility(TextView.VISIBLE);
@@ -149,28 +155,25 @@ public class NovoEmailActivity extends AppCompatActivity {
                             .apply();
                 })
                 .addOnFailureListener(e -> {
-                    Log.e(TAG, "❌ Erro", e);
-
                     if (e instanceof FirebaseAuthRecentLoginRequiredException) {
-                        Log.d(TAG, "Precisa reautenticar");
+                        // Sessão ficou velha: reautentica e tenta de novo
                         pedirReautenticacao(() -> sendVerifyBeforeUpdateEmail(novoEmail));
                     } else if (e instanceof FirebaseAuthException) {
                         String code = ((FirebaseAuthException) e).getErrorCode();
-                        Log.e(TAG, "Firebase error: " + code);
                         switch (code) {
                             case "ERROR_EMAIL_ALREADY_IN_USE":
-                                showMsg("*Este e-mail já está em uso.", true);
+                                showMsg("*Este e-mail já está em uso. Use outro.", true);
                                 break;
                             case "ERROR_INVALID_EMAIL":
                                 showMsg("*E-mail inválido.", true);
                                 break;
                             default:
-                                showMsg("*Erro: " + code, true);
+                                showMsg("*Falha ao enviar o link (" + code + "). Tente novamente.", true);
                                 break;
                         }
                         setEnabled(true);
                     } else {
-                        showMsg("*Erro: " + e.getMessage(), true);
+                        showMsg("*Falha ao enviar o link: " + e.getMessage(), true);
                         setEnabled(true);
                     }
                 });
@@ -178,12 +181,12 @@ public class NovoEmailActivity extends AppCompatActivity {
 
     private void startCooldown(int secs) {
         setEnabled(false);
-        showMsg("Link enviado! Reenviar em " + format(secs) + ".", false);
+        showMsg("Enviamos o link. Você poderá reenviar em " + format(secs) + ".", false);
         if (timer != null) timer.cancel();
         timer = new CountDownTimer(secs * 1000L, 1000L) {
             @Override
             public void onTick(long ms) {
-                showMsg("Link enviado! Reenviar em " + format((int) (ms / 1000L)) + ".", false);
+                showMsg("Enviamos o link. Você poderá reenviar em " + format((int) (ms / 1000L)) + ".", false);
             }
 
             @Override
@@ -223,6 +226,7 @@ public class NovoEmailActivity extends AppCompatActivity {
         return String.format("%02d:%02d", m, s);
     }
 
+    // ========= Reautenticação inline =========
     private void pedirReautenticacao(final Runnable onSuccess) {
         final Dialog d = new Dialog(this);
         d.requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -285,13 +289,13 @@ public class NovoEmailActivity extends AppCompatActivity {
         confirmar.setOnClickListener(v -> {
             String senhaAtual = edt.getText() == null ? "" : edt.getText().toString().trim();
             if (senhaAtual.isEmpty()) {
-                tvErro.setText("*Informe sua senha atual");
+                tvErro.setText("*Informe sua senha atual para confirmar.");
                 tvErro.setVisibility(TextView.VISIBLE);
                 return;
             }
             String emailAtual = (user != null) ? user.getEmail() : null;
             if (emailAtual == null) {
-                tvErro.setText("*Sessão inválida");
+                tvErro.setText("*Sessão inválida. Faça login novamente.");
                 tvErro.setVisibility(TextView.VISIBLE);
                 return;
             }
@@ -306,7 +310,7 @@ public class NovoEmailActivity extends AppCompatActivity {
                         onSuccess.run();
                     })
                     .addOnFailureListener(err -> {
-                        tvErro.setText("*Senha incorreta");
+                        tvErro.setText("*Senha incorreta: " + err.getMessage());
                         tvErro.setVisibility(TextView.VISIBLE);
                         confirmar.setEnabled(true);
                         confirmar.setText("Confirmar");
