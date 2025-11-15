@@ -642,10 +642,4 @@ Projeto desenvolvido como parte do curso **Técnico em Informática** no **Insti
 
 **Se este projeto te ajudou ou te inspirou, considere dar uma ⭐ no repositório!**
 
----
-
-*"A tecnologia pode ser uma ferramenta poderosa para o bem social. Este projeto é minha contribuição para conectar quem pode ajudar com quem precisa de ajuda."*
-
-**— Alberto Schneider**
-
 </div>
