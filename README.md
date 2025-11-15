@@ -609,8 +609,6 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para ma
 [![Email](https://img.shields.io/badge/Email-albertoschneider891@gmail.com-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:albertoschneider891@gmail.com)
 [![GitHub](https://img.shields.io/badge/GitHub-albertoschneider-181717?style=for-the-badge&logo=github)](https://github.com/albertoschneider)
 
-📱 WhatsApp: +55 51 99159-1769
-
 ---
 
 ## 🎓 Contexto Acadêmico
