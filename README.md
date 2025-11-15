@@ -549,25 +549,29 @@ service cloud.firestore {
 
 ---
 
-## 🤝 Contribuição
+## 🤝 Contribuições
 
-Este projeto foi desenvolvido como trabalho acadêmico, mas contribuições são bem-vindas!
+Este projeto foi desenvolvido como trabalho acadêmico para o curso Técnico em Informática. Contribuições, sugestões e feedback são bem-vindos!
 
-### Desenvolvido por
+### 👥 Equipe de Desenvolvimento
 
-- **Alberto Schneider** (95%)
-  - Arquitetura completa do aplicativo
-  - Integração Firebase (Auth, Firestore)
-  - Sistema de autenticação (Email + Google Sign-In)
+**Projeto desenvolvido colaborativamente como trabalho acadêmico:**
+
+- **Alberto Schneider** - Tech Lead & Developer
+  - Arquitetura e estrutura do projeto
+  - Implementação de autenticação (Firebase Auth, Google Sign-In)
   - Sistema de pagamentos PIX
+  - Integração Firebase Firestore
   - Upload de imagens (Cloudinary)
   - Painel administrativo
-  - UI/UX design e implementação
-  - Lógica de negócio e gerenciamento de dados
-
-- **Colaboradores** (5%)
-  - Bernardo Fritzen Siegle - Testes e documentação
-  - Lorenzo Panigo - Testes e documentação
+  
+- **Bernardo Fritzen Siegle** - Developer
+  - Suporte no desenvolvimento
+  - Testes e validação de funcionalidades
+  
+- **Lorenzo Panigo** - Developer  
+  - Suporte no desenvolvimento
+  - Testes e validação de funcionalidades
 
 ### Como Contribuir
 
